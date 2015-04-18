@@ -316,7 +316,7 @@ class TheBountyMaterialWrite:
             #
             if mtex.use_map_normal:
                 lname = "bump_layer%x" % i
-                if self.writeTexLayer(lname, mappername, bumpRoot, mtex, mtex.use_map_normal, [0], mtex.normal_factor):
+                if self.writeTexLayer(lname, mappername, bumpRoot, mtex, [0], mtex.normal_factor):
                     used = True
                     bumpRoot = lname
             #
@@ -588,6 +588,15 @@ class TheBountyMaterialWrite:
         yi.paramsClearAll()
         yi.paramsSetString("type", "null")
         return yi.createMaterial(self.namehash(mat))
+    
+    def writeDefaultMat(self, mat):
+        self.yi.paramsClearAll()
+        self.yi.paramsSetString("type", "shinydiffusemat")
+        self.yi.paramsSetColor("color", 0.8, 0.8, 0.8)
+        self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
+        #ymat = self.yi.createMaterial("defaultMat")
+        #self.materialMap["default"] = ymat
+        return yi.createMaterial("defaultMat")
 
     def writeMaterial(self, mat, preview=False): # test
         self.preview = preview
