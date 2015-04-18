@@ -114,13 +114,14 @@ class yafLight:
         if lampType == "POINT":
             yi.paramsSetString("type", "pointlight")
             yi.paramsSetBool("useGeometry", lamp.create_geometry)
+            power = 0.5 * power * power
             #
             if lamp.use_sphere:
                 yi.paramsSetString("type", "spherelight")
                 yi.paramsSetInt("samples", lamp.yaf_samples)
                 yi.paramsSetFloat("radius", lamp.yaf_sphere_radius)
                 # use sphere light attenuation  
-                power = 0.5 * power * power
+                power /= lamp.yaf_sphere_radius * lamp.yaf_sphere_radius
                 #
                 if lamp.create_geometry:
                     ID = self.makeSphere(24, 48, pos[0], pos[1], pos[2], lamp.yaf_sphere_radius, self.lightMat)
