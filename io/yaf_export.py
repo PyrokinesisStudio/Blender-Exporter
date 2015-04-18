@@ -435,20 +435,27 @@ class YafaRayRenderEngine(bpy.types.RenderEngine):
 
             def drawAreaCallback(*args):
                 x, y, w, h, tile = args
-                res = self.begin_result(x, y, w, h)
+                result = self.begin_result(x, y, w, h)
                 try:
-                    lay = res.layers[0]
-                    lay.rect, lay.passes[0].rect = tile
+                    if bpy.app.version < (2, 74, 4 ):
+                        lay = result.layers[0] 
+                    else:
+                        lay = result.layers[0].passes[0]
+                    lay.rect, lay.passes[0].rect= tile
+
                 except:
                     pass
 
-                self.end_result(res)
+                self.end_result(result)
 
             def flushCallback(*args):
-                w, h, tile = args
+                w, h, tile, dTile= args
                 res = self.begin_result(0, 0, w, h)
                 try:
-                    lay = res.layers[0]
+                    if bpy.app.version < (2, 74, 4 ):
+                        lay = res.layers[0]
+                    else:
+                        lay = res.layers[0].passes[0]
                     lay.rect, lay.passes[0].rect = tile
                 except BaseException as e:
                     pass
