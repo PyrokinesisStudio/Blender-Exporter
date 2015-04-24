@@ -48,14 +48,14 @@ enum_lighting_integrator_method =(
     ('photonmapping', "Photon Mapping", ""),
     ('pathtracing', "Pathtracing", ""),
     ('DebugIntegrator', "Debug Integrator", ""),
-    ('bidirectional', "Bidirectional PathTracing(WIP)", ""),
+    ('bidirectional', "Bidirectional PathTracing (WIP)", ""),
     ('SPPM', "Stochastic Progressive Photon Mapping", ""),
 )
 
 enum_caustic_method =(
     ('none', "None", ""),
     ('path', "Path", ""),
-    ('both', "Path+Photon", ""),
+    ('both', "Path + Photon", ""),
     ('photon', "Photon", ""),
 )
 
@@ -81,21 +81,13 @@ enum_tile_order = (
     ('random', "Random Tiles", "Random buckets by arbitray order"),
 )
 
-enum_gpu_intersection =(
-    ('Triangle', "Triangle", ""),
-    ('Sphere Hierarchy', "Sphere Hierarchy", ""),
-    ('Disk culled', "Disk culled", ""),
-    ('Sphere Hierarchy VEC', "Sphere Hierarchy VEC", ""),
-    ('Triangle VEC', "Triangle VEC", "")
-)
-# set fileformat for image saving on same format as in the exporter, both have default PNG
 enum_verbosity_level = (
     ('info', "Console Info", "Show all general info messages on console"),
     ('warning', "Console Warning", "Show only warning messages on console"),
     ('error', "Console Error", "Show only error messages on console"),
     ('mute', "Console Mute", "Mute all messages on console"),
 )
-# TODO: need review
+
 # set fileformat for image saving on same format as in the exporter, both have default PNG
 # TODO: need review
 def call_update_fileformat(self, context):
@@ -104,8 +96,6 @@ def call_update_fileformat(self, context):
     
     if scene.img_output is not render.image_settings.file_format:
         render.image_settings.file_format = scene.img_output
-        #if render.image_settings.file_format == "OPEN_EXR" and scene.gs_z_channel:
-        #    render.image_settings.use_zbuffer = True
 
 class TheBountySceneSettings(bpy.types.PropertyGroup):
     @classmethod
@@ -219,11 +209,6 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             description="Reduce the color's brightness to a low dynamic range",
             default=False
         )    
-        cls.gs_show_sam_pix = BoolProperty(
-            name="Show sample pixels",
-            description="Masks pixels marked for resampling during adaptive passes",
-            default=True
-        )    
         cls.gs_z_channel = BoolProperty(
             name="Render Z-depth map",
             description="Render depth map (Z-Buffer)",
@@ -328,7 +313,7 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
         cls.intg_cPhotons = IntProperty(
             name="Count",
             description="Number of caustic photons to be shot",
-            min=1, default=500000
+            min=2, default=500000
         )    
         cls.intg_search = IntProperty(
             name="Search count",
@@ -448,70 +433,12 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             min=0.0,
             default=1.0
         )
+        # Bidirectional test
         cls.intg_do_lightImage = BoolProperty(
             name="Do light image",
             description="Enable do light image for bidir",
             default=False
-        ) 
-        #--------------------------
-        # Anti-aliasing properties
-        #--------------------------
-        cls.intg_ph_leaf_radius = FloatProperty(
-            name="Disk Radius",
-            description="The radius of the disks generated on the triangles in the scene",
-            min=0.0001, max=1000.0,
-            default=0.3
-        )
-        cls.intg_ph_candidate_multi = IntProperty(
-            name="Point Candidantes",
-            description="Number of candidates for each point sample in best candidate sampling",
-            min=10, max=100,
-            default=50
-        )
-        cls.intg_ph_area_multiplier = FloatProperty(
-            name="Area Multiplier",
-            description="Number of disks to generate per unit area",
-            min=0.1, max=50.0,
-            default=6.0
-        )
-        cls.intg_ph_show_cover = BoolProperty(
-            name="Show Cover",
-            description="Preview the scene color coded by intersection errors (gray - good, green - background, red - wrong triangle or point, blue - didn't hit but should, pink - hit but shouldn't have)",
-            default=False
-        )
-        cls.intg_ph_test_rays = BoolProperty(
-            name="Test Intersections",
-            description="Compare the intersections computed in OpenCL with a reference",
-            default=False
-        )
-        cls.intg_ph_benchmark_ray_count = BoolProperty(
-            name="Benchmark",
-            description="Run benchmarking tests",
-            default=False
         )        
-        cls.intg_ph_benchmark_min_tile_size = IntProperty(
-            name="Min Tile Size",
-            description="Minimal tile size for benchmarking",
-            min=1, max=10000,
-            default=4
-        )
-        cls.intg_ph_work_group_size = IntProperty(
-            name="Work Unit Number",
-            description="Depends on GPU working units available",
-            min=1, max=2048,
-            default=32
-        )        
-        cls.intg_fg_OCL = BoolProperty(
-            name="OpenCL Final Gather",
-            description="Use OpenCL for Final Gather",
-            default=False
-        )
-        cls.intg_ph_method = EnumProperty(
-            name="Intersection method",
-            description="Choose GPU intersection method",
-            items=enum_gpu_intersection,
-            default='Disk culled'
-        )
         #--------------------------
         # Anti-aliasing properties
         #--------------------------
@@ -549,7 +476,13 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             name="Filter",
             description="Antialising filter type",
             items=enum_filter_type,
-            default="gauss")
+            default="gauss"
+        )
+        cls.gs_show_sam_pix = BoolProperty(
+            name="Show sampled pixels",
+            description="Masks pixels marked for resampling during adaptive passes",
+            default=True
+        )    
         
     @classmethod
     def unregister(cls):

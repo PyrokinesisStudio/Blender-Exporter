@@ -32,7 +32,6 @@ enum_volume_types=(
     ('ExpDensity Volume', "ExpDensity Volume", ""),
     ('Noise Volume', "Noise Volume", ""),
     ('Uniform Volume', "Uniform Volume", ""),
-    ('Grid Volume', "Grid Volume", ""),
 )
 
 enum_geometry_types=(
@@ -170,12 +169,7 @@ class TheBountyObjectSettings(bpy.types.PropertyGroup):
             precision=4,
             default=0.1000
         )
-        cls.volDensityFile = StringProperty(
-            name="Density file",
-            description= "Density file data",
-            subtype='FILE_PATH',
-            default=""
-        )
+    #
     @classmethod
     def unregister(cls):
         del bpy.types.Object.bounty

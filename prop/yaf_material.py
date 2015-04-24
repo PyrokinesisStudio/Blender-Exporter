@@ -50,9 +50,8 @@ def syncBlenderColors(self, context):
     #
     context.object.active_material.diffuse_color = context.object.active_material.bounty.diff_color   
   
-
 def items_mat1(self, context):
-    mat_one = []
+    #mat_one = []
     for mat in bpy.data.materials:
         if mat.name not in self.name:            
             mat_one +=((mat.name, mat.name, "First blend material"),)
@@ -60,7 +59,7 @@ def items_mat1(self, context):
     return mat_one
 
 def items_mat2(self, context):
-    mat_two = []
+    #mat_two = []
     for mat in bpy.data.materials:
         if mat.name not in self.name:
             mat_two +=((mat.name, mat.name, "Second blend material"),)
@@ -196,7 +195,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             name="Reflection strength",
             description="Amount of glossy reflection",
             min=0.0, max=1.0, step=1, precision=3,
-            soft_min=0.0, soft_max=1.0, default=0.000
+            soft_min=0.0, soft_max=1.0, default=0.0001
     )    
     exp_u = FloatProperty(
             name="Exponent U",
@@ -239,14 +238,14 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             soft_min=1.0, soft_max=30.0, default=1.800
     )    
     absorption = FloatVectorProperty(
-            name="Color and absorption",
+            name="Absorption Color",
             description="Glass volumetric absorption color. White disables absorption",
             subtype='COLOR',
             min=0.0, max=1.0, step=1, precision=3,
             default=(1.0, 1.0, 1.0)
     )    
     absorption_dist = FloatProperty(
-            name="Abs. distance",
+            name="Distance of Absorption",
             description="Absorption distance scale",
             min=0.0, max=100.0,
             step=1, precision=4,
@@ -269,7 +268,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             default=(1.0, 1.0, 1.0)
     )    
     dispersion_power = FloatProperty(
-            name="Disp. power",
+            name="Power",
             description="Strength of dispersion effect, disabled when 0",
             min=0.0, max=5.0,
             step=1, precision=4,
