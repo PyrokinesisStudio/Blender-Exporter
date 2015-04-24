@@ -1,6 +1,6 @@
-TheBounty renderer for Blender 2.72b (fork from YafaRay Blender exporter)
+TheBounty renderer for Blender 2.74 (fork from YafaRay Blender exporter)
 
-Version 0.1.6 rc2.
+Version 0.1.6_rc3.
 
 The exporter is in an experimental stage, by design for the new project, useful only for testing purposes.
 
