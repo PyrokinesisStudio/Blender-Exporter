@@ -99,16 +99,17 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
             col = layout.row()
             col.prop(scene, "intg_caustic_method")
 
-            col = layout.row()
+            #col = layout.row()
 
             if scene.intg_caustic_method in {"both", "photon"}:
+                col = layout.row(align=True)
                 col.prop(scene, "intg_photons", text="Photons")
                 col.prop(scene, "intg_caustic_mix", text="Caus. Mix")
-                col = layout.row()
+                col = layout.row(align=True)
                 col.prop(scene, "intg_caustic_depth", text="Caus. Depth")
                 col.prop(scene, "intg_caustic_radius", text="Caus. Radius")
             #
-            col = layout.row()
+            col = layout.row(align=True)
             col.prop(scene, "intg_path_samples")
             col.prop(scene, "intg_bounces")
             col = layout.row()
@@ -122,12 +123,12 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
             layout.label("Use a high number of AA samples to reduce render noise")
 
         elif integrator == "SPPM":
-            col = layout.column()
+            col = layout.column(align=True)
             col.prop(scene, "intg_photons", text="Photons per pass")
             col.prop(scene, "intg_pass_num")
-            col.prop(scene, "intg_bounces", text="Bounces")
-            col = layout.column()
+            col.prop(scene, "intg_bounces", text="Photon bounces depth")
             col.prop(scene, "intg_search")
+            col = layout.column(align=True)
             col.prop(scene, "intg_pm_ire", toggle=True)
             if not scene.intg_pm_ire:
                 col.prop(scene, "intg_times")

@@ -21,8 +21,7 @@
 import bpy
 from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
-from bl_ui.properties_material import (active_node_mat,
-                                       check_material)
+from bl_ui.properties_material import (active_node_mat, check_material)
 
 class TheBountyMaterialButtonsPanel():
     bl_space_type = 'PROPERTIES'
@@ -108,13 +107,14 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
                 row.label()
 
         elif mat:
-            split.template_ID(space, "pin_id")
-               
+            split.template_ID(space, "pin_id")               
+            split.separator()
+                        
+        if mat:
             row = layout.row(align=True)
             row.menu("TheBountyMaterialPresets", text=bpy.types.TheBountyMaterialPresets.bl_label)
             row.operator("bounty.material_preset_add", text="", icon='ZOOMIN')
-            row.operator("bounty.material_preset_add", text="", icon='ZOOMOUT').remove_active = True            
-        if mat:
+            row.operator("bounty.material_preset_add", text="", icon='ZOOMOUT').remove_active = True
             #
             layout.prop(mat.bounty, "mat_type")
                       
@@ -313,11 +313,11 @@ class TheBountyRealGlass(TheBountyMaterialTypePanel, Panel):
         split = layout.split()
         col = split.column(align=True)
         col.prop(mat.bounty, "absorption")
-        col.prop(mat.bounty, "absorption_dist")
+        layout.prop(mat.bounty, "absorption_dist")
 
         col = split.column(align=True)
-        col.label(text="Dispersion:")
-        col.prop(mat.bounty, "dispersion_power")
+        col.label(text="Dispersion power:")
+        col.prop(mat.bounty, "dispersion_power", text="")
 
         if mat.bounty.mat_type == "rough_glass":
             row = layout.row()

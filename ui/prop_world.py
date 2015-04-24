@@ -172,7 +172,7 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
         #
         if world.bg_type == 'textureback' and context.world.active_texture is not None:
             if world.bg_use_ibl:
-                #self.drawIBL(context)
+                self.drawIBL(context)
                 self.draw_influence(context)
                     
     #------------------------------------------------

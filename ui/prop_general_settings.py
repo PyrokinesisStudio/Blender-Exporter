@@ -69,7 +69,6 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         row.operator("bounty.render_preset_add", text="", icon='ZOOMOUT').remove_active = True
 
         layout.separator()
-        #layout.prop(scene, "gs_ray_depth")
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_type_render", text="")
@@ -81,7 +80,7 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         sub = col.column()
         sub.enabled = scene.gs_transp_shad
         sub = col.column()
-        #test..
+        #
         threadMode ="Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
         col.prop(scene, "gs_threads", text= threadMode)
         sub = col.column()
@@ -91,12 +90,9 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_clamp_rgb", toggle=True)
-        #col.prop(scene, "gs_verbose", toggle=True)
-        col.prop(scene, "gs_verbosity_level", text="")
 
         col = split.column()
         col.prop(render, "use_instances", text="Use instances", toggle=True)
-        #col.prop(scene, "gs_show_sam_pix", toggle=True)
         
         split = layout.split(percentage=0.5)
         col = split.column()
@@ -107,8 +103,9 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         sub.prop(scene, "bg_transp_refract", toggle=True)
         
         split = layout.split(percentage=0.58)
-        col = layout.column()
+        col = layout.row()
         col.prop(scene, "gs_draw_params", expand=True)
+        col.prop(scene, "gs_verbosity_level", text="")
         
         col = layout.column()
         col.enabled = scene.gs_draw_params
