@@ -20,7 +20,7 @@
 
 import bpy
 from bpy.types import Panel
-#from bl_ui.properties_data_camera import CameraButtonsPanel
+from bl_ui import properties_data_camera
 
 class CameraButtonsPanel():
     bl_space_type = 'PROPERTIES'
@@ -99,11 +99,13 @@ class THEBOUNTY_PT_lens(CameraButtonsPanel, Panel):
 
 class THEBOUNTY_PT_camera(CameraButtonsPanel, Panel):
     bl_label = "Camera"
+    #povman add
     bl_context = "data"
     
     @classmethod
     def poll(cls, context):
         return context.camera and CameraButtonsPanel.poll(context)
+    #end
 
     def draw(self, context):
         layout = self.layout
@@ -129,8 +131,7 @@ class THEBOUNTY_PT_camera(CameraButtonsPanel, Panel):
 
         col = split.column(align=True)
         col.prop(camera, "sensor_fit", text="")
-        
-        
+
 
 class THEBOUNTY_PT_camera_display(CameraButtonsPanel, Panel):
     bl_label = "Display"
@@ -141,9 +142,29 @@ class THEBOUNTY_PT_camera_display(CameraButtonsPanel, Panel):
         return context.camera and CameraButtonsPanel.poll(context)
     
     def draw(self, context):
-        # extra display tools
         properties_data_camera.DATA_PT_camera_display.draw(self, context)
-        
+        '''
+        layout = self.layout
+
+        camera = context.camera
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(camera, "show_limits", text="Limits")
+        col.prop(camera, "show_title_safe", text="Title Safe")
+        col.prop(camera, "show_sensor", text="Sensor")
+        col.prop(camera, "show_name", text="Name")
+
+        col = split.column()
+        col.prop_menu_enum(camera, "show_guide")
+        col.prop(camera, "draw_size", text="Size")
+        col.prop(camera, "show_passepartout", text="Passepartout")
+        sub = col.column()
+        sub.active = camera.show_passepartout
+        sub.prop(camera, "passepartout_alpha", text="Alpha", slider=True)
+        '''
+
 
 if __name__ == "__main__":  # only for live edit.
     #import bpy
