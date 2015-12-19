@@ -73,7 +73,9 @@ class TheBountyNodeTree(bpy.types.NodeTree):
                 update=acknowledge_connection)
 #    
 bounty_node_class.append(TheBountyNodeTree)
-  
+
+''' bounty node declaration
+'''  
 class TheBountyNode:
     @classmethod
     def poll( cls, context):
@@ -94,8 +96,12 @@ class TheBountyNode:
     
     def draw_label( self):
         return self.bl_label
-    '''
-    def traverse_tree( self, material_node):
+    ##
+    def get_name( self):
+        #
+        return self.name
+    
+    def traverse_node_tree( self, material_node):
         
         #Iterate inputs and traverse the tree backward if any inputs are connected.
         #Nodes are added to a list attribute of the material output node.
@@ -103,9 +109,30 @@ class TheBountyNode:
         for socket in self.inputs:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
-                linked_node.traverse_tree( material_node)
+                linked_node.traverse_node_tree( material_node)
         material_node.tree.append( self)
-    '''
+ 
+''' Base class for node sockets.
+'''   
+class TheBountyNodeSocket( object):
+    # Set to default None.
+    socket_value = None
+
+    def get_socket_value( self, texture_only = True):
+        '''
+        Method to return socket's value, if not linked. 
+        If linked, return the name of the node with appended pointer.
+        '''
+        if self.is_linked:
+            linked_node = self.links[0].from_node
+            if texture_only and linked_node.node_type == 'texture':
+                # The socket only accepts image textures.
+                return linked_node.get_node_name() + "_inst"
+            if not texture_only:
+                return linked_node.get_node_name()
+        # Return socket value if not linked, or if the incoming node is incompatible.
+        return self.socket_value
+       
 #
 bounty_node_class.append(TheBountyNode)
 
@@ -119,7 +146,8 @@ class TheBountyMaterialOutputNode(Node, TheBountyNode):
     bl_width_min = 120
     
     def init(self, context):
-        self.inputs.new('NodeSocketShader', "ShaderTree")
+        self.inputs.new('NodeSocketShader', "Surface")
+        self.inputs.new('diffuse_color',"Color")
     
     def draw_buttons(self, context, layout):
         try:
@@ -138,6 +166,7 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyNode):
     bl_icon = 'MATERIAL'
     bl_width_min = 180
     
+    node_type='shinydiffusemat'    
     #
     def init(self, context):
         # slots shaders
