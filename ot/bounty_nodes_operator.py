@@ -23,20 +23,6 @@ Created on 13/05/2014
 '''
 import bpy
 
-#------------------------------------
-# the 'base' of material nodes.
-# other nodes can derived from theses.
-#------------------------------------
-TheBountyMaterialNodeTypes = {
-    'shinydiffusemat':'ShinyDiffuseShaderNode',
-    'glossy':'GlossyShaderNode',
-    'coated_glossy':'GlossyShaderNode',
-    'glass':'GlassShaderNode',
-    'rough_glass':'GlassShaderNode',
-    'blend':'BlendShaderNode',
-    'translucent':'TranslucentScattering'
-}
-
 # test for nodetree operator
 class TheBountyAddNodetree(bpy.types.Operator):
     #
@@ -50,25 +36,16 @@ class TheBountyAddNodetree(bpy.types.Operator):
         #
         renderer = context.scene.render.engine
         return (context.material and renderer in cls.COMPAT_ENGINES)
-    #bpy.context.space_data.tree_type = 'TheBountyNodeTree'
-
 
     def execute(self, context):
         # create node
         material = context.object.active_material
         nodetree = bpy.data.node_groups.new( material.name, 'TheBountyNodeTree')
         nodetree.use_fake_user = True
+        node = nodetree.nodes.new("MaterialOutputNode")
         material.bounty.nodetree = nodetree.name
+        material.bounty.node_output = node.name      
         
-        nodeout = nodetree.nodes.new("MaterialOutputNode")
-        nodeout.location= 180,120
-                
-        shader =  nodetree.nodes.new(TheBountyMaterialNodeTypes[material.bounty.mat_type])
-        shader.location = 10,250
-            
-        nodetree.links.new(shader.outputs[0], nodeout.inputs[0])
-        #--------------------------------------     
-       
         return {'FINISHED'}
 
 

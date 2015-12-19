@@ -60,13 +60,14 @@ enum_sss_presets = (
 #-----------------------------------------
 def syncBlenderColors(self, context):
     #
-    if bpy.context.object.active_material.bounty.nodetree == "":
-        context.object.active_material.diffuse_color = context.object.active_material.bounty.diff_color
+    #if bpy.context.object.active_material.bounty.nodetree == "":
+    context.object.active_material.diffuse_color = context.object.active_material.bounty.diff_color
+    '''
     else:
         name = bpy.context.object.active_material.name
         nodetype = bpy.context.object.active_material.bounty.mat_type
-        context.object.active_material.diffuse_color = bpy.data.node_groups[name].nodes[nodetype].inputs[0].diff_color    
-  
+        context.object.active_material.diffuse_color = bpy.data.node_groups[name].nodes[node.name].inputs[0].diff_color    
+    '''
 
 class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     #---------------------------

@@ -432,24 +432,25 @@ class TheBountyMaterialWrite:
         node_type = mat.bounty.mat_type
         if mat.bounty.nodetree != "":
             ntree = mat.bounty.nodetree
-            node_inputs = bpy.data.node_groups[mat.name].nodes[ntree.name].inputs
-            shiny = {
-                "color"             : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].diff_color,
-                "transparency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[2].transparency,
-                "translucency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].translucency,
-                "diffuse_reflect"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].diffuse_reflect,
-                "emit"              : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].emittance,
-                "transmit_filter"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].transmit,
-                "specular_reflect"  : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].specular_reflect,
-                "mirror_color"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].mirror_color,
-                "fresnel_effect"    : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].fresnel_effect,
-                "IOR"               : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].IOR_reflection,
-                "diffuse_brdf"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].brdf_type,
-                "sigma"             : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].sigma
-            }
+            node_inputs = bpy.data.node_groups[mat.name].nodes[mat.bounty.node_output].inputs
+            print(node_inputs[0].name)
+            #shiny = {
+            #    "color"             : bpy.data.node_groups[mat.name].nodes[mat.bounty.node_output].inputs[0].diff_color,
+                #"transparency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[2].transparency,
+                #"translucency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].translucency,
+                #"diffuse_reflect"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].diffuse_reflect,
+                #"emit"              : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].emittance,
+                #"transmit_filter"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].transmit,
+                #"specular_reflect"  : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].specular_reflect,
+                #"mirror_color"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].mirror_color,
+                #"fresnel_effect"    : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].fresnel_effect,
+                #"IOR"               : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].IOR_reflection,
+                #"diffuse_brdf"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].brdf_type,
+                #"sigma"             : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].sigma
+            #}
             
-        else:
-            shiny = {
+            #else:
+        shiny = {
                 "color"             : mat.bounty.diff_color,
                 "transparency"      : mat.bounty.transparency,
                 "translucency"      : mat.translucency,
@@ -505,7 +506,7 @@ class TheBountyMaterialWrite:
         yi.paramsSetFloat("IOR", shinyParams.get('IOR', 1.0))
         
         yi.paramsSetString("diffuse_brdf", brdf)
-        if brdf == "oren_nayar":  # oren-nayar fix for shinydiffuse
+        if brdf == "oren_nayar":
             yi.paramsSetFloat("sigma", shinyParams.get('sigma', 0.1))
         ##
 
