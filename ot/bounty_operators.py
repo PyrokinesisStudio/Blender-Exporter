@@ -167,7 +167,7 @@ class Thebounty_OT_ParseSSS(Operator):
         
         if mat.sss_presets=='cream':
             # colors
-            mat.diff_color = (0.987, 0.90, 0.73)
+            material.diffuse_color = (0.987, 0.90, 0.73)
             mat.sssSigmaS = (.738, .547, .315)
             mat.sssSigmaA = (0.0002, 0.0028, 0.0163)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -180,7 +180,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='ketchup':
             # colors
-            mat.diff_color = (0.16, 0.01, 0.00)
+            material.diffuse_color = (0.16, 0.01, 0.00)
             mat.sssSigmaS = (0.018, 0.007, 0.0034)
             mat.sssSigmaA = (0.061, 0.97, 1.45)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -191,7 +191,7 @@ class Thebounty_OT_ParseSSS(Operator):
             mat.glossy_reflect = 0.7       
         
         elif mat.sss_presets=='marble':
-            mat.diff_color = (0.83, 0.79, 0.75)
+            material.diffuse_color = (0.83, 0.79, 0.75)
             mat.sssSigmaS = (0.219, 0.262, 0.300)
             mat.sssSigmaA = (0.0021, 0.0041, 0.0071)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -203,7 +203,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='milkskimmed':
             # colors
-            mat.diff_color = (0.81, 0.81, 0.69)
+            material.diffuse_color = (0.81, 0.81, 0.69)
             mat.sssSigmaS = (0.070, 0.122, 0.190)
             mat.sssSigmaA = (0.81, 0.81, 0.68)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -215,7 +215,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='milkwhole':
             # colors
-            mat.diff_color = (0.90, 0.88, 0.76)
+            material.diffuse_color = (0.90, 0.88, 0.76)
             mat.sssSigmaS = (0.255, 0.321, 0.377)
             mat.sssSigmaA = (0.011, 0.0024, 0.014)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -227,7 +227,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='potato':
             # colors
-            mat.diff_color = (0.77, 0.62, 0.21)
+            material.diffuse_color = (0.77, 0.62, 0.21)
             mat.sssSigmaS = (0.068, 0.070, 0.055)
             mat.sssSigmaA = (0.0024, 0.0090, 0.12)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -240,7 +240,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='skinbrown': #skin1
             # colors
-            mat.diff_color = (0.44, 0.22, 0.13)
+            material.diffuse_color = (0.44, 0.22, 0.13)
             mat.sssSigmaS = (0.074, 0.088, 0.101)
             mat.sssSigmaA = (0.032, 0.17, 0.48)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -252,7 +252,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='skinpink':
             #
-            mat.diff_color = (0.63, 0.44, 0.34)
+            material.diffuse_color = (0.63, 0.44, 0.34)
             mat.sssSigmaS = (0.109, 0.159, 0.179) # *10
             mat.sssSigmaA = (0.013, 0.070, 0.145)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -264,7 +264,7 @@ class Thebounty_OT_ParseSSS(Operator):
             
         elif mat.sss_presets=='skinyellow':
             # colors
-            mat.diff_color = (0.64, 0.42, 0.27)
+            material.diffuse_color = (0.64, 0.42, 0.27)
             mat.sssSigmaS = (0.48, 0.17, 0.10)
             mat.sssSigmaA = (0.64, 0.42, 0.27)
             mat.sssSpecularColor = (1.00, 1.00, 1.00)
@@ -276,7 +276,7 @@ class Thebounty_OT_ParseSSS(Operator):
         
         elif mat.sss_presets=='custom':
             # colors
-            mat.diff_color = mat.diff_color
+            material.diffuse_color = material.diffuse_color
             mat.sssSigmaS = mat.sssSigmaS
             mat.sssSigmaA = mat.sssSigmaA
             mat.sssSpecularColor = mat.sssSpecularColor
