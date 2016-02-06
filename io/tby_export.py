@@ -179,8 +179,10 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         baseIds = {}
         dupBaseIds = {}
 
-        for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        for obj in self.scene.objects:
+            if not (not obj.hide_render and (obj.is_visible(self.scene) or obj.hide) \
+                    and self.object_on_visible_layer(obj) and (obj.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})):
+                continue
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))

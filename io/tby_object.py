@@ -24,7 +24,11 @@ import time
 import math
 import mathutils
 import yafrayinterface
+import mathutils
 
+ones_threevec = mathutils.Vector([1, 1, 1])
+bbmin_base = mathutils.Vector([1e10, 1e10, 1e10])
+bbmax_base = mathutils.Vector([-1e10, -1e10, -1e10])
 
 def multiplyMatrix4x4Vector4(matrix, vector):
     result = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
@@ -39,6 +43,8 @@ class exportObject(object):
         self.yi = yi
         self.materialMap = mMap
         self.is_preview = preview
+        self.triangleCache = []
+        self.vertexCache = []
 
     def setScene(self, scene):
 
@@ -131,15 +137,13 @@ class exportObject(object):
     def getBBCorners(self, obj):
         bb = obj.bound_box   # look bpy.types.Object if there is any problem
 
-        bbmin = [1e10, 1e10, 1e10]
-        bbmax = [-1e10, -1e10, -1e10]
+        bbmin = bbmin_base.copy()
+        bbmax = bbmax_base.copy()
 
         for corner in bb:
             for i in range(3):
-                if corner[i] < bbmin[i]:
-                    bbmin[i] = corner[i]
-                if corner[i] > bbmax[i]:
-                    bbmax[i] = corner[i]
+                bbmin[i] = min(bbmin[i], corner[i])
+                bbmax[i] = min(bbmax[i], corner[i])
 
         return bbmin, bbmax
 
@@ -367,35 +371,30 @@ class exportObject(object):
             # into a (-1 -1 -1) (1 1 1) bounding box
             bbMin, bbMax = self.getBBCorners(obj)
 
-            delta = []
+            delta = bbMax - bbMin
 
-            for i in range(3):
-                delta.append(bbMax[i] - bbMin[i])
-                if delta[i] < 0.0001:
-                    delta[i] = 1
+            delta = [(1 if d < 0.0001 else d) for d in delta]
 
-            # use untransformed mesh's vertices
-            for v in mesh.vertices:
-                normCo = []
-                for i in range(3):
-                    normCo.append(2 * (v.co[i] - bbMin[i]) / delta[i] - 1)
-
-                ov.append([normCo[0], normCo[1], normCo[2]])
+            ov = [2 * mathutils.Vector([x/y for x, y in zip((v.co - bbMin), delta)]) - ones_threevec for v in mesh.vertices]
 
         # Transform the mesh after orcos have been stored and only if matrix exists
         if matrix is not None:
             mesh.transform(matrix)
 
-        self.yi.paramsClearAll()
-        self.yi.startGeometry()
+        self.paramsClearAll()
+        self.startGeometry()
 
-        self.yi.startTriMesh(ID, len(mesh.vertices), len(getattr(mesh, face_attr)), hasOrco, hasUV, obType)
+        self.startTriMesh(ID, len(mesh.vertices), len(getattr(mesh, face_attr)), hasOrco, hasUV, obType)
 
-        for ind, v in enumerate(mesh.vertices):
-            if hasOrco:
-                self.yi.addVertex(v.co[0], v.co[1], v.co[2], ov[ind][0], ov[ind][1], ov[ind][2])
-            else:
-                self.yi.addVertex(v.co[0], v.co[1], v.co[2])
+        if hasOrco:
+            self.addVertices(mesh.vertices, ov)
+        else:
+            self.addVertices(mesh.vertices)
+
+        # Do some material caching
+        self.defaultMaterial = self.materialMap["default"]
+        if self.scene.bounty.gs_clay_render and not oMat:
+            oMat = self.materialMap["clay"]
 
         for index, f in enumerate(getattr(mesh, face_attr)):
             if f.use_smooth:
@@ -406,9 +405,8 @@ class exportObject(object):
             else:
                 ymaterial = self.getFaceMaterial(mesh.materials, f.material_index, obj.material_slots)
 
-            co = None
             if hasUV:
-
+                co = None
                 if self.is_preview:
                     co = uv_texture[0].data[index].uv
                 else:
@@ -417,19 +415,16 @@ class exportObject(object):
                 uv0 = self.yi.addUV(co[0][0], co[0][1])
                 uv1 = self.yi.addUV(co[1][0], co[1][1])
                 uv2 = self.yi.addUV(co[2][0], co[2][1])
-
-                self.yi.addTriangle(f.vertices[0], f.vertices[1], f.vertices[2], uv0, uv1, uv2, ymaterial)
-            else:
-                self.yi.addTriangle(f.vertices[0], f.vertices[1], f.vertices[2], ymaterial)
-
-            if len(f.vertices) == 4:
-                if hasUV:
+                if len(f.vertices) == 4:
                     uv3 = self.yi.addUV(co[3][0], co[3][1])
-                    self.yi.addTriangle(f.vertices[0], f.vertices[2], f.vertices[3], uv0, uv2, uv3, ymaterial)
+                    uv = (uv0, uv1, uv2, uv3)
                 else:
-                    self.yi.addTriangle(f.vertices[0], f.vertices[2], f.vertices[3], ymaterial)
+                    uv = (uv0, uv1, uv2)
 
-        self.yi.endTriMesh()
+                self.addTriangle(list(f.vertices), uv, ymaterial)
+            else:
+                self.addTriangle(list(f.vertices), ymaterial)
+        self.endTriMesh()
 
         if isSmooth and mesh.use_auto_smooth:
             self.yi.smoothMesh(0, math.degrees(mesh.auto_smooth_angle))
@@ -438,25 +433,51 @@ class exportObject(object):
         elif isSmooth:
             self.yi.smoothMesh(0, 181)
 
-        self.yi.endGeometry()
+        self.endGeometry()
 
         bpy.data.meshes.remove(mesh)
 
+    def addTriangle(self, *args):
+        self.triangleCache.append(args)
+
+    def addVertex(self, *args):
+        self.vertexCache.append(args)
+
+    def addVertices(self, *args):
+        if len(args) == 1: # No Orco
+            self.vertexCache.extend(map(lambda v: tuple(v.co), args[0]))
+        else:
+            self.vertexCache.extend(map(lambda t: tuple(t[0].co) + tuple(t[1]), zip(args[0], args[1])))
+
+    def paramsClearAll(self):
+        self.yi.paramsClearAll()
+
+    def startGeometry(self):
+        self.yi.startGeometry()
+
+    def startTriMesh(self, ID, vert_len, attr_les, hasOrco, hasUV, obType):
+        self.yi.startTriMesh(ID, vert_len, attr_les, hasOrco, hasUV, obType)
+        self.vertexCache = []
+        self.triangleCache = []
+
+    def endTriMesh(self):
+        self.yi.addVertices(self.vertexCache)
+        self.yi.addTriangles(self.triangleCache)
+        self.yi.endTriMesh()
+
+    def endGeometry(self):
+        self.yi.endTriMesh()
+
     def getFaceMaterial(self, meshMats, matIndex, matSlots):
 
-        ymaterial = self.materialMap["default"]
-
-        if self.scene.bounty.gs_clay_render:
-            ymaterial = self.materialMap["clay"]
-        elif len(meshMats) and meshMats[matIndex]:
-            mat = meshMats[matIndex]
-            if mat in self.materialMap:
-                ymaterial = self.materialMap[mat]
+        mat = meshMats[matIndex]
+        if mat in self.materialMap:
+            return self.materialMap[mat]
         else:
-            for mat_slots in [ms for ms in matSlots if ms.material in self.materialMap]:
-                ymaterial = self.materialMap[mat_slots.material]
+            for mat_slots in filter(lambda mat_slots: mat_slots.material in self.materialMap, matSlots):
+                return self.materialMap[mat_slots.material]
 
-        return ymaterial
+        return self.defaultMaterial
     
     def defineStrandValues(self, material):
         #
