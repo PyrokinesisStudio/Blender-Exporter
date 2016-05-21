@@ -490,8 +490,8 @@ class TheBountyMaterialWrite:
             #---------------------------------------------------
             bCol = mat.diffuse_color
             # for fix dark texture backgroung in material preview
-            if mat.name.startswith("checker"):
-                bEmit = 2.50
+            #if mat.name.startswith("checker"):
+            #    bEmit = 0.50
         ##
         yi.paramsSetColor("color", bCol[0], bCol[1], bCol[2])
         yi.paramsSetFloat("transparency", transparency)
