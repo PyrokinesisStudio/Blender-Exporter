@@ -46,7 +46,7 @@ if sys.platform == 'win32':
     for file in os.listdir(BIN_PATH):
         # load dll's from a MSVC build's
         if file in {'yafaraycore.dll'}:
-            dllArray = ['zlib', 'libiconv', 'libpng16', 'jpeg8', 'libxml2', 'Half', 'Iex', \
+            dllArray = ['zlib', 'libiconv', 'libpng16', 'jpeg8', 'tiff', 'libxml2', 'Half', 'Iex', \
                         'Imath', 'IlmThread', 'IlmImf', 'yafaraycore', 'yafarayplugin']
             break
         # load dll's from a GCC build's
@@ -89,7 +89,7 @@ else:
 
 def register():
     #
-    nodeitems_utils.register_node_categories("BOUNTY_NODES", ui.prop_custom_nodes.TheBountyNodeCategories)
+    nodeitems_utils.register_node_categories("BOUNTY_NODES", ui.prop_material_nodes.TheBountyNodeCategories)
     prop.register()
     bpy.utils.register_module(__name__)
     
