@@ -139,6 +139,15 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             default=False, 
             update=set_shadow_method
     )
+    hemi_type = EnumProperty(
+            name="Hemi light type",
+            description="180 degree costant light source",
+            items=(
+                ('infinite', "Infinite", "Infinite light like Sun"),
+                ('directional', "Directional", "Directional light like spotlight useful for concentrate light on specific areas"),
+            ),
+            default='infinite'
+    )
     
 #
 def register():

@@ -83,15 +83,6 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             description="Name of the material two in blend material",
             default="blendtwo"
     )
-    node_output = StringProperty( 
-            name = "Output Node",
-            description = "Material node tree output node to link to the current material"
-    )
-    nodetree = StringProperty(
-            name="Node Tree",
-            description="Name of the shader node tree for this material",
-            default=""
-    )
     mat_type = EnumProperty(
             name="Material type",
             items=enum_material_types,
@@ -102,8 +93,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             description="Diffuse albedo color material",
             subtype='COLOR',
             min=0.0, max=1.0,
-            default=(0.8, 0.8, 0.8),
-            update=syncBlenderColors
+            default=(0.8, 0.8, 0.8)
     )
     emittance = FloatProperty(
             name="Emit",

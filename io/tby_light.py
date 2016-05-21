@@ -78,7 +78,7 @@ class exportLight:
         # up = matrix[1]  /* UNUSED */
         to = pos - direct
 
-        power = lamp.bounty.energy
+        power = lamp.energy
         color = lamp.color
 
         if self.preview:
@@ -164,8 +164,9 @@ class exportLight:
         elif lamp.type == "HEMI":
             yi.paramsSetString("type", "directional")
             yi.paramsSetPoint("direction", direct[0], direct[1], direct[2])
-            yi.paramsSetBool("infinite", lamp.bounty.infinite)
-            if not lamp.bounty.infinite:
+            infinite_light = lamp.bounty.hemi_type == 'infinite'
+            yi.paramsSetBool("infinite", infinite_light)
+            if not infinite_light:
                 yi.paramsSetFloat("radius", lamp.bounty.shadows_size)
                 yi.paramsSetPoint("from", pos[0], pos[1], pos[2])
             

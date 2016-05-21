@@ -112,7 +112,7 @@ def exportRenderSettings(yi, scene):
     yi.paramsSetBool("clamp_rgb", scene.bounty.gs_clamp_rgb)
     yi.paramsSetBool("show_sam_pix", scene.bounty.gs_show_sam_pix)
     #TODO: review
-    yi.paramsSetBool("premult", False)
+    yi.paramsSetBool("premult", scene.bounty.bg_transp)
      
     #TODO: automatic best size mode calculation based on render size
     yi.paramsSetInt("tile_size", scene.bounty.gs_tile_size)

@@ -20,7 +20,7 @@
 import bpy
 from bpy.types import Panel
 
-class DataButtonsPanel():
+class TheBountyDataButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "data"
@@ -52,15 +52,15 @@ class THEBOUNTY_PT_preview(Panel):
         self.layout.template_preview(context.lamp)
 
 
-class THEBOUNTY_PT_lamp(DataButtonsPanel, Panel):
+class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
     bl_label = "Lamp"
     COMPAT_ENGINES = {'THEBOUNTY'}
-    
+    '''
     @classmethod
     def poll(cls, context):
         engine = context.scene.render.engine
         return context.lamp and (engine in cls.COMPAT_ENGINES)
-    
+    '''
     def draw_spot_shape(self, context):
         layout = self.layout
         lamp = context.lamp.bounty
@@ -107,7 +107,7 @@ class THEBOUNTY_PT_lamp(DataButtonsPanel, Panel):
         # commons values
         layout.prop(lamp, "type", expand=True)
         layout.prop(lamp, "color")
-        layout.prop(lamp.bounty, "energy", text="Power")
+        layout.prop(lamp, "energy", text="Power")
 
         if lamp.type == "AREA":
             layout.prop(lamp.bounty, "samples")
@@ -135,10 +135,10 @@ class THEBOUNTY_PT_lamp(DataButtonsPanel, Panel):
             layout.prop(lamp.bounty, "angle")
 
         elif lamp.type == "HEMI": #"DIRECTIONAL":
-            layout.label("TheBounty 'directional' light type")
-            layout.prop(lamp.bounty, "infinite")
-            if not lamp.bounty.infinite:
-                layout.prop(lamp.bounty, "shadows_size", text="Radius of directional cone")
+            layout.prop(lamp.bounty, "hemi_type")
+            sub = layout.row()
+            sub.enabled = not lamp.bounty.hemi_type == 'infinite'   
+            sub.prop(lamp.bounty, "shadows_size", text="Radius of directional cone")
 
         elif lamp.type == "POINT":
             col = layout.column(align=True)

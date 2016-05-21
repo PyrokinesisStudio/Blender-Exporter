@@ -251,6 +251,7 @@ class TheBountyBlend(TheBountyMaterialTypePanel, Panel):
         layout.prop(mat.bounty, "blend_value", slider=True)
         layout.separator()
         blend_two_draw(layout, mat)
+        layout.operator('material.parse_blend')
                     
 class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
     bl_label = "Shiny Diffuse Material"
@@ -262,7 +263,7 @@ class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
         col.prop(mat.bounty, "emittance")
         layout.row().prop(mat.bounty, "diffuse_reflect", slider=True)
 
@@ -306,7 +307,7 @@ class TheBountyGlossyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
 
         col = split.column()
         ref = col.column(align=True)
@@ -418,7 +419,7 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         #        
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
         col.prop(mat.bounty, "diffuse_reflect", text="Diff. Reflect",slider=True)
         col = split.column()     
         col.prop(mat.bounty, "glossy_color")

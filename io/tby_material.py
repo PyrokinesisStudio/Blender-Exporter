@@ -269,8 +269,7 @@ class TheBountyMaterialWrite:
             mir_col = mat.bounty.coat_mir_col
             yi.paramsSetColor("mirror_color", mir_col[0], mir_col[1], mir_col[2])
         
-        #diffuse_color = mat.diffuse_color
-        diffuse_color = mat.bounty.diff_color
+        diffuse_color = mat.diffuse_color
         glossy_color = mat.bounty.glossy_color
 
         yi.paramsSetColor("diffuse_color", diffuse_color[0], diffuse_color[1], diffuse_color[2])
@@ -347,8 +346,7 @@ class TheBountyMaterialWrite:
         yi.paramsSetString("type", "translucent")
         yi.paramsSetFloat("IOR", mat.bounty.sssIOR)
         
-        #diffColor   = mat.diffuse_color #sssColor
-        diffColor   = mat.bounty.diff_color #sssColor
+        diffColor   = mat.diffuse_color
         glossyColor = mat.bounty.glossy_color;
         specColor   = mat.bounty.sssSpecularColor
         sigmaA      = mat.bounty.sssSigmaA
@@ -526,7 +524,7 @@ class TheBountyMaterialWrite:
             #
             if mtex.use_map_color_diffuse:
                 lname = "diff_layer%x" % i
-                if self.writeTexLayer(lname, mappername, diffRoot, mtex, bCol, mtex.diffuse_color_factor):
+                if self.writeTexLayer(lname, mappername, diffRoot, mtex, diffColor, mtex.diffuse_color_factor):
                     used = True
                     diffRoot = lname
             #
@@ -576,9 +574,10 @@ class TheBountyMaterialWrite:
         if len(mirrorRoot) > 0:
             yi.paramsSetString("mirror_shader", mirrorRoot)
         if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)
+            yi.paramsSetString("bump_shader", bumpRoot)        
 
         return yi.createMaterial(self.namehash(mat))
+    
 
     def writeBlendShader(self, mat):
         yi = self.yi
@@ -645,7 +644,7 @@ class TheBountyMaterialWrite:
         self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
         return yi.createMaterial("defaultMat")
 
-    def writeMaterial(self, mat, preview=False): # test
+    def writeMaterial(self, mat, preview=False):
         self.preview = preview
         self.yi.printInfo("Exporter: Creating Material: \"" + self.namehash(mat) + "\"")
         ymat = None

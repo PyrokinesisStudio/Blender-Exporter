@@ -224,7 +224,12 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             description="Choose the render output method",
             items=enum_render_output_mode,
             default='into_blender'
-    )    
+    )
+    gs_use_instances = BoolProperty(
+            name="Use instances",
+            description="Instance support leads to effective memory reduction when using duplicates",
+            default=False
+    )     
     img_output = EnumProperty(
             name="Image File Type",
             description="Image will be saved in this file format",

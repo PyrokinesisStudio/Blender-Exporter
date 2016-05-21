@@ -137,7 +137,45 @@ class TheBounty_OT_presets_ior_list(Operator):
         return {'FINISHED'}
 #
 opClasses.append(TheBounty_OT_presets_ior_list)
+#
 
+class Thebounty_OT_UpdateBlend(Operator):
+    bl_idname = "material.parse_blend"
+    bl_label = "Add blend's slots materials for easy edit"
+    
+    
+    @classmethod
+    def poll(cls, context):
+        material = context.material
+        return material and (material.bounty.mat_type == "blend")
+    #
+    def execute(self, context):
+        obj = context.object
+        mat = bpy.context.object.active_material
+               
+        #--------------------------------------------------------------------------
+        # test: try to add blend's material selected to slots for easy edit
+        # state: atm don't work. Any change are only effective after first render
+        # TODO: find the way for allow real time update
+        mat1 = bpy.data.materials[mat.bounty.blendOne]
+        if len(obj.data.materials) < 2:
+            obj.data.materials.append(mat1)
+            
+        if len(obj.data.materials) >= 2:
+            if obj.data.materials[1].name is not mat.bounty.blendOne:
+                obj.data.materials[1] = mat1
+        #--------------------------------------------------------------------------
+        mat2 = bpy.data.materials[mat.bounty.blendTwo]
+        if len(obj.data.materials) < 3: 
+            obj.data.materials.append(mat2)
+        # 
+        if len(obj.data.materials) == 3:
+            if obj.data.materials[2].name is not mat.bounty.blendTwo:
+                obj.data.materials[2] = mat2
+        #--------------------------------------------------------------------------
+        return {'FINISHED'}
+    
+opClasses.append(Thebounty_OT_UpdateBlend)            
 #-------------------------------------------
 # Add support for use ibl files
 #-------------------------------------------

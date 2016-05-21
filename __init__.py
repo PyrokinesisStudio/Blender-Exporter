@@ -39,7 +39,7 @@ PLUGIN_PATH = os.path.join(__path__[0], 'bin', 'plugins')
 BIN_PATH = os.path.join(__path__[0], 'bin')
 sys.path.append(BIN_PATH)
 
-#---------------------------------------------------------------        
+#---------------------------------------------------------------
 # The order of libs is very important. Please do not alter it.
 #---------------------------------------------------------------
 if sys.platform == 'win32':
@@ -57,7 +57,7 @@ if sys.platform == 'win32':
 
 elif sys.platform == 'darwin':
     dllArray = ['libyafaraycore.dylib', 'libyafarayplugin.dylib']
-    
+
 else: # linux
     dllArray = ['libyafaraycore.so', 'libyafarayplugin.so']
 
