@@ -187,7 +187,7 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             name="Custom string",
             description="Custom string will be added to the info bar, use it for CPU, RAM etc",
             default=""
-    )# TODO: Atm, is unused. Review!!    
+    )   
     gs_premult = BoolProperty(
             name="Premultiply",
             description="Premultipy Alpha channel for renders with transparent background",

@@ -35,19 +35,20 @@ class THEBOUNTY_MT_render_presets(Menu):
 
 # povman: test for next panel distribution
 class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
-    bl_label = "Render Passes"
+    bl_label = "Extra Passes"
 
     def draw(self, context):
         layout = self.layout
         scene = context.scene.bounty
-        #render = scene.render
         #
         split = layout.split()
         col = split.column()
+        col.prop(scene, "gs_z_channel", toggle=True)
         col.prop(scene, "gs_transp_shad", toggle=True)
         col.prop(scene, "gs_clay_render", toggle=True)
-        col.prop(scene, "gs_z_channel", toggle=True)
+        # new column
         col = split.column()
+        col.prop(scene, "gs_premult", text="Premultiply alpha", toggle=True)
         sub = col.column()
         sub.enabled = scene.gs_transp_shad
         sub.prop(scene, "gs_shadow_depth")
