@@ -33,21 +33,20 @@ class THEBOUNTY_MT_render_presets(Menu):
     COMPAT_ENGINES = {'THEBOUNTY'}
     draw = Menu.draw_preset
 
-# povman: test for next panel distribution
 class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
     bl_label = "Render Passes"
 
     def draw(self, context):
         layout = self.layout
         scene = context.scene.bounty
-        #render = scene.render
         #
         split = layout.split()
         col = split.column()
-        col.prop(scene, "gs_transp_shad", toggle=True)
-        col.prop(scene, "gs_clay_render", toggle=True)
         col.prop(scene, "gs_z_channel", toggle=True)
+        col.prop(scene, "gs_transp_shad", toggle=True)
+        col.prop(scene, "gs_clay_render ", toggle=True)
         col = split.column()
+        col.prop(scene, "gs_premult", toggle=True)
         sub = col.column()
         sub.enabled = scene.gs_transp_shad
         sub.prop(scene, "gs_shadow_depth")
@@ -102,7 +101,7 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         sub.enabled = scene.bg_transp
         sub.prop(scene, "bg_transp_refract", toggle=True)
         
-        split = layout.split(percentage=0.58)
+        split = layout.split(percentage=0.5)
         col = layout.row()
         col.prop(scene, "gs_draw_params", expand=True)
         col.prop(scene, "gs_verbosity_level", text="")
