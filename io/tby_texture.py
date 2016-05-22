@@ -369,7 +369,7 @@ class exportTexture:
             yi.paramsSetFloat("cropmax_y", tex.crop_max_y)
 
             yi.paramsSetBool("rot90", tex.use_flip_axis)
-            #yi.paramsSetString("interpolate", tex.interpolation_type)
+            yi.paramsSetString("interpolate", tex.interpolation_type)
             textureConfigured = True
 
         if textureConfigured:
