@@ -19,11 +19,11 @@
 # <pep8 compliant>
 
 import bpy
-import os
+import os, subprocess, sys
 import threading
 import time
 import yafrayinterface
-from .. import PLUGIN_PATH
+from .. import PLUGIN_PATH , BIN_PATH
 from .tby_object import exportObject
 from .tby_light  import exportLight
 from .tby_world  import exportWorld
@@ -49,8 +49,13 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     bl_label = "TheBounty Render"
     prog = 0.0
     tag = ""
-    #useViewToRender = False
-    #viewMatrix = None
+    sceneMeshes   = [] # MESH 
+    sceneSurfaces = [] # SURFACE 
+    sceneCurves   = [] # CURVE
+    sceneFonts    = [] # FONT 
+    sceneEmpties  = [] # EMPTY
+    sceneLamps    = [] # LAMP
+    
     sceneMat = []
     
     #--------------------------------
@@ -127,7 +132,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 if mat_slot.material.bounty.blendOne =="":
                     mat_slot.material.bounty.blendOne = "blendone"
                 mat1 = bpy.data.materials[mat_slot.material.bounty.blendOne]
-                
+                #
                 if mat_slot.material.bounty.blendTwo =="":
                     mat_slot.material.bounty.blendTwo = "blendtwo"
                 mat2 = bpy.data.materials[mat_slot.material.bounty.blendTwo]
@@ -148,13 +153,40 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
             obj_visible |= layer_visible
         return obj_visible
-
+    
+    # test for create scene collections objects in 'one pass'( lamps, meshes,..)
     def exportObjects(self):
+        self.sceneMeshes = set()   # MESH 
+        self.sceneSurfaces = set() # SURFACE 
+        self.sceneCurves = set()   # CURVE
+        self.sceneFonts = set()    # FONT 
+        self.sceneEmpties = set()  # EMPTY
+        self.sceneLamps = set()    # LAMP
+        
         self.yi.printInfo("Exporter: Processing Lamps...")
 
         #---------------------------
         # export only visible lamps
         #---------------------------
+        for obj in self.scene.objects:
+            if obj.type == 'LAMP':
+                if not obj.hide_render and obj.is_visible(self.scene):
+                    if obj.is_duplicator:
+                        obj.create_dupli_list(self.scene)
+                        for obj_dupli in obj.dupli_list:
+                            matrix = obj_dupli.matrix.copy()
+                            self.lights.createLight(self.yi, obj_dupli.object, matrix)
+
+                        if obj.dupli_list:
+                            obj.free_dupli_list()
+                            pass
+                    else: # not duplicator
+                        if obj.parent and obj.parent.is_duplicator:
+                            continue
+                        self.lights.createLight(self.yi, obj, obj.matrix_world)
+            else:
+                continue
+        '''
         for obj in [o for o in self.scene.objects if not o.hide_render and o.is_visible(self.scene) and o.type == 'LAMP']:
             if obj.is_duplicator:
                 obj.create_dupli_list(self.scene)
@@ -168,7 +200,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 if obj.parent and obj.parent.is_duplicator:
                     continue
                 self.lights.createLight(self.yi, obj, obj.matrix_world)
-
+        '''
         self.yi.printInfo("Exporter: Processing Geometry...")
 
         #-----------------------------
@@ -232,30 +264,27 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #
         if 'blendone' not in bpy.data.materials:
             m1 = bpy.data.materials.new('blendone')
-            m1.diffuse_color = (0.0, 0.0, 1.0)
             m1.bounty.mat_type = 'shinydiffusemat'
+            m1.diffuse_color = (1.0, 0.0, 0.0)
                         
         if 'blendtwo' not in bpy.data.materials:
             m2 = bpy.data.materials.new('blendtwo')
-            m1.diffuse_color =(1.0, 0.0, 0.0)
             m2.bounty.mat_type = 'glossy'
+            m2.diffuse_color = (0.0, 1.0, 0.0)
     
-    
-    def handleBlendMat(self, obj, mat):
+    def handleBlendMat(self, mat):        
         #-------------------------
         # blend material one
         #-------------------------
-        if mat.bounty.blendOne == "":
-            mat.bounty.blendOne ='blendone'            
-        mat1 = bpy.data.materials[mat.bounty.blendOne] 
+        if mat.bounty.blendOne in {"", mat.name}:
+            self.yi.printWarning("Not valid material for blend component. Using default 'blendone'")
+            mat.bounty.blendOne = "blendone"       
+        mat1 = bpy.data.materials[mat.bounty.blendOne]
         
+        # not recursive blend        
         if mat1.bounty.mat_type == 'blend':
-            if mat1.name != mat.name:
-                self.handleBlendMat(obj, mat1)
-            else:
-                self.yi.printWarning("Exporter: Problem with blend material {0}."
-                                     " You can't use blend material {1}, inside their own blend defination".format(mat.name, mat1.name))
-                return
+            self.yi.printWarning("Exporter: Recursive Blend material not allowed. Changed type to shinydiffusemat")
+            mat1.bounty.mat_type = 'shinydiffusemat'
         #
         if mat1 not in self.exportedMaterials:
             self.exportedMaterials.add(mat1)
@@ -264,18 +293,15 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-------------------------
         # blend material two
         #-------------------------
-        if mat.bounty.blendTwo == "":
-            mat.bounty.blendTwo = 'blendtwo'
+        if mat.bounty.blendTwo in {"", mat.name, mat1.name}:
+            self.yi.printWarning("Not valid material for blend component. Using default 'blendtwo'")
+            mat.bounty.blendTwo = "blendtwo"
         mat2 = bpy.data.materials[mat.bounty.blendTwo]
-        
-        # check for recursive 'blend'
+            
+        # not recursive 'blend'
         if mat2.bounty.mat_type == 'blend':
-            if mat2.name != mat.name:
-                self.handleBlendMat(obj, mat2)
-            else:
-                self.yi.printWarning("Exporter: Problem with blend material {0}."
-                                     " You can't use blend material {1}, inside their own blend defination".format(mat.name, mat2.name))
-                return
+            self.yi.printWarning("Exporter: Recursive Blend material not allowed. Change type to glossy")
+            mat2.bounty.mat_type = 'glossy'
             
         # write blend material two    
         if mat2 not in self.exportedMaterials:
@@ -323,17 +349,18 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #----------------------------------------------
         # override all materials in 'clay render' mode
         #----------------------------------------------
-        for obj in [o for o in self.scene.objects if not self.scene.bounty.gs_clay_render]:
-            for mat_slot in obj.material_slots:
-                if mat_slot.material not in self.exportedMaterials:
-                    self.exportMaterial(obj, mat_slot.material)
+        if not self.scene.bounty.gs_clay_render:
+            for obj in self.scene.objects:
+                for slot in obj.material_slots:
+                    if slot.material not in self.exportedMaterials:
+                        self.exportMaterial(obj, slot.material)
 
     def exportMaterial(self, obj, material):
         if material:
             # must make sure all materials used by a blend mat
             # are written before the blend mat itself                
             if material.bounty.mat_type == 'blend':                    
-                self.handleBlendMat(obj, material)
+                self.handleBlendMat(material)
             else:
                 self.exportedMaterials.add(material)
                 self.setMaterial.writeMaterial(material, self.is_preview)
@@ -344,7 +371,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         # write image or XML-File with filename from framenumber
         frame_numb_str = "{:0" + str(len(str(self.scene.frame_end))) + "d}"
         output = os.path.join(output_path, frame_numb_str.format(self.scene.frame_current))
-        # try to create dir if it not exists...
+        # try to create folder if it not exists...
         if not os.path.exists(output_path):
             try:
                 os.makedirs(output_path)
@@ -400,11 +427,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             self.yi.paramsClearAll()
             self.co = yafrayinterface.imageOutput_t()
             self.yi.setOutfile(self.outputFile)
-
+            
         else:
             self.setInterface(yafrayinterface.yafrayInterface_t())
             self.yi.setInputGamma(scene.bounty.gs_gamma_input, scene.bounty.sc_apply_gammaInput)
-
+        
         self.yi.startScene()
         self.exportScene()# to above, line 92
         self.lightIntegrator.exportIntegrator(self.scene.bounty) # lightIntegrator, line 26
@@ -440,7 +467,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             if scene.gs_z_channel and not scene.img_output == 'OPEN_EXR':
                 # TODO: need review that option for load both files when z-depth is rendered
                 # except when use exr format
-                #lay.load_from_file("{0}.{1}".format(self.output, self.file_type))
+                lay.load_from_file("{0}.{1}".format(self.output, self.file_type))
                 lay.load_from_file("{0}_zbuffer.{1}".format(self.output, self.file_type))
                 
             else:

@@ -138,10 +138,10 @@ class TheBounty_OT_presets_ior_list(Operator):
 #
 opClasses.append(TheBounty_OT_presets_ior_list)
 #
-
-class Thebounty_OT_UpdateBlend(Operator):
-    bl_idname = "material.parse_blend"
-    bl_label = "Add blend's slots materials for easy edit"
+class Thebounty_OT_SyncBlendMaterial(Operator):
+    bl_idname = "material.sync_blend"
+    bl_label = "Sync Blendmat slots or Fix empty selection"
+    bl_description = "Sync material slot with selected materials or fix empty selected item"
     
     
     @classmethod
@@ -150,37 +150,48 @@ class Thebounty_OT_UpdateBlend(Operator):
         return material and (material.bounty.mat_type == "blend")
     #
     def execute(self, context):
-        obj = context.object
+        #
+        obj = bpy.context.object
         mat = bpy.context.object.active_material
-               
-        #--------------------------------------------------------------------------
-        # test: try to add blend's material selected to slots for easy edit
-        # state: atm don't work. Any change are only effective after first render
-        # TODO: find the way for allow real time update
+        #-------------------------
+        # blend material one
+        #-------------------------
+        if mat.bounty.blendOne == "":
+            if 'blendone' not in bpy.data.materials:
+                bpy.data.materials.new('blendone')
+            mat.bounty.blendOne = 'blendone'
+        #       
         mat1 = bpy.data.materials[mat.bounty.blendOne]
+        
         if len(obj.data.materials) < 2:
             obj.data.materials.append(mat1)
             
-        if len(obj.data.materials) >= 2:
+        if len(obj.data.materials) > 1:
             if obj.data.materials[1].name is not mat.bounty.blendOne:
                 obj.data.materials[1] = mat1
-        #--------------------------------------------------------------------------
+        
+        #-------------------------
+        # blend material two
+        #-------------------------
+        if mat.bounty.blendTwo == "":
+            if 'blendtwo' not in bpy.data.materials:
+                bpy.data.materials.new('blendtwo')
+            mat.bounty.blendTwo = 'blendtwo'
+        #
         mat2 = bpy.data.materials[mat.bounty.blendTwo]
+        
         if len(obj.data.materials) < 3: 
             obj.data.materials.append(mat2)
         # 
-        if len(obj.data.materials) == 3:
+        if len(obj.data.materials) > 2:
             if obj.data.materials[2].name is not mat.bounty.blendTwo:
                 obj.data.materials[2] = mat2
         #--------------------------------------------------------------------------
         return {'FINISHED'}
-    
-opClasses.append(Thebounty_OT_UpdateBlend)            
-#-------------------------------------------
-# Add support for use ibl files
-#-------------------------------------------
-import re, os
-
+# 
+opClasses.append(Thebounty_OT_SyncBlendMaterial)
+              
+#
 class Thebounty_OT_ParseSSS(Operator):
     bl_idname = "material.parse_sss"
     bl_label = "Apply SSS preset values"
@@ -314,7 +325,7 @@ class Thebounty_OT_ParseSSS(Operator):
         
         elif mat.sss_presets=='custom':
             # colors
-            material.diffuse_color = material.diffuse_color
+            material.diffuse_color = mat.diff_color
             mat.sssSigmaS = mat.sssSigmaS
             mat.sssSigmaA = mat.sssSigmaA
             mat.sssSpecularColor = mat.sssSpecularColor
@@ -329,6 +340,11 @@ class Thebounty_OT_ParseSSS(Operator):
       
 #
 opClasses.append(Thebounty_OT_ParseSSS)
+
+#-------------------------------------------
+# Add support for use ibl files
+#-------------------------------------------
+import re, os
 
 class Thebounty_OT_ParseIBL(Operator):
     bl_idname = "world.parse_ibl"
@@ -349,9 +365,12 @@ class Thebounty_OT_ParseIBL(Operator):
         world = context.world.bounty
         scene = context.scene
         file = world.ibl_file
+        filePath = bpy.path.abspath(world.ibl_file)
+        filePath = os.path.realpath(filePath)
+        filePath = os.path.normpath(filePath)
         # parse..
-        self.iblValues = self.parseIbl(file)
-        iblFolder = os.path.dirname(file) 
+        self.iblValues = self.parseIbl(filePath)
+        iblFolder = os.path.dirname(filePath) 
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
