@@ -19,9 +19,24 @@
 # <pep8 compliant>
 
 import os
+import bpy
 from mathutils import Vector
 from math import degrees, pi, sin, cos
 from bpy.path import abspath
+
+# test ----------------------------------------------------------
+def getNodeOut(lamp):
+        # escoger el primer nodo del tipo Output Light
+        nodeOutName = 'None'
+        if lamp.bounty.nodetree != "":
+            for out in bpy.data.node_groups[lamp.bounty.nodetree].nodes:
+                if out.bl_label == 'Output Light':
+                    nodeOutName = out.bl_label
+                    break
+        return nodeOutName
+#
+validLightNodes = ['SPOT', 'POINT']
+#----------------------------------------------------------------
 
 class exportLight:
     def __init__(self, interface, preview):
@@ -97,6 +112,30 @@ class exportLight:
                 power = 1.0 #0.8
 
         yi.paramsClearAll()
+        #-----------------------------------------------------------------------------
+        outNodeName = getNodeOut(lamp)
+        linked_node = None
+        if lamp.bounty.nodetree is not "" and outNodeName is not 'None':
+            #print(mat.bounty.node_output)
+            light_node = bpy.data.node_groups[lamp.bounty.nodetree].nodes[outNodeName]
+            # para nodos con un solo input, no hace falta usar un loop.
+            inputNodeOut = light_node.inputs[0]
+            # comprobamos si el socket tiene nodos conectados
+            if inputNodeOut.is_linked:
+                # si es asi, declaramos el objeto 'linked_node'..
+                linked_node = inputNodeOut.links[0].from_node
+                                  
+                # ..y comprobamos el tipo de nodo que es. Para eso usamos el parametro fijo 'bl_label'.
+                if linked_node.bl_label in validLightNodes:
+                    lamp.type = linked_node.bl_label
+                    # test
+                    nodetreeListNames = light_node.traverse_node_tree()
+                    #print('node tree list: ', nodetreeListNames)
+                    
+                    #self.useMaterialNodes = True
+                else:
+                    print('No type of valid node has got connected. Ignoring nodetree')
+        #----------------------------------------------------------------------------------------
 
         yi.printInfo("Exporting Lamp: {0} [{1}]".format(lamp_name, lamp.type))
 
@@ -164,9 +203,8 @@ class exportLight:
         elif lamp.type == "HEMI":
             yi.paramsSetString("type", "directional")
             yi.paramsSetPoint("direction", direct[0], direct[1], direct[2])
-            infinite_light = lamp.bounty.hemi_type == 'infinite'
-            yi.paramsSetBool("infinite", infinite_light)
-            if not infinite_light:
+            yi.paramsSetBool("infinite", lamp.bounty.infinite)
+            if not lamp.bounty.infinite:
                 yi.paramsSetFloat("radius", lamp.bounty.shadows_size)
                 yi.paramsSetPoint("from", pos[0], pos[1], pos[2])
             
