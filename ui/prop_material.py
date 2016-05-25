@@ -23,20 +23,21 @@ from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
 
+'''
 #
 def panel_node_draw(layout, material, output_type): #, input_name):
     node = find_node(material, output_type)
-    if not node:
+    if node == None:
         return False
-    else:
-        if material.bounty.nodetree:
-            ntree = bpy.data.node_groups[material.bounty.nodetree]
+    #else:
+    #    if material.bounty.nodetree:
+    #        ntree = bpy.data.node_groups[material.bounty.nodetree]
             #input = find_node_input(node, input_name)
             #layout.template_node_view(ntree, node, input)
 
     return True
-
-def find_node(material, nodetypes):
+'''
+def find_node(material, nodetype):
     if not (material and material.bounty and material.bounty.nodetree):
         return None
         
@@ -49,18 +50,20 @@ def find_node(material, nodetypes):
     
     for node in ntree.nodes:
         nt = getattr(node, "bl_idname", None)
-        if nt in nodetypes:
+        #print(nt)
+        if nt in nodetype:
             return node
     return None
 
-def node_tree_selector_draw(layout, mat, output_type):
-    # 
+def node_tree_selector_draw(layout, mat, nodetype):
+    #
     try:
         layout.prop_search(mat.bounty, "nodetree", bpy.data, "node_groups")
+        
     except:
         return False
-
-    node = find_node(mat, output_type)
+    #
+    node = find_node(mat, nodetype)
     if not node:
         if not mat.bounty.nodetree:
             layout.operator('bounty.add_nodetree', icon='NODETREE')
@@ -158,7 +161,7 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
             split.template_ID(ob, "active_material", new="material.new")
             row = split.row()
             #---------------------------------------------------------
-            # for deactivate nodes are used from other render engines
+            # for disable nodes are used from other render engines
             #---------------------------------------------------------
             if mat and mat.use_nodes: 
                 row.prop(mat, "use_nodes", icon='NODETREE', text="")
@@ -181,9 +184,9 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         #----------------------------------------------------
         # show nodetree button
         #----------------------------------------------------
-        node_tree_selector_draw(layout, mat, 'MaterialOutputNode')
-        if not panel_node_draw(layout, mat, 'MaterialOutputNode'): 
-            row = self.layout.row(align=True)
+        if not node_tree_selector_draw(layout, mat, 'MaterialOutputNode'):
+            #if not panel_node_draw(layout, mat, 'MaterialOutputNode'): 
+            #    row = self.layout.row(align=True)
             if slot is not None and slot.name:
                 layout.prop(mat.bounty, "mat_type")
                 
@@ -244,14 +247,16 @@ class TheBountyBlend(TheBountyMaterialTypePanel, Panel):
     def draw(self, context):
         layout = self.layout
         mat = active_node_mat(context.material)
-
+        
         layout.separator()
         blend_one_draw(layout, mat)
+        
         layout.separator()
         layout.prop(mat.bounty, "blend_value", slider=True)
+        
         layout.separator()
         blend_two_draw(layout, mat)
-        layout.operator('material.parse_blend')
+        layout.operator('material.sync_blend')
                     
 class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
     bl_label = "Shiny Diffuse Material"
@@ -272,7 +277,7 @@ class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
         sub.label(text="Reflectance model:")
         sub.prop(mat.bounty, "brdf_type", text="")
         brdf = sub.column()
-        brdf.enabled = mat.bounty.brdf_type == "oren-nayar"
+        brdf.enabled = mat.bounty.brdf_type == "oren_nayar"
         brdf.prop(mat.bounty, "sigma")
 
         layout.separator()
@@ -288,7 +293,7 @@ class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
         split = layout.split()
         col = split.column()
         col.label(text="Mirror color:")
-        col.prop(mat.bounty, "mirr_color", text="")
+        col.prop(mat.bounty, "mirror_color", text="")
 
         col = split.column()
         col.prop(mat.bounty, "fresnel_effect")
@@ -307,14 +312,14 @@ class TheBountyGlossyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat, "diffuse_color")
+        col.prop(mat, "diffuse_color") #bounty, "diff_color")
 
         col = split.column()
         ref = col.column(align=True)
         ref.label(text="Reflectance model:")
         ref.prop(mat.bounty, "brdf_type", text="")
         sig = col.column()
-        sig.enabled = mat.bounty.brdf_type == "oren-nayar"
+        sig.enabled = mat.bounty.brdf_type == "oren_nayar"
         sig.prop(mat.bounty, "sigma")
         layout.row().prop(mat.bounty, "diffuse_reflect", slider=True)
 
@@ -419,7 +424,7 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         #        
         split = layout.split()
         col = split.column()
-        col.prop(mat, "diffuse_color")
+        col.prop(mat, "diffuse_color") #mat.bounty, "diff_color")
         col.prop(mat.bounty, "diffuse_reflect", text="Diff. Reflect",slider=True)
         col = split.column()     
         col.prop(mat.bounty, "glossy_color")

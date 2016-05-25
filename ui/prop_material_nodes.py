@@ -24,20 +24,23 @@ from bpy.types import Node, NodeSocket
 from bpy.props import (FloatProperty, FloatVectorProperty, StringProperty, BoolProperty, EnumProperty)
 
 from . import prop_node_sockets
-# test move here
-#import nodeitems_utils
+#
 from nodeitems_utils import NodeCategory, NodeItem, NodeItemCustom
 
 from ..prop.tby_material import TheBountyMaterialProperties as MatProperty
+#------------------------------------------------------
 
+def fixNodeSize(nmin, nmax):
+    bl_width_min = nmin
+    bl_width_max = nmax
 
 bounty_node_class=[]
-# Derived from the NodeTree base type, similar to Menu, Operator, Panel, etc.
-class TheBountyNodeTree(bpy.types.NodeTree):
-    #
-    
-    bl_idname = 'TheBountyNodeTree'
-    bl_label = 'TheBounty Node Tree'
+
+#
+class TheBountyMaterialNodeTree(bpy.types.NodeTree):
+    #    
+    bl_idname = 'TheBountyMaterialNodeTree'
+    bl_label = 'TheBounty NodeTree'
     bl_icon = 'MATERIAL'
 
     @classmethod
@@ -55,7 +58,13 @@ class TheBountyNodeTree(bpy.types.NodeTree):
                 nt_name = active_mat.bounty.nodetree
                 if nt_name != '':
                     return bpy.data.node_groups[active_mat.bounty.nodetree], active_mat, active_mat
-                
+        '''
+        elif ob and ob.type == 'LAMP':
+            la = ob.data
+            nt_name = la.bounty.nodetree
+            if nt_name != '':
+                return bpy.data.node_groups[la.bounty.nodetree], la, la
+        '''        
         return (None, None, None)
         
     # This block updates the preview, when socket links change
@@ -71,16 +80,21 @@ class TheBountyNodeTree(bpy.types.NodeTree):
                 name='Links Changed', 
                 default=False, 
                 update=acknowledge_connection)
+    
 #    
-bounty_node_class.append(TheBountyNodeTree)
+bounty_node_class.append(TheBountyMaterialNodeTree)
 
-''' bounty node declaration
+''' TheBounty material node class base declaration
 '''  
-class TheBountyNode:
+class TheBountyMaterialNode:
+    # test for lock node sizes
+    bl_width_min = bl_width_max = 180
+      
     @classmethod
     def poll( cls, context):
-        # 
-        return (context.bl_idname == "TheBountyNodeTree" and context.scene.render.engine == 'THEBOUNTY')
+        #
+        engine = context.scene.render.engine 
+        return (context.bl_idname == "TheBountyMaterialNodeTree" and engine == 'THEBOUNTY')
 
     def draw_buttons( self, context, layout):
         pass
@@ -100,138 +114,151 @@ class TheBountyNode:
     def get_name( self):
         #
         return self.name
-    
-    def traverse_node_tree( self, material_node):
-        
-        #Iterate inputs and traverse the tree backward if any inputs are connected.
-        #Nodes are added to a list attribute of the material output node.
-        
+    # base
+    #
+    def traverse_node_tree(self, material_node):
+        #
         for socket in self.inputs:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
                 linked_node.traverse_node_tree( material_node)
-        material_node.tree.append( self)
- 
-''' Base class for node sockets.
-'''   
-class TheBountyNodeSocket( object):
-    # Set to default None.
-    socket_value = None
-
-    def get_socket_value( self, texture_only = True):
+        material_node.listedNodes.append(self)
+        
         '''
-        Method to return socket's value, if not linked. 
-        If linked, return the name of the node with appended pointer.
-        '''
-        if self.is_linked:
-            linked_node = self.links[0].from_node
-            if texture_only and linked_node.node_type == 'texture':
-                # The socket only accepts image textures.
-                return linked_node.get_node_name() + "_inst"
-            if not texture_only:
-                return linked_node.get_node_name()
-        # Return socket value if not linked, or if the incoming node is incompatible.
-        return self.socket_value
-       
+        for socket in self.inputs:
+            
+            if socket.is_linked:
+                print('linked socket: ', socket.name)
+                linked_node = socket.links[0].from_node
+                linked_node.traverse_node_tree(material_node)
+                # start
+                for input in linked_node.inputs:
+                    if input.is_linked:
+                        new_node = input.links[0].from_node
+                        new_node.traverse_node_tree(material_node)
+                        print('new node: ', new_node.name)
+                        #print('input on node: ', input.bl_label, 'values: ', input.getValues())
+                        #material_node.nodeValues.append((input.bl_idname, input.exportValues())) # getValues()))
+                    material_node.nodeValues = input.exportValues()
+                # end
+                
+                if linked_node.name not in material_node.nodetreeListNames:
+                    material_node.nodetreeListNames.append(linked_node.name)
+                #material_node.nodetreeListNodes.append(linked_node.bl_label)
+            # si no es linked que hacemos??
+            else:
+                print('unlinked socket: ', socket.name, ', value: ', socket.default_value)
+            
+        #return material_node.nodetreeListNames, 
+        #return material_node.nodeValues
+        '''  
+    
 #
-bounty_node_class.append(TheBountyNode)
+bounty_node_class.append(TheBountyMaterialNode)
 
 #------------------------------------------------
-# Output node
+# Material Output node
 #------------------------------------------------
-class TheBountyMaterialOutputNode(Node, TheBountyNode):
+class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
     bl_idname = 'MaterialOutputNode'
-    bl_label = 'Material Output'
+    bl_label = 'Output Material'
     bl_icon = 'NODETREE'
     bl_width_min = 120
-    
+    bl_width_max = 130
+    #
+    listedNodes = []
+
     def init(self, context):
         self.inputs.new('NodeSocketShader', "Surface")
-        self.inputs.new('diffuse_color',"Color")
+        
     
     def draw_buttons(self, context, layout):
         try:
             layout.label(context.active_object.active_material.name)
         except:
             layout.label(context.material.name)
+    #
+    def filterNodeList( self, nodes):
+        nodeList = []
+        for node in nodes:
+            if node not in nodeList:
+                nodeList.append( node)
+        return nodeList
+    #
+    def traverse_node_tree( self):
+        #
+        self.listedNodes.clear()
+        for socket in self.inputs:
+            if socket.is_linked:
+                linked_node = socket.links[0].from_node
+                linked_node.traverse_node_tree( self)
+        #
+        return self.filterNodeList(self.listedNodes)  
 #
 bounty_node_class.append(TheBountyMaterialOutputNode)
         
 #------------------------------------------------
 # Shinydiffuse node
 #------------------------------------------------           
-class TheBountyShinyDiffuseShaderNode(Node, TheBountyNode):
+class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'ShinyDiffuseShaderNode'
     bl_label = 'shinydiffusemat'
     bl_icon = 'MATERIAL'
-    bl_width_min = 180
-    
-    node_type='shinydiffusemat'    
+       
     #
     def init(self, context):
         # slots shaders
         self.outputs.new('NodeSocketColor', "Shader")
         
-        self.inputs.new('diffuse_color',"Color")
-        self.inputs.new('emittance', 'Emitt')
+        self.inputs.new('diffuse_color',"Diffuse")
+        
+        self.inputs.new('emittance', 'Emittance')
+        self.inputs['Emittance'].enabled = False
         
         self.inputs.new('brdf', 'BRDF')
         
         self.inputs.new('transparency', 'Transparency')
+        
         self.inputs.new('translucency', 'Translucency')
         
         self.inputs.new('mirror', 'Mirror')
         
-        self.inputs.new('fresnel', 'Fresnel Effect')
+        self.inputs.new('fresnel', 'Fresnel')
         
-        #self.inputs.new('NodeSocketColor', "BumpMap")
-    
-    def copy(self, node):
-        # Copy function to initialize a copied node from an existing one.
-        print("Copying from node ", node)
-
-    def free(self):
-        # Free function to clean up on removal.
-        print("Removing node ", self, ", Goodbye!")
+        #self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
         # Additional buttons displayed on the node.
         pass
-            
-    def draw_buttons_ext(self, context, layout):
-        # Detail buttons in the sidebar.
-        # If this function is not defined, the draw_buttons function is used instead
-        pass
+    
 #
 bounty_node_class.append(TheBountyShinyDiffuseShaderNode)
 
 #------------------------------------------------
 # Translucent SSS node
 #------------------------------------------------
-class TheBountyTranslucentShaderNode(Node, TheBountyNode):
+class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
     #
-    bl_idname = 'TranslucentScattering'
+    bl_idname = 'TranslucentShaderNode'
     bl_label = 'translucent'
     bl_icon = 'MATERIAL'
-    bl_width_min = 180
     
     #
     def init(self, context):
         # slots shaders
         self.outputs.new('NodeSocketColor', "Shader")
         
-        self.inputs.new('diffuse_color',"Color")
-        self.inputs.new('diffuse_reflection', 'Reflection')
+        self.inputs.new('diffuse_color',"Diffuse")
+        
+        self.inputs.new('glossy_color',"Glossy Color")
+        
+        self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
         #
         mat = context.active_object.active_material
                 
         col = layout.column()
-        #col.prop(mat, "diffuse_color")
-        #col.prop(mat.bounty, "diffuse_reflect", text="Diff. Reflect",slider=True)
-        col.prop(mat.bounty, "glossy_color")
-        col.prop(mat.bounty, "glossy_reflect", text="Gloss. Reflect",slider=True)
         col.prop(mat.bounty, "sssSpecularColor")
         col.prop(mat.bounty, "exponent", text="Specular Exponent")
         
@@ -254,128 +281,97 @@ bounty_node_class.append(TheBountyTranslucentShaderNode)
 #------------------------------------------------
 # Glossy node
 #------------------------------------------------
-class TheBountyGlossyShaderNode(Node, TheBountyNode):
+class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlossyShaderNode'
     bl_label = 'glossy'
     bl_icon = 'MATERIAL'
-    bl_width_min = 180
     
     def init(self, context):
         #
         self.outputs.new('NodeSocketColor', "Shader")
         
-        self.inputs.new('diffuse_color',"Diffuse Color")        
+        self.inputs.new('diffuse_color',"Diffuse")    
         self.inputs.new('brdf', 'BRDF')
+        
+        self.inputs.new('glossy_color',"Glossy")
+        self.inputs.new('glossy_reflect',"Specular")
+        #self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
-        """ Same design to a UI panels ( column, split, row..) """
-        # sync values with panels
+        #
         mat = context.active_object.active_material
         
         col = layout.column()
-        
-        col = layout.column()
-        col.prop(mat.bounty, "glossy_color")
         exp = col.column()
         exp.enabled = mat.bounty.anisotropic == False
         exp.prop(mat.bounty, "exponent")
 
-        #col = split.column()
         sub = col.column(align=True)
         sub.prop(mat.bounty, "anisotropic")
         ani = sub.column()
         ani.enabled = mat.bounty.anisotropic == True
         ani.prop(mat.bounty, "exp_u")
         ani.prop(mat.bounty, "exp_v")
-        col= layout.column()
-        col.prop(mat.bounty, "glossy_reflect", slider=True)
-        col.row().prop(mat.bounty, "as_diffuse")
+        layout.prop(mat.bounty, "as_diffuse")
 
         layout.separator()
 
         if mat.bounty.mat_type == "coated_glossy":
-            box = layout.box()
-            box.label(text="Coated layer")
             col = layout.column()
             col.prop(mat.bounty, "coat_mir_col")
-            col.label(text="Fresnel reflection:")
             col.prop(mat.bounty, "IOR_reflection")
-    
-    def draw_buttons_ext(self, context, layout):
-        # many buttons..
-        pass
-
-    def copy(self, node):
-        print("Copying from node ", node)
-
-    def free(self):
-        print("Removing node ", self, ", Goodbye!")
 #
 bounty_node_class.append(TheBountyGlossyShaderNode)
 
 #------------------------------------------------
 # Glass shader node
 #------------------------------------------------                      
-class TheBountyGlassShaderNode(Node, TheBountyNode):
+class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlassShaderNode'
     bl_label = 'glass'
     bl_icon = 'MATERIAL'
-    bl_width_min = 180
 
     def init(self, context):
         #
         self.outputs.new('NodeSocketColor', "Shader")
+        
+        self.inputs.new('glass_mir_col', 'Mirror')
+        self.inputs.new('bumpmap', 'Bumpmap')
 
     def draw_buttons(self, context, layout):
         """ Same design to a UI panels ( column, split, row..) """
         mat = context.active_object.active_material
         
-        layout.label(text="Refraction and Reflections:")
         col = layout.column()
-        col.prop(mat.bounty, "IOR_refraction")
-
         # TODO: need review..
         #col.menu("YAF_MT_presets_ior_list", text=bpy.types.YAF_MT_presets_ior_list.bl_label)
-
+        
+        
         col.prop(mat.bounty, "absorption")
-        col.prop(mat.bounty, "absorption_dist")
+        col.prop(mat.bounty, "absorption_dist", text='Distance')
 
-        col.prop(mat.bounty, "dispersion_power")
+        col.prop(mat.bounty, "dispersion_power", text='Dispersion power')
 
         if mat.bounty.mat_type == "rough_glass":
             col = layout.column()
-            #box.label(text="Glass roughness:")
-            col.prop(mat.bounty, "refr_roughness",text="Roughness exponent", slider=True)
+            col.prop(mat.bounty, "refr_roughness", text="Roughness exponent", slider=True)
 
         col.prop(mat.bounty, "filter_color")
-        col.prop(mat.bounty, "glass_mir_col")
         col.prop(mat.bounty, "glass_transmit", slider=True)
         col.prop(mat.bounty, "fake_shadows")
-            
-    def draw_buttons_ext(self, context, layout):
-        # many buttons..
-        pass
-
-    def copy(self, node):
-        print("Copying from node ", node)
-        
-    def free(self):
-        print("Removing node ", self, ", Goodbye!")
+        col.prop(mat.bounty, "IOR_refraction")
 #
 bounty_node_class.append(TheBountyGlassShaderNode)
 
 #------------------------------------------------
 # Blend shader node
 #------------------------------------------------
-class TheBountyBlendShaderNode(Node, TheBountyNode):
+class TheBountyBlendShaderNode(Node, TheBountyMaterialNode):
     # Glossy custom node
     bl_idname = 'BlendShaderNode'
     bl_label = 'blend'
     bl_icon = 'MATERIAL'
-    bl_width_min = 180
         
-    # test
-    # TODO: is need find the methode for acces to this parameter for exporter
     blend_amount = FloatProperty(
         name="Blend value",
         description="Amount of blending materials",
@@ -389,46 +385,17 @@ class TheBountyBlendShaderNode(Node, TheBountyNode):
 
     def draw_buttons(self, context, layout):
         try:
-            #mat = context.active_object.active_material
-            layout.prop(self, "blend_amount", text="")
+            layout.prop(self, "blend_amount", text="", slider=True)
         except:
             print("Nonetype node")
 #
 bounty_node_class.append(TheBountyBlendShaderNode)
 
 '''
-class TheBountyTextureShaderNode(Node, TheBountyNode):
-    # Texture shader node
-    bl_idname = 'TextureShaderNode'
-    bl_label = 'Texture Shader'
-    bl_icon = 'TEXTURE'
-    bl_width_min = 180
-
-    def init(self, context):
-        #self.inputs.new('NodeSocketColor', "Filter Color")
-        #
-        self.outputs.new('NodeSocketColor', "Shader")
-
-    def draw_buttons(self, context, layout):
-        #
-        pass
-            
-    def draw_buttons_ext(self, context, layout):
-        pass
-
-    def copy(self, node):
-        print("Copying from node ", node)
-        
-    def free(self):
-        print("Removing node ", self, ", Goodbye!")
-#
-bounty_node_class.append(TheBountyTextureShaderNode)
-
-
 #-------------------------------------------
 # BDRF model
 #-------------------------------------------
-class TheBountyBrdfNode(Node, TheBountyNode):
+class TheBountyBrdfNode(Node, TheBountyMaterialNode):
     #    
     bl_idname = 'TheBountyBrdfNode'
     bl_label = 'BRDF Node'
@@ -450,14 +417,14 @@ bounty_node_class.append(TheBountyBrdfNode)
 #------------------------------------------------
 # Imagemap node
 #------------------------------------------------
-class TheBountyImageMapNode(Node, TheBountyNode):
+class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     #-------------------------
     # texture image map nodee
     #-------------------------
     bl_idname = 'TheBountyImageMapNode'
-    bl_label = 'ImageMap'
+    bl_label = 'imagemap'
     # 
-    bl_width_min = 220
+    bl_width_min = 225
     
     #----------------------------------------------- 
     # properties
@@ -482,8 +449,7 @@ class TheBountyImageMapNode(Node, TheBountyNode):
         #
         layout.label('Image file')
         layout.prop(self, "image_map")
-        layout.prop(self,'influence', text='Texture Influence', slider=True)
-                
+        layout.prop(self,'influence', text='Texture Influence', slider=True)                
 #
 bounty_node_class.append(TheBountyImageMapNode)
 
@@ -491,7 +457,7 @@ bounty_node_class.append(TheBountyImageMapNode)
 #------------------------------------------------
 # Mirror node
 #------------------------------------------------      
-class TheBountyMirrorNode(Node, TheBountyNode):
+class TheBountyMirrorNode(Node, TheBountyMaterialNode):
     bl_idname = 'TheBountyMirrorNode'
     bl_label = 'Mirror Node'    
     
@@ -510,21 +476,17 @@ bounty_node_class.append(TheBountyMirrorNode)
        
 '''
 
-# our own base class with an appropriate poll function,
-# so the categories only show up in our own tree type
+   
 class TheBountyNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
         engine = context.scene.render.engine
-        return context.space_data.tree_type =='TheBountyNodeTree' and engine == 'THEBOUNTY'
+        return context.space_data.tree_type =='TheBountyMaterialNodeTree' and engine == 'THEBOUNTY'
 
 # all categories in a list
-TheBountyNodeCategories = [
+TheBountyMaterialNodeCategories = [
     # identifier, label, items list
-    #TheBountyNodeCategory("TheBountyLight", "Light Output", items=[
-    #    # output node
-    #    NodeItem("LampOutputNode"),
-    #    ]),
+    
     TheBountyNodeCategory("TheBountyMaterial", "Material", items=[
         # output node
         NodeItem(TheBountyMaterialOutputNode.bl_idname),
@@ -545,18 +507,19 @@ TheBountyNodeCategories = [
         #NodeItem(TheBountyTextureShaderNode.bl_idname),
         #NodeItem(TheBountyBrdfNode.bl_idname)
         ]),
+        
     ]
 #
 bounty_node_class.append(TheBountyNodeCategory)
 
 
 def register():
-    for bclass in bounty_node_class:
-        bpy.utils.register_class(bclass)
+    for bountyclass in bounty_node_class:
+        bpy.utils.register_class(bountyclass)
     
 def unregister():
-    for bclass in bounty_node_class:
-        bpy.utils.unregister_class(bclass)
+    for bountyclass in bounty_node_class:
+        bpy.utils.unregister_class(bountyclass)
 
 
 if __name__ == "__main__":

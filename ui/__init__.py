@@ -27,6 +27,7 @@ from . import prop_strand
 from . import prop_object
 from . import prop_light
 from . import prop_material_nodes
+from . import prop_light_nodes
 
 from . import prop_scene
 from . import prop_render_layer
