@@ -44,7 +44,7 @@ class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
         col = split.column()
         col.prop(scene, "gs_z_channel", toggle=True)
         col.prop(scene, "gs_transp_shad", toggle=True)
-        col.prop(scene, "gs_clay_render ", toggle=True)
+        col.prop(scene, "gs_clay_render", toggle=True)
         col = split.column()
         col.prop(scene, "gs_premult", toggle=True)
         sub = col.column()
