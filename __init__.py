@@ -23,7 +23,7 @@ bl_info = {
     "description": "TheBounty Renderer integration for Blender",
     "author": "Pedro Alcaide (povmaniaco), rubdos, TynkaTopi, paultron",
     "version": (0, 1, 6, 4),
-    "blender": (2, 75, 0),
+    "blender": (2, 77, 0),
     "location": "Info Header > Engine dropdown menu",
     "wiki_url": "https://github.com/TheBounty/Blender-Exporter/wiki",
     "tracker_url": "https://github.com/TheBounty/Blender-Exporter/issues",
@@ -37,16 +37,18 @@ import ctypes
 
 PLUGIN_PATH = os.path.join(__path__[0], 'bin', 'plugins')
 BIN_PATH = os.path.join(__path__[0], 'bin')
-sys.path.append(BIN_PATH)
 
-#---------------------------------------------------------------
+sys.path.append(BIN_PATH)
+sys.path.insert(0, BIN_PATH)
+
+#---------------------------------------------------------------        
 # The order of libs is very important. Please do not alter it.
 #---------------------------------------------------------------
 if sys.platform == 'win32':
     for file in os.listdir(BIN_PATH):
         # load dll's from a MSVC build's
         if file in {'yafaraycore.dll'}:
-            dllArray = ['zlib', 'libiconv', 'libpng16', 'jpeg8', 'tiff', 'libxml2', 'Half', 'Iex', \
+            dllArray = ['zlib', 'libiconv', 'libpng16', 'jpeg8', 'tiff','libxml2', 'Half', 'Iex', \
                         'Imath', 'IlmThread', 'IlmImf', 'yafaraycore', 'yafarayplugin']
             break
         # load dll's from a GCC build's
@@ -85,19 +87,19 @@ else:
     from . import io
     from . import ui
     from . import ot
-    
 
 def register():
     #
-    nodeitems_utils.register_node_categories("BOUNTY_NODES", ui.prop_material_nodes.TheBountyNodeCategories)
+    nodeitems_utils.register_node_categories("THEBOUNTY_MATERIAL_NODES", ui.prop_material_nodes.TheBountyMaterialNodeCategories)
+    nodeitems_utils.register_node_categories("THEBOUNTY_LIGHT_NODES", ui.prop_light_nodes.TheBountyLightNodeCategories)
     prop.register()
     bpy.utils.register_module(__name__)
     
     
 def unregister():
-    nodeitems_utils.unregister_node_categories("BOUNTY_NODES")
+    nodeitems_utils.unregister_node_categories("THEBOUNTY_MATERIAL_NODES")
+    nodeitems_utils.unregister_node_categories("THEBOUNTY_LIGHT_NODES")
     bpy.utils.unregister_module(__name__)
-
 
 if __name__ == '__main__':
     register()

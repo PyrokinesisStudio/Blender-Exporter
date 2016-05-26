@@ -334,7 +334,7 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     def init(self, context):
         #
         self.outputs.new('NodeSocketColor', "Shader")
-        
+        # add only connectable slots
         self.inputs.new('glass_mir_col', 'Mirror')
         self.inputs.new('bumpmap', 'Bumpmap')
 
@@ -349,13 +349,10 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
         
         col.prop(mat.bounty, "absorption")
         col.prop(mat.bounty, "absorption_dist", text='Distance')
-
         col.prop(mat.bounty, "dispersion_power", text='Dispersion power')
-
         if mat.bounty.mat_type == "rough_glass":
             col = layout.column()
             col.prop(mat.bounty, "refr_roughness", text="Roughness exponent", slider=True)
-
         col.prop(mat.bounty, "filter_color")
         col.prop(mat.bounty, "glass_transmit", slider=True)
         col.prop(mat.bounty, "fake_shadows")

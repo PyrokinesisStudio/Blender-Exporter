@@ -477,7 +477,7 @@ class glossy_color_socket(NodeSocket, TheBountyNodeSocket):
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Glossy Layer' if self.is_linked else 'Glossy Color'            
+        label = 'Glossy Color Layer' if self.is_linked else 'Glossy Color'            
         #                     
         col.prop(self, "glossy_color", text= label )
     #
@@ -650,7 +650,7 @@ class glass_mirror_color_socket(NodeSocket, TheBountyNodeSocket):
     #        
     def draw(self, context, layout, node, text):
         col = layout.row()
-        label = "Reflect layer" if self.is_linked else "Reflect color"
+        label = "Reflect layer" if self.is_linked else "Mirror color"
         
         col.prop(self, "glass_mir_col", text="")
         col.label(text=label) 

@@ -23,7 +23,7 @@ from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
 
-'''
+
 #
 def panel_node_draw(layout, material, output_type): #, input_name):
     node = find_node(material, output_type)
@@ -36,7 +36,7 @@ def panel_node_draw(layout, material, output_type): #, input_name):
             #layout.template_node_view(ntree, node, input)
 
     return True
-'''
+
 def find_node(material, nodetype):
     if not (material and material.bounty and material.bounty.nodetree):
         return None
@@ -95,7 +95,7 @@ class TheBountyMaterialButtonsPanel():
     
     @classmethod
     def poll(cls, context):
-        mat = context.material.bounty
+        mat = context.material
         return mat and (context.scene.render.engine in cls.COMPAT_ENGINES)
 
 
@@ -187,9 +187,9 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         if not node_tree_selector_draw(layout, mat, 'MaterialOutputNode'):
             #if not panel_node_draw(layout, mat, 'MaterialOutputNode'): 
             #    row = self.layout.row(align=True)
+            #
             if slot is not None and slot.name:
-                layout.prop(mat.bounty, "mat_type")
-                
+                layout.prop(mat.bounty, "mat_type")                
                       
 
 class TheBountyMaterialPreview(TheBountyMaterialButtonsPanel, Panel):
