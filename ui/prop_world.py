@@ -83,7 +83,7 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
                 #
                 layout.template_ID(context.world, "active_texture")
                 # it allows to change the used image
-                if  tex.yaf_tex_type == "IMAGE":
+                if  tex.bounty.tex_type == "IMAGE":
                     layout.template_image(tex, "image", tex.image_user, compact=True)
                 #else:
                 #    # TODO: create message about not allow texture type

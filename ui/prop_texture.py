@@ -34,7 +34,7 @@ class TheBountyTextureButtonsPanel():
     def poll(cls, context):
         tex = context.texture
         engine = context.scene.render.engine
-        return tex and (tex.yaf_tex_type not in 'NONE' or tex.use_nodes) and (engine in cls.COMPAT_ENGINES)
+        return tex and (tex.bounty.tex_type not in 'NONE' or tex.use_nodes) and (engine in cls.COMPAT_ENGINES)
 
 
 class TheBounty_PT_context_texture(TheBountyTextureButtonsPanel, Panel):
@@ -104,7 +104,7 @@ class TheBounty_PT_context_texture(TheBountyTextureButtonsPanel, Panel):
                             split.prop(slot, "output_node", text="")
                     else:
                         split.label(text="Type:")
-                        split.prop(tex, "yaf_tex_type", text="")
+                        split.prop(tex.bounty, "tex_type", text="")
             return
         #"""
 
@@ -148,7 +148,7 @@ class TheBounty_PT_context_texture(TheBountyTextureButtonsPanel, Panel):
 
             else:
                 split.label(text="Type:")
-                split.prop(tex, "yaf_tex_type", text="")
+                split.prop(tex.bounty, "tex_type", text="")
 
 
 class TheBounty_PT_texture_preview(TheBountyTextureButtonsPanel, Panel):
@@ -191,7 +191,7 @@ class TextureTypePanel(TheBountyTextureButtonsPanel):
     def poll(cls, context):
         tex = context.texture
         engine = context.scene.render.engine
-        return tex and ((tex.yaf_tex_type == cls.tex_type and 
+        return tex and ((tex.bounty.tex_type == cls.tex_type and 
                          not tex.use_nodes) and 
                         (engine in cls.COMPAT_ENGINES))
 
@@ -303,7 +303,7 @@ def imageTexturePoll(cls, context):
     engine = context.scene.render.engine
     tex = context.texture
     
-    return tex and (tex.yaf_tex_type == cls.tex_type and (engine in cls.COMPAT_ENGINES))
+    return tex and (tex.bounty.tex_type == cls.tex_type and (engine in cls.COMPAT_ENGINES))
     
 
 class TheBounty_PT_image_sampling(TextureTypePanel, Panel):
@@ -324,13 +324,13 @@ class TheBounty_PT_image_sampling(TextureTypePanel, Panel):
         
         if not isinstance(idblock, World):
             row = layout.row(align=True)
-            row.prop(tex, "yaf_use_alpha", text="Use Alpha")
+            row.prop(tex.bounty, "use_alpha", text="Use Alpha")
             row.prop(tex, "use_calculate_alpha", text="Calculate Alpha")
         
             row = layout.row(align=True)
             row.prop(tex, "use_flip_axis", text="Flip X/Y Axis")
         #
-        layout.prop(tex,"interpolation_type")
+        layout.prop(tex.bounty,"interpolation_type")
 
         
 
@@ -525,7 +525,6 @@ class TheBounty_PT_mapping(TextureSlotPanel, Panel):
                 col.label(text="Coordinates:")
                 col = split.column()
                 col.prop(world, "bg_mapping_type", text="")
-                #col.prop(tex, "use_interpolation", text="Use image background interpolation")
             else:
                 split = layout.split(percentage=0.3)
                 col = split.column()
@@ -655,7 +654,7 @@ class TheBounty_PT_influence(TextureSlotPanel, Panel):
             for node in nodes:
                 value = shaderNodes[node]
                 factor_but(col, value[0], value[1], value[2])
-                if node == "Bump" and getattr(tex, "use_map_normal") and texture.yaf_tex_type == 'IMAGE':
+                if node == "Bump" and getattr(tex, "use_map_normal") and texture.bounty.tex_type == 'IMAGE':
                     col.prop(texture, "yaf_is_normal_map", "Use map as normal map")
 
         elif isinstance(idblock, World):  # for setup world texture

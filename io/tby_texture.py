@@ -103,8 +103,8 @@ class exportTexture:
 
         textureConfigured = False
 
-        if tex.yaf_tex_type == 'BLEND':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        if tex.bounty.tex_type == 'BLEND':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "blend")
 
             stype = switchBlendType.get(tex.progression, 'lin')  # set blend type for blend texture, default is 'lin'
@@ -112,8 +112,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'CLOUDS':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'CLOUDS':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "clouds")
 
             noise_size = tex.noise_scale
@@ -133,8 +133,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'WOOD':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'WOOD':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "wood")
 
             yi.paramsSetInt("depth", 0)
@@ -178,8 +178,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'MARBLE':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'MARBLE':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "marble")
 
             yi.paramsSetInt("depth", tex.noise_depth)
@@ -219,8 +219,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'VORONOI':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'VORONOI':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "voronoi")
 
             if tex.color_mode == 'POSITION':
@@ -252,8 +252,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'MUSGRAVE':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'MUSGRAVE':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "musgrave")
 
             ts = switchMusgraveType.get(tex.musgrave_type, 'multifractal')
@@ -274,8 +274,8 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'DISTORTED_NOISE':
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
+        elif tex.bounty.tex_type == 'DISTORTED_NOISE':
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "distorted_noise")
 
             yi.paramsSetFloat("distort", tex.distortion)
@@ -290,7 +290,7 @@ class exportTexture:
 
             textureConfigured = True
 
-        elif tex.yaf_tex_type == 'IMAGE' and tex.image and tex.image.source in {'FILE', 'GENERATED'}:
+        elif tex.bounty.tex_type == 'IMAGE' and tex.image and tex.image.source in {'FILE', 'GENERATED'}:                
 
             filename = os.path.splitext(os.path.basename(bpy.data.filepath))[0]
 
@@ -334,14 +334,14 @@ class exportTexture:
             image_tex = os.path.realpath(image_tex)
             image_tex = os.path.normpath(image_tex)
 
-            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}: {2}".format(name, tex.yaf_tex_type, image_tex))
+            yi.printInfo("Exporter: Creating Texture: '{0}' type {1}: {2}".format(name, tex.bounty.tex_type, image_tex))
 
             yi.paramsSetString("type", "image")
             yi.paramsSetString("filename", image_tex)
 
-            yi.paramsSetBool("use_alpha", tex.yaf_use_alpha)
+            yi.paramsSetBool("use_alpha", tex.bounty.use_alpha)
             yi.paramsSetBool("calc_alpha", tex.use_calculate_alpha)
-            yi.paramsSetBool("normalmap", tex.yaf_is_normal_map)
+            yi.paramsSetBool("normalmap", tex.bounty.is_normal_map)
             yi.paramsSetFloat("gamma", scene.bounty.gs_gamma_input)
 
             # repeat
@@ -369,7 +369,7 @@ class exportTexture:
             yi.paramsSetFloat("cropmax_y", tex.crop_max_y)
 
             yi.paramsSetBool("rot90", tex.use_flip_axis)
-            yi.paramsSetString("interpolate", tex.interpolation_type)
+            yi.paramsSetString("interpolate", tex.bounty.interpolation_type)
             textureConfigured = True
 
         if textureConfigured:
