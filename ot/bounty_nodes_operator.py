@@ -103,7 +103,7 @@ class TheBountyAddMaterialNodetree(bpy.types.Operator):
         shadernode = nodetree.nodes.new(mat_node_types.get(material.bounty.mat_type))
         shadernode.location = [-200, 0]
         nodetree.links.new(nodeOut.inputs[0],shadernode.outputs[0])
-        #
+        '''
         if material.bounty.mat_type == 'blend':
             shaderOne = nodetree.nodes.new('ShinyDiffuseShaderNode')
             shaderOne.location = [-500, 200]
@@ -112,7 +112,7 @@ class TheBountyAddMaterialNodetree(bpy.types.Operator):
             shaderTwo = nodetree.nodes.new('GlossyShaderNode')
             shaderTwo.location = [-500, -200]
             nodetree.links.new(shadernode.inputs[1],shaderTwo.outputs[0])
-        
+        '''
         return {'FINISHED'}
 #
 #

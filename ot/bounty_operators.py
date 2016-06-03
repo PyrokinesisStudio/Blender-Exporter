@@ -141,12 +141,11 @@ opClasses.append(TheBounty_OT_presets_ior_list)
 class Thebounty_OT_SyncBlendMaterial(Operator):
     bl_idname = "material.sync_blend"
     bl_label = "Sync Blendmat slots or Fix empty selection"
-    bl_description = "Sync material slot with selected materials or fix empty selected item"
-    
+    bl_description = "Sync material slot with selected materials or fix empty selected item"    
     
     @classmethod
     def poll(cls, context):
-        material = context.material
+        material = context.object.active_material
         return material and (material.bounty.mat_type == "blend")
     #
     def execute(self, context):

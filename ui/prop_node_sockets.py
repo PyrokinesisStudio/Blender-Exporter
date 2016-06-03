@@ -68,7 +68,7 @@ bounty_socket_class.append(TheBountyNodeSocket)
 
 class light_color_socket(NodeSocket, TheBountyNodeSocket):
     #-----------------------
-    # Diffuse color sockets 
+    # Light color socket 
     #-----------------------
     
     bl_idname = 'color'
@@ -81,7 +81,6 @@ class light_color_socket(NodeSocket, TheBountyNodeSocket):
             min=0.0, max=1.0,
             default=(0.8, 0.8, 0.8),
     )
-    #diff_color = MatProperty.diff_color
     energy = LightProperty.energy
     
     # useful helper functions
@@ -119,7 +118,7 @@ bounty_socket_class.append(light_color_socket)
 '''
 class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
     #-----------------------
-    # Diffuse color sockets 
+    # Diffuse color socket 
     #-----------------------
     
     bl_idname = 'diffuse_color'
@@ -143,7 +142,7 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
         col = layout.column()
         label = 'Diffuse Color'
         if self.is_linked: # and not self.is_output:
-            label = 'Diffuse layer'
+            label = 'Diffuse color layer'
         #                     
         col.prop(self, "diff_color", text= label )
         col.prop(self, "diffuse_reflect", text="Diffuse Reflection", slider=True)
@@ -403,19 +402,53 @@ class transmit_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(transmit_socket)
 
+#--------------------------
+# specular reflect sockect
+#--------------------------
+class mirror_reflect_socket(NodeSocket):
+    bl_idname = 'specular'
+    bl_label = 'Specular Socket'
+    
+    specular_reflect = MatProperty.specular_reflect
+    
+    # default values for socket's
+    def default_value_get(self):
+        return self.specular_reflect
+    
+    def default_value_set(self, value):
+        self.specular_reflect = value
+    
+    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
+    
+    def draw(self, context, layout, node, text):
+        col = layout.column()
+        label ="Specular reflect"
+        if self.is_linked:
+            col.label("Specular reflect layer")
+        #else:
+        col.prop(self, "specular_reflect", slider=True)     
+    #
+    def draw_color(self, context, node):
+        return (float_socket)
+#
+bounty_socket_class.append(mirror_reflect_socket)
+
+
 #--------------------
 # specular sockect
 #--------------------
 class mirror_color_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = 'mirror'
-    bl_label = 'Mirror Socket'
+    bl_label = 'Mirror Color Socket'
     params = {}
-    
+    '''
     mirror_color = FloatVectorProperty(
         name="Mirror", description="Mirror color reflection",
         subtype='COLOR', min=0.0, max=1.0, default=(0.8, 0.80, 0.80)
     )
-    specular_reflect = MatProperty.specular_reflect
+    '''
+    #specular_reflect = MatProperty.specular_reflect
+    mirror_color = MatProperty.mirror_color
     
     # default values for socket's
     def default_value_get(self):
@@ -428,16 +461,17 @@ class mirror_color_socket(NodeSocket, TheBountyNodeSocket):
     #        
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label="Mirror color"
+        label="Specular color"
         if self.is_linked:
-            label="Mirror layer"
-        #else:
+            label="Specular Color layer"
         col.prop(self, "mirror_color", text=label)
-        col.prop(self, "specular_reflect", text='Mirror reflection', slider=True)   
+        #col.prop(self, "specular_reflect", text='Specular reflect', slider=True)   
     #
     def exportValues(self):
-        self.matValues['mirror_color']= [c for c in self.mirror_color]
-        self.matValues['specular_reflect']= self.specular_reflect
+        #self.matValues['mirror_color']= [c for c in self.mirror_color]
+        self.params['mirror_color']= [c for c in self.mirror_color]
+        #self.matValues['specular_reflect']= self.specular_reflect
+        #self.params['specular_reflect']= self.specular_reflect
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
@@ -482,7 +516,7 @@ class glossy_color_socket(NodeSocket, TheBountyNodeSocket):
         col.prop(self, "glossy_color", text= label )
     #
     def exportValues(self):
-        self.matValues['glossy_color']= [c for c in self.glossy_color]
+        self.params['glossy_color']= [c for c in self.glossy_color]
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
@@ -525,34 +559,6 @@ class glossy_reflect_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(glossy_reflect_socket)
 
-
-'''
-class mirror_reflect_socket(NodeSocket):
-    bl_idname = 'specular'
-    bl_label = 'Custom Node Socket'
-    
-    specular_reflect = MatProperty.specular_reflect
-    
-    # default values for socket's
-    def default_value_get(self):
-        return self.specular_reflect
-    
-    def default_value_set(self, value):
-        self.specular_reflect = value
-    
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
-    
-    def draw(self, context, layout, node, text):
-        if self.is_linked:
-            layout.label(text)
-        else:
-            layout.prop(self, "specular_reflect", slider=True)    
-    #
-    def draw_color(self, context, node):
-        return (float_socket)
-#
-bounty_socket_class.append(mirror_reflect_socket)
-'''
 class fresnel_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = "fresnel"
     bl_label = "Fresnel Socket"
@@ -598,7 +604,7 @@ class fresnel_socket(NodeSocket, TheBountyNodeSocket):
 bounty_socket_class.append(fresnel_socket) 
    
 #-----------------------------------------
-# IOR sockect
+# Index of refraction socket (IOR)
 #-----------------------------------------
 class ior_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = "IOR"
@@ -626,9 +632,9 @@ class ior_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(ior_socket)
 
-#--------------------
-# specular sockect
-#--------------------
+#------------------------
+# Color Specular sockect
+#------------------------
 class glass_mirror_color_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = 'glass_mir_col'
     bl_label = 'Mirror Socket'
@@ -660,8 +666,9 @@ class glass_mirror_color_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(glass_mirror_color_socket)
 
-''' bumpmap sockect
-'''
+#-------------------
+# bumpmap sockect
+#-------------------
 class bumpmap_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = 'bumpmap'
     bl_label = 'Bumpmap Socket'
@@ -669,7 +676,7 @@ class bumpmap_socket(NodeSocket, TheBountyNodeSocket):
     
     bumpmap = BoolProperty(
             name="Bumpmap layer",
-            description="Apply a bumpmap effect to material",
+            description="Apply bumpmap effect to material",
             default=False
     )  
     
@@ -773,9 +780,9 @@ class mapping_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(mapping_socket)
 
-#-----------------------
-# BRDF socket
-#-----------------------
+#---------------------------
+# texture projection socket
+#---------------------------
 class projection_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = 'projection'
     bl_label = 'Texture Projection Socket'

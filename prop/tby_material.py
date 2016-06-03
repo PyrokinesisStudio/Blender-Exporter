@@ -58,6 +58,15 @@ enum_sss_presets = (
 # syncronize some colors with Blender
 # for better visualization on viewport
 #-----------------------------------------
+def getNodeOutName(self, mat):
+    nodeOutName = 'None'
+    if mat.bounty.nodetree != "":
+        for out in bpy.data.node_groups[mat.bounty.nodetree].nodes:
+            if out.bl_idname == 'MaterialOutputNode' and out.inputs[0].is_linked:
+                nodeOutName = out.name
+                #print('out: ', nodeOutName)
+                break
+    return nodeOutName
 
 def syncBlenderColors(self, context):
     #
@@ -65,9 +74,10 @@ def syncBlenderColors(self, context):
     if bpy.context.object.active_material.bounty.nodetree != "":
         #
         tree_name = bpy.context.object.active_material.bounty.nodetree
-        #print('node output ', bpy.context.object.active_material.bounty.node_output)
+        #print('node output ', bpy.context.object.active_material.bounty.node_output) 
+        nodeOutName = getNodeOutName(self, bpy.context.object.active_material)
         #        
-        for socket in bpy.data.node_groups[tree_name].nodes[bpy.context.object.active_material.bounty.node_output].inputs:
+        for socket in bpy.data.node_groups[tree_name].nodes[nodeOutName].inputs:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
                 # Use 'bl_label' for node type
@@ -78,7 +88,7 @@ def syncBlenderColors(self, context):
                     pass
             # with nodetree but socket are not linked (review ?)
             else:
-                diffuse = context.object.active_material.bounty.diffuse_color
+                diffuse = context.object.active_material.diffuse_color
     #
     context.object.active_material.diffuse_color = diffuse
 
