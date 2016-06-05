@@ -335,7 +335,14 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'
     
     # properties..
-    absorption = MatProperty.absorption
+    absorption =        MatProperty.absorption
+    absorption_dist =   MatProperty.absorption_dist
+    dispersion_power =  MatProperty.dispersion_power
+    refr_roughness =    MatProperty.refr_roughness
+    filter_color =      MatProperty.filter_color
+    glass_transmit =    MatProperty.glass_transmit
+    fake_shadows =      MatProperty.fake_shadows
+    IOR_refraction =    MatProperty.IOR_refraction
 
     def init(self, context):
         #
@@ -351,15 +358,6 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
         col = layout.column()
         # TODO: need review..
         #col.menu("YAF_MT_presets_ior_list", text=bpy.types.YAF_MT_presets_ior_list.bl_label)
-        
-        absorption =        MatProperty.absorption
-        absorption_dist =   MatProperty.absorption_dist
-        dispersion_power =  MatProperty.dispersion_power
-        refr_roughness =    MatProperty.refr_roughness
-        filter_color =      MatProperty.filter_color
-        glass_transmit =    MatProperty.glass_transmit
-        fake_shadows =      MatProperty.fake_shadows
-        IOR_refraction =    MatProperty.IOR_refraction
         
         col.prop(self, "absorption")
         col.prop(self, "absorption_dist", text='Distance')
@@ -462,7 +460,6 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
         #
         layout.label('Image file')
         row = layout.row(align=True)
-        row(percentage=25)
         row.operator('image.unpack', text='')
         row.prop_search(self, 'image_map', bpy.data, "images")
         layout.prop(self, 'influence', text='Texture Influence', slider=True)
