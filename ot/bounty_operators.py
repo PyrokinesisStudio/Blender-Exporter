@@ -166,8 +166,8 @@ class Thebounty_OT_SyncBlendMaterial(Operator):
             obj.data.materials.append(mat1)
             
         if len(obj.data.materials) > 1:
-            if obj.data.materials[1].name is not mat.bounty.blendOne:
-                obj.data.materials[1] = mat1
+            if mat.bounty.blendOne not in obj.data.materials:
+                obj.data.materials.append(mat1)
         
         #-------------------------
         # blend material two
@@ -183,8 +183,8 @@ class Thebounty_OT_SyncBlendMaterial(Operator):
             obj.data.materials.append(mat2)
         # 
         if len(obj.data.materials) > 2:
-            if obj.data.materials[2].name is not mat.bounty.blendTwo:
-                obj.data.materials[2] = mat2
+            if mat.bounty.blendTwo not in obj.data.materials:
+                obj.data.materials.append(mat2)
         #--------------------------------------------------------------------------
         return {'FINISHED'}
 # 
