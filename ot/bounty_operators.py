@@ -373,7 +373,7 @@ class Thebounty_OT_ParseIBL(Operator):
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
-            evfile = self.iblValues.get('EV')
+            evfile = self.iblValues.get('EVfile')
             newval = os.path.join(iblFolder, evfile) 
             worldTexture.image.filepath = newval
         
@@ -401,47 +401,48 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line[:7] == 'ICOfile':
-                self.parseValue(line, 2) # string
+            if line.startswith('ICOfile'): # string
+                self.iblValues['ICOfile'] = self.parseValue(line, 2)
             #
-            if line[:11] == 'PREVIEWfile':
-                self.iblValues['PRE']= self.parseValue(line, 2) #PREVIEWfile          
+            if line.startswith('PREVIEWfile'): # string   
+                self.iblValues['PREVIEWfile'] = self.parseValue(line, 2)       
+            # [Background]
+            # BGfile = "file_Bg.jpg", BGmap = 1, BGu = 0.0, BGv = 0.0, BGheight = 3072, 
+            if line.startswith('BGfile'): # string
+                self.iblValues['BGfile'] = self.parseValue(line, 2)
             #
-            if line[:6] == 'BGfile':
-                self.iblValues['BG']= self.parseValue(line, 2) #BGfile
+            if line.startswith('BGheight'): # integer
+                self.iblValues['BGheight'] = self.parseValue(line, 1)
+            # [Enviroment]
+            #EVfile = "file_Env.hdr", EVmap = 1, EVu = 0.0, EVv = 0.0, EVheight = 180, EVmulti = 1.0, EVgamma = 2.2
+            if line.startswith('EVfile'): # string
+                self.iblValues['EVfile'] = self.parseValue(line, 2)
             #
-            if line[:8] == 'BGheight':
-                self.parseValue(line, 1) # integer
+            if line.startswith('EVheight'): # integer
+                self.iblValues['EVheight'] = self.parseValue(line, 1)
             #
-            if line[:6] == 'EVfile':
-                self.iblValues['EV']= self.parseValue(line, 2) #EVfile
-            #
-            if line[:8] == 'EVheight':
-                self.parseValue(line, 1) # integer
-            #
-            if line[:7] == 'EVgamma':
-                self.parseValue(line, 0) # float
+            if line.startswith('EVgamma'): # float
+                self.iblValues['EVgamma'] = self.parseValue(line, 0)
+            # [Reflection] 
+            #REFfile = "file_Ref.hdr", REFmap = 1,  REFu = 0.0, REFv = 0.0, REFheight = 1536, REFmulti = 1.0, REFgamma = 2.2  
+            if line.startswith('REFfile'): # string
+                self.iblValues['REFfile'] = self.parseValue(line, 2)
                 
-            if line[:7] == 'REFfile':
-                self.iblValues['REF']= self.parseValue(line, 2) #REFfile
+            if line.startswith('REFheight'): # integer
+                self.iblValues['REFheight'] = self.parseValue(line, 1)
                 
-            if line[:9] == 'REFheight':
-                self.parseValue(line, 1) # integer
-                
-            if line[:8] == 'REFgamma':
-                self.parseValue(line, 0) # float
+            if line.startswith('REFgamma'): # float
+                self.iblValues['REFgamma'] = self.parseValue(line, 0)
                      
         f.close()
         return self.iblValues
     
 opClasses.append(Thebounty_OT_ParseIBL)
-# test
 
 def register():
     for cls in opClasses:
         bpy.utils.register_class(cls)
     
-
 def unregister():
     for cls in opClasses:
         bpy.utils.unregister_class(cls)

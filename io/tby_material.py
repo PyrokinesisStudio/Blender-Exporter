@@ -95,10 +95,10 @@ class TheBountyMaterialWrite:
         return used_textures
     #
     textureLayerParams = {
-        "element": "shader_node", "type":"layer","name":'',"input":'mapname',"mode":'MIX',
-        "stencil":'',"negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
-        "color_input": False,"use_alpha": False, "upper_color":(1,1,1), "upper_value":0.0, 
-        "upper_layer":'', "colfac": 1.0, "valfac":1.0,"do_color":False, "do_scalar": True}
+        "element": "shader_node", "type":"layer", "name":'', "input":'mapname', "mode":'MIX',
+        "stencil":'', "negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
+        "color_input": False, "use_alpha": False, "upper_color":(1,1,1), "upper_value":0.0, 
+        "upper_layer":'', "colfac": 1.0, "valfac":1.0, "do_color":False, "do_scalar": True}
     
     def writeTexLayer(self, name, mapName, ulayer, mtex, dcol, factor):
         #
@@ -290,9 +290,11 @@ class TheBountyMaterialWrite:
                 i += 1
 
         yi.paramsEndList()
-        if len(mcolRoot) > 0:
+        if mcolRoot.startswith('mircol_'):
+            #if len(mcolRoot) > 0:
             yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if len(bumpRoot) > 0:
+        if bumpRoot is not '':
+            #if len(bumpRoot) > 0:
             yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
@@ -529,16 +531,16 @@ class TheBountyMaterialWrite:
             "type"              : mat.bounty.mat_type,
             "color"             : linked_node.inputs['Diffuse'].diff_color          if nodemat else mat.diffuse_color,
             "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect     if nodemat else mat.bounty.diffuse_reflect,
-            "emit"              : linked_node.emittance                 if nodemat else mat.bounty.emittance,
-            "diffuse_brdf"      : linked_node.brdf_type                 if nodemat else mat.bounty.brdf_type,
-            "sigma"             : linked_node.sigma                     if nodemat else mat.bounty.sigma,
+            "emit"              : linked_node.emittance         if nodemat else mat.bounty.emittance,
+            "diffuse_brdf"      : linked_node.brdf_type         if nodemat else mat.bounty.brdf_type,
+            "sigma"             : linked_node.sigma             if nodemat else mat.bounty.sigma,
             "transparency"      : linked_node.inputs['Transparency'].transparency   if nodemat else mat.bounty.transparency,
             "translucency"      : linked_node.inputs['Translucency'].translucency   if nodemat else mat.bounty.translucency,
-            "transmit_filter"   : linked_node.transmit                  if nodemat else mat.bounty.transmit_filter,
+            "transmit_filter"   : linked_node.transmit          if nodemat else mat.bounty.transmit_filter,
             "specular_reflect"  : linked_node.inputs['Specular'].specular_reflect   if nodemat else mat.bounty.specular_reflect,
             "mirror_color"      : linked_node.inputs['Mirror'].mirror_color         if nodemat else mat.bounty.mirror_color,
-            "fresnel_effect"    : linked_node.fresnel_effect      if nodemat else mat.bounty.fresnel_effect,
-            "IOR"               : linked_node.IOR_reflection      if nodemat else mat.bounty.IOR_reflection,                            
+            "fresnel_effect"    : linked_node.fresnel_effect    if nodemat else mat.bounty.fresnel_effect,
+            "IOR"               : linked_node.IOR_reflection    if nodemat else mat.bounty.IOR_reflection,                            
         }
         return materialParams
        
@@ -555,7 +557,7 @@ class TheBountyMaterialWrite:
         '''
         params = self.shinyParams(mat, linked_node)
         
-        bCol = params.get('color', mat.diffuse_color)
+        diffColor = params.get('color', mat.diffuse_color)
         mirCol = params.get('mirror_color', mat.bounty.mirror_color)
         
         specular_reflect = params.get('specular_reflect', mat.bounty.specular_reflect)
@@ -564,10 +566,10 @@ class TheBountyMaterialWrite:
         brdf = params.get('diffuse_brdf', mat.bounty.brdf_type) #'lambert')
         #bEmit = params.get('emit', mat.bounty.emittance)
 
-        yi.paramsSetString("type", params.get('type','shinydiffusemat'))
+        yi.paramsSetString("type", 'shinydiffusemat')
         
         ##
-        yi.paramsSetColor("color", bCol[0], bCol[1], bCol[2])
+        yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
         yi.paramsSetFloat("transparency", transparency)
         yi.paramsSetFloat("translucency", translucency)
         yi.paramsSetFloat("diffuse_reflect", params.get('diffuse_reflect', mat.bounty.diffuse_reflect))
@@ -600,7 +602,7 @@ class TheBountyMaterialWrite:
             #
             if mtex.use_map_color_diffuse:
                 lname = "diff_layer%x" % i
-                if self.writeTexLayer(lname, mappername, diffRoot, mtex, bCol, mtex.diffuse_color_factor):
+                if self.writeTexLayer(lname, mappername, diffRoot, mtex, diffColor, mtex.diffuse_color_factor):
                     used = True
                     diffRoot = lname
             #
