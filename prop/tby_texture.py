@@ -20,14 +20,6 @@
 
 import bpy
 
-from bpy.props import (EnumProperty,
-                       BoolProperty,
-                       PointerProperty)
-
-
-Texture = bpy.types.Texture
-
-
 # try to update blender propertie texture.type to texture.bounty.tex_type
 def call_tex_type_update(self, context):
     try:
@@ -92,23 +84,23 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
     #--------------------------
     # Own texture properties.
     #--------------------------
-    tex_type = EnumProperty(
+    tex_type = bpy.props.EnumProperty(
             name="Type", description="",
             items=enum_texture_type,
             update=call_tex_type_update,
             default='NONE'
     )
-    is_normal_map = BoolProperty(
+    is_normal_map = bpy.props.BoolProperty(
             name="Use map as normal map",
             description="Use image RGB values for normal mapping",
             default=False
     )
-    use_alpha = BoolProperty(
+    use_alpha = bpy.props.BoolProperty(
             name="Use alpha image info",
             description="Use alpha values for image mapping",
             default=False
     )    
-    interpolation_type= EnumProperty(
+    interpolation_type= bpy.props.EnumProperty(
             name="Interpolation", 
             description="Use image interpolation",
             items=enum_interpolation_type, 
@@ -117,13 +109,13 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
     #---------------------------
     # Texture nodes properties
     #---------------------------     
-    texture_coord = EnumProperty(
+    texture_coord = bpy.props.EnumProperty(
             name="Mapping",
             description="Texture coordinates mapping mode",
             items=enum_texture_coord_type,
             default='UV',
     )       
-    projection_type = EnumProperty(
+    projection_type = bpy.props.EnumProperty(
             name="Projection",
             description="Texture projection mode",
             items=enum_texture_projection_mode,
@@ -162,18 +154,21 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
             default='mix'
     )
     negative = bpy.props.BoolProperty(
-            name='Negative'
+            name='Negative', description='',
+            default=False
     )
     no_rgb = bpy.props.BoolProperty(
-            name='No RGB'
+            name='No RGB', description='',
+            default=False
     )
     stencil = bpy.props.BoolProperty(
-            name='Stencil'
+            name='Stencil', description='',
+            default=False
     )
 
 def register():
     bpy.utils.register_class(TheBountyTextureProperties)
-    bpy.types.Texture.bounty = PointerProperty(type=TheBountyTextureProperties )
+    bpy.types.Texture.bounty = bpy.props.PointerProperty(type=TheBountyTextureProperties )
     
 def unregister():
     bpy.utils.unregister_class(TheBountyTextureProperties)
