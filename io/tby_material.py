@@ -291,10 +291,9 @@ class TheBountyMaterialWrite:
 
         yi.paramsEndList()
         if mcolRoot.startswith('mircol_'):
-            #if len(mcolRoot) > 0:
             yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if bumpRoot is not '':
-            #if len(bumpRoot) > 0:
+            
+        if bumpRoot.startswith('bump_'):
             yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
@@ -318,8 +317,8 @@ class TheBountyMaterialWrite:
             "exp_v"             : mat.bounty.exp_v,
             "diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type   if nodemat else mat.bounty.brdf_type,
             "sigma"             : linked_node.inputs['BRDF'].sigma       if nodemat else mat.bounty.sigma,
-            "IOR"               : mat.bounty.IOR_reflection,#         if mat.bounty.mat_type == "coated_glossy" else 1.0,
-            'mirror_color'      : mat.bounty.coat_mir_col#           if mat.bounty.mat_type == "coated_glossy" else (0.8, 0.8, 0.8)                
+            "IOR"               : mat.bounty.IOR_reflection,
+            'mirror_color'      : mat.bounty.coat_mir_col                
         }
         return materialParams
             
