@@ -142,7 +142,7 @@ opClasses.append(TheBounty_OT_presets_ior_list)
 
 class Thebounty_OT_UpdateBlend(Operator):
     bl_idname = "material.parse_blend"
-    bl_label = "Sync material slots or Fix empty selection"
+    bl_label = "Sync material slots or Fix empty selector"
     bl_description = "Sync material slot with selected materials or fix empty selected item"    
     
     @classmethod
@@ -162,13 +162,8 @@ class Thebounty_OT_UpdateBlend(Operator):
                 bpy.data.materials.new('blendone')
             mat.bounty.blendOne = 'blendone'
         #       
-        mat1 = bpy.data.materials[mat.bounty.blendOne]
-        if len(obj.data.materials) < 2:
-            obj.data.materials.append(mat1)
-            
-        if len(obj.data.materials) > 1:
-            if obj.data.materials[1].name is not mat.bounty.blendOne:
-                obj.data.materials[1] = mat1
+        if mat.bounty.blendOne not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendOne])
         #-------------------------
         # blend material two
         #-------------------------
@@ -177,13 +172,8 @@ class Thebounty_OT_UpdateBlend(Operator):
                 bpy.data.materials.new('blendtwo')
             mat.bounty.blendTwo = 'blendtwo'
         #
-        mat2 = bpy.data.materials[mat.bounty.blendTwo]
-        if len(obj.data.materials) < 3: 
-            obj.data.materials.append(mat2)
-        # 
-        if len(obj.data.materials) > 2:
-            if obj.data.materials[2].name is not mat.bounty.blendTwo:
-                obj.data.materials[2] = mat2
+        if mat.bounty.blendTwo not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendTwo])
         
         return {'FINISHED'}
     
