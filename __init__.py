@@ -37,8 +37,10 @@ import ctypes
 
 PLUGIN_PATH = os.path.join(__path__[0], 'bin', 'plugins')
 BIN_PATH = os.path.join(__path__[0], 'bin')
-sys.path.append(BIN_PATH)
+#sys.path.append(BIN_PATH)
+sys.path.insert(0,BIN_PATH)
 
+'''
 #---------------------------------------------------------------
 # The order of libs is very important. Please do not alter it.
 #---------------------------------------------------------------
@@ -67,7 +69,7 @@ for dll in dllArray:
         ctypes.cdll.LoadLibrary(os.path.join(BIN_PATH, dll))
     except Exception as e:
         print("ERROR: Failed to load library {0}, {1}".format(dll, repr(e)))
-
+'''
 #--------------------------
 # import exporter modules
 #--------------------------
