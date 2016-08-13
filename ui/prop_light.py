@@ -209,12 +209,12 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
             layout.prop(lamp.bounty, "samples")
             layout.prop(lamp.bounty, "angle")
 
-        elif lamp.type == "HEMI": #"DIRECTIONAL":
-            layout.label("TheBounty 'directional' light type")
+        elif lamp.type == "HEMI":
             layout.prop(lamp.bounty, "infinite")
-            if not lamp.bounty.infinite:
-                layout.prop(lamp.bounty, "shadows_size", text="Radius of directional cone")
-        
+            sub = layout.row()
+            sub.enabled = not lamp.bounty.infinite
+            sub.prop(lamp.bounty, "shadows_size", text="Radius of directional cone")
+
         elif lamp.type == "POINT":
             col = layout.column(align=True)
             col.prop(lamp.bounty, "use_sphere", toggle=True)

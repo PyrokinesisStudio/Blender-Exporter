@@ -130,11 +130,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             if mat_slot.material.bounty.mat_type == 'blend':
                 #-------------------------------------------
                 if mat_slot.material.bounty.blendOne =="":
-                    mat_slot.material.bounty.blendOne = "blendone"
+                    mat_slot.material.bounty.blendOne = 'blendone'
                 mat1 = bpy.data.materials[mat_slot.material.bounty.blendOne]
                 #
                 if mat_slot.material.bounty.blendTwo =="":
-                    mat_slot.material.bounty.blendTwo = "blendtwo"
+                    mat_slot.material.bounty.blendTwo = 'blendtwo'
                 mat2 = bpy.data.materials[mat_slot.material.bounty.blendTwo]
                 #                
                 for blendMat in [mat1, mat2]:
