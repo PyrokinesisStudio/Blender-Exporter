@@ -357,7 +357,7 @@ class Thebounty_OT_ParseIBL(Operator):
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
-            evfile = self.iblValues.get('EV')
+            evfile = self.iblValues.get('EVfile')
             newval = os.path.join(iblFolder, evfile) 
             worldTexture.image.filepath = newval
         
@@ -385,35 +385,51 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line[:7] == 'ICOfile':
-                self.parseValue(line, 2) # string
+            if line.startswith('ICOfile'):
+                self.iblValues['ICOfile']= self.parseValue(line, 2) # string
             #
-            if line[:11] == 'PREVIEWfile':
-                self.iblValues['PRE']= self.parseValue(line, 2) #PREVIEWfile          
+            if line.startswith('PREVIEWfile'):
+                self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
+            
+            #[Background]
+            if line.startswith('BGfile'):
+                self.iblValues['BGfile']= self.parseValue(line, 2) # string
             #
-            if line[:6] == 'BGfile':
-                self.iblValues['BG']= self.parseValue(line, 2) #BGfile
+            if line.startswith('BGheight'):
+                self.iblValues['BGheight']= self.parseValue(line, 1) # integer
+            
+            # [Enviroment]
+            if line.startswith('EVfile'):
+                self.iblValues['EVfile']= self.parseValue(line, 2) # string
             #
-            if line[:8] == 'BGheight':
-                self.parseValue(line, 1) # integer
+            if line.startswith('EVheight'):
+                self.iblValues['EVheight']= self.parseValue(line, 1) # integer
             #
-            if line[:6] == 'EVfile':
-                self.iblValues['EV']= self.parseValue(line, 2) #EVfile
-            #
-            if line[:8] == 'EVheight':
-                self.parseValue(line, 1) # integer
-            #
-            if line[:7] == 'EVgamma':
-                self.parseValue(line, 0) # float
+            if line.startswith('EVgamma'):
+                self.iblValues['EVgamma']= self.parseValue(line, 0) # float
+            
+            # [Reflection]   
+            if line.startswith('REFfile'):
+                self.iblValues['REFfile']= self.parseValue(line, 2) # string
                 
-            if line[:7] == 'REFfile':
-                self.iblValues['REF']= self.parseValue(line, 2) #REFfile
+            if line.startswith('REFheight'):
+                self.iblValues['REFheight']= self.parseValue(line, 1) # integer
                 
-            if line[:9] == 'REFheight':
-                self.parseValue(line, 1) # integer
+            if line.startswith('REFgamma'):
+                self.iblValues['REFgamma']= self.parseValue(line, 0) # float
                 
-            if line[:8] == 'REFgamma':
-                self.parseValue(line, 0) # float
+            # [Sun]
+            if line.startswith('SUNcolor'):
+                self.iblValues['SUNcolor'] = (255,255,245)
+                
+            if line.startswith('SUNmulti'):
+                self.iblValues['SUNmulti']= self.parseValue(line, 0) # float
+                
+            if line.startswith('SUNu'):
+                self.iblValues['SUNu']= self.parseValue(line, 0) # float
+                
+            if line.startswith('SUNv'):
+                self.iblValues['SUNv']= self.parseValue(line, 0) # float
                      
         f.close()
         return self.iblValues
