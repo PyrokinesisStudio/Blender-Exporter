@@ -138,10 +138,9 @@ class TheBounty_OT_presets_ior_list(Operator):
 #
 opClasses.append(TheBounty_OT_presets_ior_list)
 #
-
-class Thebounty_OT_UpdateBlend(Operator):
-    bl_idname = "material.parse_blend"
-    bl_label = "Sync material slots or Fix empty selector"
+class Thebounty_OT_SyncBlendMaterial(Operator):
+    bl_idname = "material.sync_blend"
+    bl_label = "Sync Blendmat slots or Fix empty selection"
     bl_description = "Sync material slot with selected materials or fix empty selected item"    
     
     @classmethod
@@ -389,51 +388,38 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line.startswith('ICOfile'):
-                self.iblValues['ICOfile']= self.parseValue(line, 2) # string
+            if line.startswith('ICOfile'): # string
+                self.iblValues['ICOfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('PREVIEWfile'):
-                self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
-            
-            #[Background]
-            if line.startswith('BGfile'):
-                self.iblValues['BGfile']= self.parseValue(line, 2) # string
+            if line.startswith('PREVIEWfile'): # string   
+                self.iblValues['PREVIEWfile'] = self.parseValue(line, 2)       
+            # [Background]
+            # BGfile = "file_Bg.jpg", BGmap = 1, BGu = 0.0, BGv = 0.0, BGheight = 3072, 
+            if line.startswith('BGfile'): # string
+                self.iblValues['BGfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('BGheight'):
-                self.iblValues['BGheight']= self.parseValue(line, 1) # integer
-            
+            if line.startswith('BGheight'): # integer
+                self.iblValues['BGheight'] = self.parseValue(line, 1)
             # [Enviroment]
-            if line.startswith('EVfile'):
-                self.iblValues['EVfile']= self.parseValue(line, 2) # string
+            #EVfile = "file_Env.hdr", EVmap = 1, EVu = 0.0, EVv = 0.0, EVheight = 180, EVmulti = 1.0, EVgamma = 2.2
+            if line.startswith('EVfile'): # string
+                self.iblValues['EVfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('EVheight'):
-                self.iblValues['EVheight']= self.parseValue(line, 1) # integer
+            if line.startswith('EVheight'): # integer
+                self.iblValues['EVheight'] = self.parseValue(line, 1)
             #
-            if line.startswith('EVgamma'):
-                self.iblValues['EVgamma']= self.parseValue(line, 0) # float
-            
-            # [Reflection]   
-            if line.startswith('REFfile'):
-                self.iblValues['REFfile']= self.parseValue(line, 2) # string
+            if line.startswith('EVgamma'): # float
+                self.iblValues['EVgamma'] = self.parseValue(line, 0)
+            # [Reflection] 
+            #REFfile = "file_Ref.hdr", REFmap = 1,  REFu = 0.0, REFv = 0.0, REFheight = 1536, REFmulti = 1.0, REFgamma = 2.2  
+            if line.startswith('REFfile'): # string
+                self.iblValues['REFfile'] = self.parseValue(line, 2)
                 
-            if line.startswith('REFheight'):
-                self.iblValues['REFheight']= self.parseValue(line, 1) # integer
+            if line.startswith('REFheight'): # integer
+                self.iblValues['REFheight'] = self.parseValue(line, 1)
                 
-            if line.startswith('REFgamma'):
-                self.iblValues['REFgamma']= self.parseValue(line, 0) # float
-                
-            # [Sun]
-            if line.startswith('SUNcolor'):
-                self.iblValues['SUNcolor'] = (255,255,245)
-                
-            if line.startswith('SUNmulti'):
-                self.iblValues['SUNmulti']= self.parseValue(line, 0) # float
-                
-            if line.startswith('SUNu'):
-                self.iblValues['SUNu']= self.parseValue(line, 0) # float
-                
-            if line.startswith('SUNv'):
-                self.iblValues['SUNv']= self.parseValue(line, 0) # float
+            if line.startswith('REFgamma'): # float
+                self.iblValues['REFgamma'] = self.parseValue(line, 0)
                      
         f.close()
         return self.iblValues
