@@ -220,7 +220,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                         
         if 'blendtwo' not in bpy.data.materials:
             m2 = bpy.data.materials.new('blendtwo')
-            m1.diffuse_color =(1.0, 0.0, 0.0)
+            m2.diffuse_color =(1.0, 0.0, 0.0)
             m2.bounty.mat_type = 'glossy'
     
     
