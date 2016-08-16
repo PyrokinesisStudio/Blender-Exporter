@@ -23,17 +23,23 @@ from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
 
-
 #
-def panel_node_draw(layout, material, output_type): #, input_name):
+def find_node_input(node, name):
+    for input in node.inputs:
+        if input.name == name:
+            return input
+
+    return None
+
+def panel_node_draw(layout, material, output_type, input_name):
     node = find_node(material, output_type)
-    if node == None:
+    if not node:
         return False
-    #else:
-    #    if material.bounty.nodetree:
-    #        ntree = bpy.data.node_groups[material.bounty.nodetree]
-            #input = find_node_input(node, input_name)
-            #layout.template_node_view(ntree, node, input)
+    else:
+        if material.bounty.nodetree:
+            ntree = bpy.data.node_groups[material.bounty.nodetree]
+            input = find_node_input(node, input_name)
+            layout.template_node_view(ntree, node, input)
 
     return True
 
@@ -184,13 +190,12 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         #----------------------------------------------------
         # show nodetree button
         #----------------------------------------------------
-        if not node_tree_selector_draw(layout, mat, 'MaterialOutputNode'):
-            #if not panel_node_draw(layout, mat, 'MaterialOutputNode'): 
-            #    row = self.layout.row(align=True)
-            #
+        #if not 
+        node_tree_selector_draw(layout, mat, 'MaterialOutputNode')#:
+        if not panel_node_draw(layout, mat, 'MaterialOutputNode', 'Surface'): 
+            #row = self.layout.row(align=True)
             if slot is not None and slot.name:
-                layout.prop(mat.bounty, "mat_type")                
-                      
+                layout.prop(mat.bounty, "mat_type")             
 
 class TheBountyMaterialPreview(TheBountyMaterialButtonsPanel, Panel):
     bl_label = "Preview" 
@@ -312,7 +317,7 @@ class TheBountyGlossyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat, "diffuse_color") #bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
 
         col = split.column()
         ref = col.column(align=True)
