@@ -135,8 +135,8 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
         self.matParams['color']= [c for c in self.diff_color]
         self.matParams['diffuse_reflect']= self.diffuse_reflect
         # test
-        self.matParams['DiffuseLayer']= None
-        self.matParams['diffuse_shader']= None
+        #self.matParams['DiffuseLayer']= None
+        #self.matParams['diffuse_shader']= None
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
@@ -175,7 +175,7 @@ class emitt_socket(NodeSocket, TheBountyNodeSocket):
             layout.label(text)
         else:
             layout.prop(self, "emittance", slider=True)    
-    #
+    '''
     def exportValues(self):
         self.params['emit']=  self.emittance
         if self.is_linked:
@@ -186,7 +186,7 @@ class emitt_socket(NodeSocket, TheBountyNodeSocket):
                 pass
         #
         return self.params
-            
+    '''        
     #
     def draw_color(self, context, node):
         return (float_socket)    
@@ -802,7 +802,7 @@ class projection_socket(NodeSocket, TheBountyNodeSocket):
             col.prop(self, "projection_type")  
     #
     def exportValues(self):
-        self.params['projection_type']= self.projection_type
+        #self.params['projection_type']= self.projection_type
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
