@@ -86,9 +86,6 @@ def syncBlenderColors(self, context):
                     
                 elif linked_node.bl_label == 'glass':
                     pass
-            # with nodetree but socket are not linked (review ?)
-            #else:
-            #    diffuse = context.object.active_material.diffuse_color
     #
     context.object.active_material.diffuse_color = diffuse
 
