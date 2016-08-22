@@ -73,9 +73,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if self.is_preview:
             # at least, allow warning messages with material preview
             self.yi.setVerbosityWarning()
-            #to correct alpha problems in preview roughglass
-            #self.scene.bounty.bg_transp = False
-            #self.scene.bounty.bg_transp_refract = False
         else:
             #
             self.verbositylevel(self.scene.bounty.gs_verbosity_level)

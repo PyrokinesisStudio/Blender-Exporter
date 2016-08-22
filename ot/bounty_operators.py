@@ -344,7 +344,7 @@ class Thebounty_OT_ParseIBL(Operator):
     
     @classmethod
     def poll(cls, context):
-        world = context.world
+        world = context.scene.world
         return world and (world.bounty.bg_type == "textureback")
     #
     def execute(self, context):
@@ -430,19 +430,29 @@ opClasses.append(Thebounty_OT_ParseIBL)
 class Thebounty_OT_alignIBL(Operator):
     bl_idname = "world.align_ibl"
     bl_label = "Interactive IBL Alignament"
-    bl_description='None to say'
+    bl_description='Interactive texture background  alignment to your scene'
     
     @classmethod
     def poll(cls, context):
-        world = context.world
-        return world and (world.bounty.bg_type == "textureback")
+        world = context.scene.world
+        #bpy.context.scene.world.active_texture
+        texture = world.active_texture
+        if world and (world.bounty.bg_type == "textureback") and texture and texture.type == 'IMAGE':
+            return True
+        
+        return False
     
     def execute(self, context):
-        # blender part of code
+        # blender parameters
+        # TODO: refine code
+        bpy.context.scene.world.use_sky_paper = False
+        bpy.context.scene.world.use_sky_blend = False
         bpy.context.scene.world.use_sky_real = True
+        
         bpy.context.scene.world.texture_slots[0].texture_coords='EQUIRECT'
         bpy.context.scene.world.texture_slots[0].use_map_horizon = True
-        # test
+
+        # exporter parameters
         bpy.context.scene.world.bounty.bg_mapping_type = 'SPHERE'
         bpy.context.scene.world.bounty.bg_rotation = 180
         
