@@ -49,14 +49,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     bl_label = "TheBounty Render"
     prog = 0.0
     tag = ""
-    sceneMeshes   = [] # MESH 
-    sceneSurfaces = [] # SURFACE 
-    sceneCurves   = [] # CURVE
-    sceneFonts    = [] # FONT 
-    sceneEmpties  = [] # EMPTY
-    sceneLamps    = [] # LAMP
-    
-    sceneMat = []
     
     #--------------------------------
     # set console  verbosity levels
@@ -82,8 +74,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             # at least, allow warning messages with material preview
             self.yi.setVerbosityWarning()
             #to correct alpha problems in preview roughglass
-            self.scene.bounty.bg_transp = False
-            self.scene.bounty.bg_transp_refract = False
+            #self.scene.bounty.bg_transp = False
+            #self.scene.bounty.bg_transp_refract = False
         else:
             #
             self.verbositylevel(self.scene.bounty.gs_verbosity_level)
@@ -112,9 +104,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportScene(self):
         #
         self.exportTextures()
-        #for obj in self.scene.objects:
-        #    self.exportTexture(obj)
-            
         self.exportMaterials()
         self.geometry.setScene(self.scene)
         self.exportObjects()
@@ -140,36 +129,44 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     
     # test for create scene collections objects in 'one pass'( lamps, meshes,..)
     def exportObjects(self):
-        self.sceneMeshes = set()   # MESH 
-        self.sceneSurfaces = set() # SURFACE 
-        self.sceneCurves = set()   # CURVE
-        self.sceneFonts = set()    # FONT 
-        self.sceneEmpties = set()  # EMPTY
-        self.sceneLamps = set()    # LAMP
+        sceneMeshes = list() #set()   # MESH 
+        sceneSurfaces = list() # SURFACE 
+        sceneCurves = list()   # CURVE
+        sceneFonts = list()    # FONT 
+        sceneEmpties = list()  # EMPTY
+        sceneLamps = list()    # LAMP
+        
+        for obj in self.scene.objects:
+            if obj.type =='LAMP':       sceneLamps.append(obj)
+            if obj.type =='MESH':       sceneMeshes.append(obj)
+            if obj.type =='CURVE':      sceneCurves.append(obj)
+            if obj.type =='SURFACE':    sceneSurfaces.append(obj)
+            # test
+            #sceneMeshes += sceneCurves
         
         self.yi.printInfo("Exporter: Processing Lamps...")
 
         #---------------------------
         # export only visible lamps
         #---------------------------
-        for obj in self.scene.objects:
-            if obj.type == 'LAMP':
-                if not obj.hide_render and obj.is_visible(self.scene):
-                    if obj.is_duplicator:
-                        obj.create_dupli_list(self.scene)
-                        for obj_dupli in obj.dupli_list:
-                            matrix = obj_dupli.matrix.copy()
-                            self.lights.createLight(self.yi, obj_dupli.object, matrix)
+        for obj in sceneLamps:
+            #if obj.type == 'LAMP':
+            if not obj.hide_render and obj.is_visible(self.scene):
+                if obj.is_duplicator:
+                    obj.create_dupli_list(self.scene)
+                    for obj_dupli in obj.dupli_list:
+                        matrix = obj_dupli.matrix.copy()
+                        self.lights.createLight(self.yi, obj_dupli.object, matrix)
 
-                        if obj.dupli_list:
-                            obj.free_dupli_list()
-                            pass
-                    else: # not duplicator
-                        if obj.parent and obj.parent.is_duplicator:
-                            continue
-                        self.lights.createLight(self.yi, obj, obj.matrix_world)
-            else:
-                continue
+                    if obj.dupli_list:
+                        obj.free_dupli_list()
+                        pass
+                else: # not duplicator
+                    if obj.parent and obj.parent.is_duplicator:
+                        continue
+                    self.lights.createLight(self.yi, obj, obj.matrix_world)
+            #else:
+            #    continue
         '''
         for obj in [o for o in self.scene.objects if not o.hide_render and o.is_visible(self.scene) and o.type == 'LAMP']:
             if obj.is_duplicator:
