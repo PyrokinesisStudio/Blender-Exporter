@@ -426,6 +426,31 @@ class Thebounty_OT_ParseIBL(Operator):
     
 opClasses.append(Thebounty_OT_ParseIBL)
 
+#
+class Thebounty_OT_alignIBL(Operator):
+    bl_idname = "world.align_ibl"
+    bl_label = "Interactive IBL Alignament"
+    bl_description='None to say'
+    
+    @classmethod
+    def poll(cls, context):
+        world = context.world
+        return world and (world.bounty.bg_type == "textureback")
+    
+    def execute(self, context):
+        # blender part of code
+        bpy.context.scene.world.use_sky_real = True
+        bpy.context.scene.world.texture_slots[0].texture_coords='EQUIRECT'
+        bpy.context.scene.world.texture_slots[0].use_map_horizon = True
+        # test
+        bpy.context.scene.world.bounty.bg_mapping_type = 'SPHERE'
+        bpy.context.scene.world.bounty.bg_rotation = 180
+        
+        return {'FINISHED'}
+        
+opClasses.append(Thebounty_OT_alignIBL)    
+    
+
 def register():
     for cls in opClasses:
         bpy.utils.register_class(cls)

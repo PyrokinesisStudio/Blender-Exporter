@@ -90,7 +90,8 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
                 #    pass
             else:
                 layout.template_ID(context.world, "active_texture", new="texture.new")
-            
+            #
+            layout.operator("world.align_ibl")
             layout.label(text="Background Texture options")
             row = layout.row()
             row.prop(world,"bg_rotation")
