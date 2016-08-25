@@ -437,7 +437,7 @@ class Thebounty_OT_alignIBL(Operator):
         world = context.scene.world
         #bpy.context.scene.world.active_texture
         texture = world.active_texture
-        if world and (world.bounty.bg_type == "textureback") and texture and texture.type == 'IMAGE':
+        if world and (world.bounty.bg_type == "textureback") and texture and texture.type == 'IMAGE' and texture.image:
             return True
         
         return False
@@ -445,16 +445,17 @@ class Thebounty_OT_alignIBL(Operator):
     def execute(self, context):
         # blender parameters
         # TODO: refine code
-        bpy.context.scene.world.use_sky_paper = False
-        bpy.context.scene.world.use_sky_blend = False
-        bpy.context.scene.world.use_sky_real = True
+        world = context.scene.world
+        world.use_sky_paper = False
+        world.use_sky_blend = False
+        world.use_sky_real = True
         
-        bpy.context.scene.world.texture_slots[0].texture_coords='EQUIRECT'
-        bpy.context.scene.world.texture_slots[0].use_map_horizon = True
+        world.texture_slots[0].texture_coords='EQUIRECT'
+        world.texture_slots[0].use_map_horizon = True
 
         # exporter parameters
-        bpy.context.scene.world.bounty.bg_mapping_type = 'SPHERE'
-        bpy.context.scene.world.bounty.bg_rotation = 180
+        world.bounty.bg_mapping_type = 'SPHERE'
+        world.bounty.bg_rotation = 180
         
         return {'FINISHED'}
         
