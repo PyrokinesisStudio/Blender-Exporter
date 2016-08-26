@@ -444,7 +444,7 @@ class YafaRayRenderEngine(bpy.types.RenderEngine):
                 res = self.begin_result(0, 0, w, h)
                 try:
                     lay = res.layers[0]
-                    lay.rect, lay.passes[0].rect = tile
+                    lay.passes[0].rect, lay.passes[1].rect = tile
                 except BaseException as e:
                     pass
 
