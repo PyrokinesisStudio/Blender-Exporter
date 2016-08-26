@@ -20,7 +20,7 @@
 
 import bpy
 from bpy.types import Panel
-#from bl_ui.properties_data_camera import CameraButtonsPanel
+from bl_ui import properties_data_camera #import CameraButtonsPanel
 
 class CameraButtonsPanel():
     bl_space_type = 'PROPERTIES'
@@ -32,8 +32,6 @@ class CameraButtonsPanel():
     def poll(cls, context):
         engine = context.scene.render.engine
         return context.camera and (engine in cls.COMPAT_ENGINES)
-
-#CameraButtonsPanel.COMPAT_ENGINES = {'THEBOUNTY'}
 
 
 class THEBOUNTY_PT_lens(CameraButtonsPanel, Panel):
@@ -53,26 +51,26 @@ class THEBOUNTY_PT_lens(CameraButtonsPanel, Panel):
         # exporter camera subclass
         camera = context.camera.bounty
 
-        layout.prop(camera, "camera_type", expand=True)
+        layout.prop(cam.bounty, "camera_type", expand=True)
 
         layout.separator()
 
-        if camera.camera_type == 'angular':
-            layout.prop(camera, "angular_angle")
-            layout.prop(camera, "max_angle")
-            layout.prop(camera, "mirrored")
-            layout.prop(camera, "circular")
+        if cam.bounty.camera_type == 'angular':
+            layout.prop(cam.bounty, "angular_angle")
+            layout.prop(cam.bounty, "max_angle")
+            layout.prop(cam.bounty, "mirrored")
+            layout.prop(cam.bounty, "circular")
 
-        elif camera.camera_type == 'orthographic':
+        elif cam.bounty.camera_type == 'orthographic':
             layout.prop(cam, "ortho_scale")
 
-        elif camera.camera_type in {'perspective', 'architect'}:
+        elif cam.bounty.camera_type in {'perspective', 'architect'}:
             layout.prop(cam, "lens")
 
             layout.separator()
 
             layout.label("Depth of Field:")
-            layout.prop(camera, "aperture")
+            layout.prop(cam.bounty, "aperture")
             split = layout.split()
             split.prop(cam, "dof_object", text="")
             col = split.column()
@@ -80,9 +78,9 @@ class THEBOUNTY_PT_lens(CameraButtonsPanel, Panel):
                 col.enabled = False
             col.prop(cam, "dof_distance", text="Distance")
 
-            layout.prop(camera, "bokeh_type")
-            layout.prop(camera, "bokeh_bias")
-            layout.prop(camera, "bokeh_rotation")
+            layout.prop(cam.bounty, "bokeh_type")
+            layout.prop(cam.bounty, "bokeh_bias")
+            layout.prop(cam.bounty, "bokeh_rotation")
 
         layout.separator()
         split = layout.split()
@@ -92,9 +90,9 @@ class THEBOUNTY_PT_lens(CameraButtonsPanel, Panel):
         col.prop(cam, "shift_y", text="Y")
 
         col = split.column(align=True)
-        col.prop(camera, "use_clipping")
+        col.prop(cam.bounty, "use_clipping")
         sub = col.column()
-        sub.active = camera.use_clipping
+        sub.active = cam.bounty.use_clipping
         sub.prop(cam, "clip_start", text="Start")
         sub.prop(cam, "clip_end", text="End")
 
@@ -137,34 +135,14 @@ class THEBOUNTY_PT_camera(CameraButtonsPanel, Panel):
 
 class THEBOUNTY_PT_camera_display(CameraButtonsPanel, Panel):
     bl_label = "Display"
-    #povman add
     bl_context = "data"
     
     @classmethod
     def poll(cls, context):
         return context.camera and CameraButtonsPanel.poll(context)
-    #end
     
     def draw(self, context):
-        layout = self.layout
-
-        camera = context.camera
-
-        split = layout.split()
-
-        col = split.column()
-        col.prop(camera, "show_limits", text="Limits")
-        col.prop(camera, "show_title_safe", text="Title Safe")
-        col.prop(camera, "show_sensor", text="Sensor")
-        col.prop(camera, "show_name", text="Name")
-
-        col = split.column()
-        col.prop_menu_enum(camera, "show_guide")
-        col.prop(camera, "draw_size", text="Size")
-        col.prop(camera, "show_passepartout", text="Passepartout")
-        sub = col.column()
-        sub.active = camera.show_passepartout
-        sub.prop(camera, "passepartout_alpha", text="Alpha", slider=True)
+        properties_data_camera.DATA_PT_camera_display.draw(self, context)
 
 
 if __name__ == "__main__":  # only for live edit.

@@ -21,16 +21,25 @@
 import bpy
 from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
-from bl_ui.properties_material import (active_node_mat,
-                                       check_material)
+from bl_ui.properties_material import (active_node_mat, check_material)
 
-from .. import EXP_BRANCH
 
-nodes = False
-for branch in EXP_BRANCH:
-    if branch == 'custom_nodes':
-        nodes = True
-#MaterialButtonsPanel.COMPAT_ENGINES = {'THEBOUNTY'}
+def blend_one_draw(layout, mat):
+    #
+    try:
+        layout.prop_search(mat.bounty, "blendOne", bpy.data, "materials")
+    except:
+        return False    
+    return True
+
+def blend_two_draw(layout, mat):
+    #
+    try:
+        layout.prop_search(mat.bounty, "blendTwo", bpy.data, "materials")
+    except:
+        return False
+    return True
+
 
 class TheBountyMaterialButtonsPanel():
     bl_space_type = 'PROPERTIES'
@@ -40,7 +49,8 @@ class TheBountyMaterialButtonsPanel():
     
     @classmethod
     def poll(cls, context):
-        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+        mat = context.material.bounty
+        return mat and (context.scene.render.engine in cls.COMPAT_ENGINES)
 
 
 class TheBountyMaterialPresets(Menu):
@@ -59,7 +69,7 @@ class TheBountyMaterialTypePanel(TheBountyMaterialButtonsPanel):
         mat = context.material
         engine = context.scene.render.engine
         #
-        return check_material(mat) and(mat.bounty.mat_type in cls.material_type) and (engine in cls.COMPAT_ENGINES)
+        return check_material(mat) and (mat.bounty.mat_type in cls.material_type) and (engine in cls.COMPAT_ENGINES)
 
 
 class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
@@ -90,10 +100,6 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
             col.operator("object.material_slot_remove", icon='ZOOMOUT', text="")
 
             # TODO: code own operators to copy yaf material settings...
-            # povman add test..
-            #col.operator("object.material_slot_move", text="", icon='TRIA_UP').type = 'UP'
-            #col.operator("object.material_slot_move", text="", icon='TRIA_DOWN').type = 'DOWN'
-            # end test
             col.menu("MATERIAL_MT_specials", icon='DOWNARROW_HLT', text="")
 
             if ob.mode == 'EDIT':
@@ -107,46 +113,29 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         if ob:
             split.template_ID(ob, "active_material", new="material.new")
             row = split.row()
-            #----------------
-            # test for nodes
-            #----------------
-            if nodes:
-                ymat = context.material
-                if ymat:
-                    row.prop(ymat, "use_nodes", icon='NODETREE', text="")
-                    #----------------
+            #---------------------------------------------------------
+            # for deactivate nodes are used from other render engines
+            #---------------------------------------------------------
+            if mat and mat.use_nodes: 
+                row.prop(mat, "use_nodes", icon='NODETREE', text="")
+            #
             if slot:
                 row.prop(slot, "link", text="")
             else:
                 row.label()
 
         elif mat:
-            split.template_ID(space, "pin_id")
+            split.template_ID(space, "pin_id")               
             split.separator()
-
+                        
         if mat:
-            if nodes:
-                row = layout.row()
-                row.operator("bounty.add_nodetree", icon='NODETREE')
-            #
-            layout.separator()
-            layout.prop(mat.bounty, "mat_type") # expand true..
-            
             row = layout.row(align=True)
             row.menu("TheBountyMaterialPresets", text=bpy.types.TheBountyMaterialPresets.bl_label)
             row.operator("bounty.material_preset_add", text="", icon='ZOOMIN')
             row.operator("bounty.material_preset_add", text="", icon='ZOOMOUT').remove_active = True
-            #-------------------
-            # test for nodes
-            #-------------------
-            if nodes and mat.use_nodes:
-                #if mat.use_nodes:
-                row = layout.row()
-                row.label(text="", icon='NODETREE')
-                if mat.active_node_material:
-                    row.prop(mat.active_node_material, "name", text="")
-                else:
-                    row.label(text="No material node selected")
+            #
+            layout.prop(mat.bounty, "mat_type")
+                      
 
 class TheBountyMaterialPreview(TheBountyMaterialButtonsPanel, Panel):
     bl_label = "Preview" 
@@ -204,13 +193,13 @@ class TheBountyBlend(TheBountyMaterialTypePanel, Panel):
         layout = self.layout
         mat = active_node_mat(context.material)
 
-        col = layout.column()
         layout.separator()
-        col.prop(mat.bounty, "blendmaterial1", text="Material one")            
-        col.separator()
-        col.prop(mat.bounty, "blend_value", slider=True)
-        col.separator()
-        col.prop(mat.bounty, "blendmaterial2", text="Material two")
+        blend_one_draw(layout, mat)
+        layout.separator()
+        layout.prop(mat.bounty, "blend_value", slider=True)
+        layout.separator()
+        blend_two_draw(layout, mat)
+        layout.operator('material.parse_blend')
                     
 class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
     bl_label = "Diffuse reflection"
@@ -222,7 +211,7 @@ class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
         col.prop(mat.bounty, "emittance")
         layout.row().prop(mat.bounty, "diffuse_reflect", slider=True)
 
@@ -241,7 +230,7 @@ class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
         col = split.column()
         col.prop(mat.bounty, "transparency", slider=True)
         col = split.column()
-        col.prop(mat, "translucency", slider=True)
+        col.prop(mat.bounty, "translucency", slider=True)
         box.row().prop(mat.bounty, "transmit_filter", slider=True)
 
 class TheBountyShinySpecular(TheBountyMaterialTypePanel, Panel):
@@ -274,7 +263,7 @@ class TheBountyGlossyDiffuse(TheBountyMaterialTypePanel, Panel):
 
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
 
         col = split.column()
         ref = col.column(align=True)
@@ -342,11 +331,11 @@ class TheBountyRealGlass(TheBountyMaterialTypePanel, Panel):
         split = layout.split()
         col = split.column(align=True)
         col.prop(mat.bounty, "absorption")
-        col.prop(mat.bounty, "absorption_dist")
+        layout.prop(mat.bounty, "absorption_dist")
 
         col = split.column(align=True)
-        col.label(text="Dispersion:")
-        col.prop(mat.bounty, "dispersion_power")
+        col.label(text="Dispersion power:")
+        col.prop(mat.bounty, "dispersion_power", text="")
 
         if mat.bounty.mat_type == "rough_glass":
             row = layout.row()
@@ -368,33 +357,25 @@ class TheBountyFakeGlass(TheBountyMaterialTypePanel, Panel):
         col.prop(mat.bounty, "glass_mir_col")
         layout.row().prop(mat.bounty, "glass_transmit", slider=True)
         layout.row().prop(mat.bounty, "fake_shadows")
-        
-class TheBountyScatteringPresets(Menu):
-    bl_label = "Scattering Presets"
-    preset_subdir = "thebounty/sss"
-    preset_operator = "script.execute_preset"
-    COMPAT_ENGINES = {'THEBOUNTY'}
-    draw = Menu.draw_preset
-    
+
 class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
-    bl_label = ""
+    bl_label = "Translucent Scattering Material"
     material_type = 'translucent'
     
     def draw(self, context):
         #
         layout = self.layout
-        self.bl_label="Translucent Scattering Material"
-            
-        self.drawTranslucent(context, layout)
-        self.drawScattering(context, layout)
-
-    def drawTranslucent(self, context, layout):
-        #layout = self.layout
         mat = active_node_mat(context.material)
         
+        self.drawTranslucent(context, layout, mat)
+        self.drawSSS(context, layout, mat)
+        self.drawScattering(context, layout, mat)
+
+    def drawTranslucent(self, context, layout, mat):
+        #        
         split = layout.split()
         col = split.column()
-        col.prop(mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
         col.prop(mat.bounty, "diffuse_reflect", text="Diff. Reflect",slider=True)
         col = split.column()     
         col.prop(mat.bounty, "glossy_color")
@@ -402,16 +383,20 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         row= layout.row()
         row.prop(mat.bounty, "sssSpecularColor")
         layout.prop(mat.bounty, "exponent", text="Specular Exponent")
-
-    def drawScattering(self, context, layout):
-        #layout = self.layout
-        mat = active_node_mat(context.material)
-        layout.separator() #("Scattering properties")
         
+    def drawSSS(self, context, layout, mat):
+        #
         row = layout.row()
         row.label("SSS Presets")
-        row.menu("TheBountyScatteringPresets", text=bpy.types.TheBountyScatteringPresets.bl_label)
+        row.prop(mat.bounty, 'sss_presets', text="")
         
+        if not mat.bounty.sss_presets == "custom":
+            layout.operator("material.parse_sss")
+
+    def drawScattering(self, context, layout, mat):
+        #
+        layout.separator()        
+        row = layout.row()        
         split = layout.split()
         
         col = split.column()        
@@ -423,7 +408,8 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         col.prop(mat.bounty, "sssSigmaA", text="Absorption (Sigma A)")
         col.prop(mat.bounty, "sss_transmit", text="Translucency")
         col.prop(mat.bounty, "sssIOR")
-
+    
+            
 if __name__ == "__main__":  # only for live edit.
     #import bpy
     bpy.utils.register_module(__name__)

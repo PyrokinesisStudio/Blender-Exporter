@@ -25,7 +25,7 @@ from bpy.props import (EnumProperty,
 Texture = bpy.types.Texture
 
 
-# try to update blender propertie texture.type to YafaRay's texture.yaf_tex_type
+# try to update blender propertie texture.type to texture.yaf_tex_type
 def call_tex_type_update(self, context):
     try:
         tex = context.texture

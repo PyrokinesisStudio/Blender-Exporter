@@ -28,82 +28,14 @@ class RenderButtonsPanel():
     COMPAT_ENGINES = {'THEBOUNTY'}
     
     @classmethod
-    def poll(cls, context):
+    def poll(self, context):
         scene = context.scene
-        return scene and (scene.render.engine in cls.COMPAT_ENGINES)
+        return scene and (scene.render.engine in self.COMPAT_ENGINES)
 
-
-class TheBounty_PT_render(RenderButtonsPanel, Panel):
-    bl_label = "Render"
-
-    def draw(self, context):
-        layout = self.layout
-
-        rd = context.scene.render
-
-        row = layout.row(align=True)
-        row.operator("bounty.render_still", text="Render", icon='RENDER_STILL')
-        row.operator("bounty.render_animation", text="Animation", icon='RENDER_ANIMATION')
-        #row.operator("sound.mixdown", text="Audio", icon='PLAY_AUDIO')
-        layout.operator("bounty.render_view", text="Render 3D View", icon='RENDER_STILL')
-
-        split = layout.split(percentage=0.33)
-
-        split.label(text="Display:")
-        row = split.row(align=True)
-        row.prop(rd, "display_mode", text="")
-        row.prop(rd, "use_lock_interface", icon_only=True)
-
-
-class BOUNTY_PT_dimensions(RenderButtonsPanel, Panel):
-    bl_label = "Dimensions"
-    bl_options = {'DEFAULT_CLOSED'}
-    
-    def draw(self, context):
-        layout = self.layout
-
-        scene = context.scene
-        rd = scene.render
-
-        row = layout.row(align=True)
-        row.menu("RENDER_MT_presets", text=bpy.types.RENDER_MT_presets.bl_label)
-        row.operator("render.preset_add", text="", icon='ZOOMIN')
-        row.operator("render.preset_add", text="", icon='ZOOMOUT').remove_active = True
-
-        split = layout.split()
-
-        col = split.column()
-        sub = col.column(align=True)
-        sub.label(text="Resolution:")
-        sub.prop(rd, "resolution_x", text="X")
-        sub.prop(rd, "resolution_y", text="Y")
-        sub.prop(rd, "resolution_percentage", text="")
-
-        sub.label(text="Aspect Ratio:")
-        sub.prop(rd, "pixel_aspect_x", text="X")
-        sub.prop(rd, "pixel_aspect_y", text="Y")
-
-        row = col.row()
-        row.prop(rd, "use_border", text="Border")
-        sub = row.row()
-        sub.active = rd.use_border
-        sub.prop(rd, "use_crop_to_border", text="Crop")
-
-        col = split.column()
-        sub = col.column(align=True)
-        sub.label(text="Frame Range:")
-        sub.prop(scene, "frame_start")
-        sub.prop(scene, "frame_end")
-        sub.prop(scene, "frame_step")
-
-        #sub.label(text="Frame Rate:")
-        #self.draw_framerate(sub, rd)
-
-        subrow = sub.row(align=True)
-        subrow.label(text="Time Remapping:")
-        subrow = sub.row(align=True)
-        subrow.prop(rd, "frame_map_old", text="Old")
-        subrow.prop(rd, "frame_map_new", text="New")
+from bl_ui import properties_render
+properties_render.RENDER_PT_render.COMPAT_ENGINES.add('THEBOUNTY')
+properties_render.RENDER_PT_dimensions.COMPAT_ENGINES.add('THEBOUNTY')
+del properties_render
 
 #
 from . import prop_general_settings

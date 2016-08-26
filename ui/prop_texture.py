@@ -24,7 +24,7 @@ from bl_ui.properties_texture import context_tex_datablock, id_tex_datablock
 from bpy.types import (Panel, Texture, Brush, Material, World, ParticleSettings)
 
 
-class TextureButtonsPanel():
+class TheBountyTextureButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "texture"
@@ -37,7 +37,7 @@ class TextureButtonsPanel():
         return tex and (tex.yaf_tex_type not in 'NONE' or tex.use_nodes) and (engine in cls.COMPAT_ENGINES)
 
 
-class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
+class TheBounty_PT_context_texture(TheBountyTextureButtonsPanel, Panel):
     bl_label = "TheBounty Textures"
     bl_options = {'HIDE_HEADER'}
     COMPAT_ENGINES = {'THEBOUNTY'}
@@ -59,8 +59,7 @@ class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
                 (engine in cls.COMPAT_ENGINES))
 
     def draw(self, context):
-        layout = self.layout
-        
+        layout = self.layout        
         slot = getattr(context, "texture_slot", None)
         node = getattr(context, "texture_node", None)
         space = context.space_data
@@ -68,9 +67,10 @@ class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
         idblock = context_tex_datablock(context)
         pin_id = space.pin_id
 
+        space.use_limited_texture_context = True
+
         if space.use_pin_id and not isinstance(pin_id, Texture):
-            idblock = pin_id
-            #idblock = context_tex_datablock(pin_id) # is use for texture lamp??
+            idblock = id_tex_datablock(pin_id)
             pin_id = None
 
         if not space.use_pin_id:
@@ -79,7 +79,7 @@ class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
         
         # copied from Blender, but not use atm
         # TODO: review
-        """
+        #'''
         if space.texture_context == 'OTHER':
             if not pin_id:
                 layout.template_texture_user()
@@ -104,9 +104,9 @@ class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
                             split.prop(slot, "output_node", text="")
                     else:
                         split.label(text="Type:")
-                        split.prop(tex, "type", text="")
+                        split.prop(tex, "yaf_tex_type", text="")
             return
-        """
+        #"""
 
         tex_collection = (pin_id is None) and (node is None) and (not isinstance(idblock, Brush))
 
@@ -151,7 +151,7 @@ class TheBounty_PT_context_texture(TextureButtonsPanel, Panel):
                 split.prop(tex, "yaf_tex_type", text="")
 
 
-class TheBounty_PT_texture_preview(TextureButtonsPanel, Panel):
+class TheBounty_PT_texture_preview(TheBountyTextureButtonsPanel, Panel):
     bl_label = "Preview"
     COMPAT_ENGINES = {'THEBOUNTY'}
 
@@ -172,7 +172,7 @@ class TheBounty_PT_texture_preview(TextureButtonsPanel, Panel):
             layout.prop(tex, "use_preview_alpha")
 
 
-class TextureSlotPanel(TextureButtonsPanel):
+class TextureSlotPanel(TheBountyTextureButtonsPanel):
     COMPAT_ENGINES = {'THEBOUNTY'}
 
     @classmethod
@@ -181,10 +181,10 @@ class TextureSlotPanel(TextureButtonsPanel):
             return False
 
         engine = context.scene.render.engine
-        return THEBOUNTY_TextureButtonsPanel.poll(cls, context) and (engine in cls.COMPAT_ENGINES)
+        return TheBountyTextureButtonsPanel.poll(cls, context) and (engine in cls.COMPAT_ENGINES)
 
 
-class TextureTypePanel(TextureButtonsPanel):
+class TextureTypePanel(TheBountyTextureButtonsPanel):
     COMPAT_ENGINES = {'THEBOUNTY'}
 
     @classmethod
@@ -533,11 +533,13 @@ class TheBounty_PT_mapping(TextureSlotPanel, Panel):
                 col = split.column()
                 col.prop(tex, "texture_coords", text="")
 
-            """
+            
             if tex.texture_coords == 'UV':
-                pass
+                #pass
                 
-                #### UV layers not supported in yafaray engine ###
+                '''
+                 Maybe UV layers ist not supported in TheBounty engine
+                '''
                 split = layout.split(percentage=0.3)
                 split.label(text="Layer:")
                 ob = context.object
@@ -545,10 +547,9 @@ class TheBounty_PT_mapping(TextureSlotPanel, Panel):
                     split.prop_search(tex, "uv_layer", ob.data, "uv_textures", text="")
                 else:
                     split.prop(tex, "uv_layer", text="")
-            """
+            
 
-            #el
-            if tex.texture_coords == 'OBJECT':
+            elif tex.texture_coords == 'OBJECT':
                 split = layout.split(percentage=0.3)
                 split.label(text="Object:")
                 split.prop(tex, "object", text="")

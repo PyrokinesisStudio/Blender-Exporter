@@ -18,14 +18,20 @@
 
 # <pep8 compliant>
 
+
 import bpy
 from bpy.types import Panel
 
+# sss mat check
+def haveSSS():
+    for mat in bpy.data.materials:
+        if mat.bounty.mat_type == "translucent":
+            return True
+    return False
+
+
 from . prop_render import RenderButtonsPanel
-from .. import EXP_BRANCH
-
 RenderButtonsPanel.COMPAT_ENGINES = {'THEBOUNTY'}
-
 
 class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
     bl_label = "Lighting Integrator Method"
@@ -41,7 +47,9 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
         integrator = scene.intg_light_method
         layout.prop(scene, "intg_light_method", text="")
         # for recursive raytracing..
-        layout.prop(scene, "gs_ray_depth")
+        row = layout.row()
+        row.enabled = integrator not in {"bidirectional"}
+        row.prop(scene, "gs_ray_depth")
         #
         if integrator == "directlighting":
             row = layout.row()
@@ -89,70 +97,19 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
                 col = layout.row()
                 col.prop(scene, "intg_show_map", toggle=True)
                 
-        elif ('opencl' in EXP_BRANCH and integrator == 'photonmappingGPU'):
-            #
-            row = layout.row()
-
-            row.prop(scene, "intg_bounces")
-
-            row = layout.row()
-            
-            col = row.column(align=True)
-            col.label(" Diffuse Photons:", icon='MOD_PHYSICS')
-            col.prop(scene, "intg_photons")
-            col.prop(scene, "intg_diffuse_radius")
-            col.prop(scene, "intg_search")
-            
-            col = row.column(align=True)
-            col.label(" Caustic Photons:", icon='MOD_PARTICLES')
-            col.prop(scene, "intg_cPhotons")
-            col.prop(scene, "intg_caustic_radius")
-            col.prop(scene, "intg_caustic_mix")
-            
-            row = layout.row()
-            row.prop(scene, "intg_show_map", toggle=True)
-
-            row = layout.row()
-            row.label("OpenCL Settings:")
-
-            row = layout.row()
-            row.prop(scene, "intg_ph_method")
-            
-            row = layout.row(align=True)
-            row.prop(scene, "intg_ph_leaf_radius")
-            row.prop(scene, "intg_ph_candidate_multi")
-            
-            row = layout.row()
-            row.prop(scene, "intg_ph_area_multiplier")
-            
-            row = layout.row()
-            row.prop(scene, "intg_fg_OCL", toggle=True)
-
-            row = layout.row(align=True)
-            row.prop(scene, "intg_ph_show_cover", toggle=True)
-            row.prop(scene, "intg_ph_test_rays", toggle=True)
-            row.prop(scene, "intg_ph_benchmark_ray_count", toggle=True)
-            
-            row = layout.row(align=True)
-            row.prop(scene, "intg_ph_benchmark_min_tile_size", toggle=True)
-            row.prop(scene, "intg_ph_work_group_size", toggle=True)
-        #------------------------
-        # pathtracing integrator
-        #------------------------
         elif integrator == "pathtracing":
             col = layout.row()
             col.prop(scene, "intg_caustic_method")
 
-            col = layout.row()
-
             if scene.intg_caustic_method in {"both", "photon"}:
+                col = layout.row(align=True)
                 col.prop(scene, "intg_photons", text="Photons")
                 col.prop(scene, "intg_caustic_mix", text="Caus. Mix")
-                col = layout.row()
+                col = layout.row(align=True)
                 col.prop(scene, "intg_caustic_depth", text="Caus. Depth")
                 col.prop(scene, "intg_caustic_radius", text="Caus. Radius")
             #
-            col = layout.row()
+            col = layout.row(align=True)
             col.prop(scene, "intg_path_samples")
             col.prop(scene, "intg_bounces")
             col = layout.row()
@@ -163,15 +120,16 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
             layout.row().prop(scene, "intg_show_perturbed_normals")
             
         elif integrator == "bidirectional":
+            #layout.row().prop(scene, "intg_do_lightImage")
             layout.label("Use a high number of AA samples to reduce render noise")
 
         elif integrator == "SPPM":
-            col = layout.column()
+            col = layout.column(align=True)
             col.prop(scene, "intg_photons", text="Photons per pass")
             col.prop(scene, "intg_pass_num")
-            col.prop(scene, "intg_bounces", text="Bounces")
-            col = layout.column()
+            col.prop(scene, "intg_bounces", text="Photon bounces depth")
             col.prop(scene, "intg_search")
+            col = layout.column(align=True)
             col.prop(scene, "intg_pm_ire", toggle=True)
             if not scene.intg_pm_ire:
                 col.prop(scene, "intg_times")
@@ -181,7 +139,7 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
         #----------------------------
         # SubSurface integrator
         #----------------------------
-        if integrator in {'directlighting', 'photonmapping', 'pathtracing'}:
+        if integrator in {'directlighting', 'photonmapping', 'pathtracing'} and haveSSS():
             col = layout.column(align=True)
             col.prop(scene, "intg_useSSS", toggle=True)
             if scene.intg_useSSS:

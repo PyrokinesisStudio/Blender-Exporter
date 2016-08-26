@@ -18,30 +18,30 @@
 
 # <pep8 compliant>
 
-from . import yaf_object
-from . import yaf_material
-from . import yaf_light
-from . import yaf_scene
-from . import yaf_camera
-from . import yaf_texture
-from . import yaf_world
+from . import tby_object
+from . import tby_material
+from . import tby_light
+from . import tby_scene
+from . import tby_camera
+from . import tby_texture
+from . import tby_world
 
 
 def register():
-    yaf_object.register()
-    yaf_material.register()
-    yaf_light.register()
-    yaf_scene.register()
-    yaf_camera.register()
-    yaf_texture.register()
-    yaf_world.register()
+    tby_object.register()
+    tby_material.register()
+    tby_light.register()
+    tby_scene.register()
+    tby_camera.register()
+    tby_texture.register()
+    tby_world.register()
 
 
 def unregister():
-    yaf_object.unregister()
-    yaf_material.unregister()
-    yaf_light.unregister()
-    yaf_scene.unregister()
-    yaf_camera.unregister()
-    yaf_texture.unregister()
-    yaf_world.unregister()
+    tby_object.unregister()
+    tby_material.unregister()
+    tby_light.unregister()
+    tby_scene.unregister()
+    tby_camera.unregister()
+    tby_texture.unregister()
+    tby_world.unregister()

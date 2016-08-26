@@ -21,14 +21,10 @@
 from bpy.types import Panel
 
 # Inherit World data block
-from bl_ui.properties_world import WORLD_PT_context_world
-WORLD_PT_context_world.COMPAT_ENGINES.add('THEBOUNTY')
-del WORLD_PT_context_world
-
-# Inherit World Preview Panel
-from bl_ui.properties_world import WORLD_PT_preview
-WORLD_PT_preview.COMPAT_ENGINES.add('THEBOUNTY')
-del WORLD_PT_preview
+from bl_ui import properties_world
+properties_world.WORLD_PT_context_world.COMPAT_ENGINES.add('THEBOUNTY')
+properties_world.WORLD_PT_preview.COMPAT_ENGINES.add('THEBOUNTY')
+del properties_world
 
 class WorldButtonsPanel():
     bl_space_type = 'PROPERTIES'
@@ -177,6 +173,7 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
         if world.bg_type == 'textureback' and context.world.active_texture is not None:
             if world.bg_use_ibl:
                 self.drawIBL(context)
+                self.draw_influence(context)
                     
     #------------------------------------------------
     # Update Sun Light position 'from' or 'to' scene 

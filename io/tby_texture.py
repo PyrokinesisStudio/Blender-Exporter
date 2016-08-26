@@ -60,6 +60,15 @@ lowerImageFileExtension = {
         'HDR': 'hdr',
         'OPEN_EXR': 'exr',
 }
+##
+capitalizeImageFileExtension = {
+        'png': 'PNG',
+        'tga':'TARGA',
+        'tif':'TIFF',
+        'jpg':'JPEG',
+        'hdr':'HDR',
+        'exr':'OPEN_EXR',
+}
 
 def noise2string(ntype):
     a = {
@@ -78,7 +87,7 @@ def noise2string(ntype):
     return a.get(ntype, 'newperlin')
 
 
-class yafTexture:
+class exportTexture:
     def __init__(self, interface):
         self.yi = interface
         self.loadedTextures = set()
@@ -238,7 +247,7 @@ class yafTexture:
                 noise_size = 1.0 / noise_size
             yi.paramsSetFloat("size", noise_size)
 
-            ts = switchDistMetric.get(tex.distance_metric, 'minkovsky')  # set distance metric for VORONOI Texture, default is 'minkovsky'
+            ts = switchDistMetric.get(tex.distance_metric, 'minkovsky')
             yi.paramsSetString("distance_metric", ts)
 
             textureConfigured = True
@@ -247,7 +256,7 @@ class yafTexture:
             yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.yaf_tex_type))
             yi.paramsSetString("type", "musgrave")
 
-            ts = switchMusgraveType.get(tex.musgrave_type, 'multifractal')  # set MusgraveType, default is 'multifractal'
+            ts = switchMusgraveType.get(tex.musgrave_type, 'multifractal')
 
             yi.paramsSetString("musgrave_type", ts)
             yi.paramsSetString("noise_type", noise2string(tex.noise_basis))
@@ -293,21 +302,26 @@ class yafTexture:
 
             filename = clean_name(filename)
             # 
-            fileformat = lowerImageFileExtension.get(scene.render.image_settings.file_format)
-            #fileformat = scene.render.image_settings.file_format.lower()
+            fileformat = lowerImageFileExtension.get(scene.render.image_settings.file_format,'PNG')
             extract_path = os.path.join(filename, "{:05d}".format(scene.frame_current))
 
             if tex.image.source == 'GENERATED':
                 image_tex = "baked_image_{0}.{1}".format(clean_name(tex.name), fileformat)
                 image_tex = os.path.join(save_dir, extract_path, image_tex)
                 image_tex = abspath(image_tex)
-                tex.image.save_render(image_tex, scene)
-            if tex.image.source == 'FILE':
-                if tex.image.packed_file:
-                    image_tex = "extracted_image_{0}.{1}".format(clean_name(tex.name), fileformat)
-                    image_tex = os.path.join(save_dir, extract_path, image_tex)
-                    image_tex = abspath(image_tex)
+                # test for not overwrite current file (or non extract every time)
+                if not os.path.exists(image_tex):
                     tex.image.save_render(image_tex, scene)
+                    
+            if tex.image.source == 'FILE':
+                #
+                image_tex = ''
+                if tex.image.packed_file:
+                    # checking local path
+                    if not os.path.exists(abspath(tex.image.filepath)):
+                        tex.image.unpack(method='WRITE_LOCAL')
+                    image_tex = abspath(tex.image.filepath)                        
+                    
                 else:
                     if tex.image.library is not None:
                         image_tex = abspath(tex.image.filepath, library=tex.image.library)

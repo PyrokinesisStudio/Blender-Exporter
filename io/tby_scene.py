@@ -94,10 +94,8 @@ def exportRenderSettings(yi, scene):
     yi.paramsSetString("integrator_name", "default")
     yi.paramsSetString("volintegrator_name", "volintegr")
     
-    # use exporter params from UI
     # gamma output
-    yi.paramsSetFloat("gamma", scene.view_settings.gamma)
-    #yi.paramsSetFloat("gamma", scene.gs_gamma)
+    yi.paramsSetFloat("gamma", scene.bounty.gs_gamma)
     
     exportAA(yi, scene)
 
@@ -114,9 +112,10 @@ def exportRenderSettings(yi, scene):
 
     yi.paramsSetBool("clamp_rgb", scene.bounty.gs_clamp_rgb)
     yi.paramsSetBool("show_sam_pix", scene.bounty.gs_show_sam_pix)
-    # change to True for fix volume domain issue
-    yi.paramsSetBool("premult", scene.bounty.bg_transp) # scene.bounty.gs_premult)# unused..?
-
+    #TODO: review
+    yi.paramsSetBool("premult", scene.bounty.gs_premult)
+     
+    #TODO: automatic best size mode calculation based on render size
     yi.paramsSetInt("tile_size", scene.bounty.gs_tile_size)
     yi.paramsSetString("tiles_order", scene.bounty.gs_tile_order)
 

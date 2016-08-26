@@ -34,7 +34,7 @@ def multiplyMatrix4x4Vector4(matrix, vector):
     return result
 
 
-class yafObject(object):
+class exportObject(object):
     def __init__(self, yi, mMap, preview):
         self.yi = yi
         self.materialMap = mMap
@@ -51,105 +51,74 @@ class yafObject(object):
 
         camera = self.scene.camera
         render = self.scene.render
-
-        if bpy.types.THEBOUNTY.useViewToRender and bpy.types.THEBOUNTY.viewMatrix:
-            # use the view matrix to calculate the inverted transformed
-            # points cam pos (0,0,0), front (0,0,1) and up (0,1,0)
-            # view matrix works like the opengl view part of the
-            # projection matrix, i.e. transforms everything so camera is
-            # at 0,0,0 looking towards 0,0,1 (y axis being up)
-
-            m = bpy.types.THEBOUNTY.viewMatrix
-            # m.transpose() --> not needed anymore: matrix indexing changed with Blender rev.42816
-            inv = m.inverted()
-
-            pos = multiplyMatrix4x4Vector4(inv, mathutils.Vector((0, 0, 0, 1)))
-            aboveCam = multiplyMatrix4x4Vector4(inv, mathutils.Vector((0, 1, 0, 1)))
-            frontCam = multiplyMatrix4x4Vector4(inv, mathutils.Vector((0, 0, 1, 1)))
-
-            direction = frontCam - pos
-            up = aboveCam
-
-        else:
-            # get cam worldspace transformation matrix, e.g. if cam is parented matrix_local does not work
-            matrix = camera.matrix_world.copy()
-            # matrix indexing (row, colums) changed in Blender rev.42816, for explanation see also:
-            # http://wiki.blender.org/index.php/User:TrumanBlending/Matrix_Indexing
-            pos = matrix.col[3]
-            direction = matrix.col[2]
-            up = pos + matrix.col[1]
+        cam = camera.data
+        
+        # get cam worldspace transformation matrix, e.g. if cam is parented matrix_local does not work
+        matrix = camera.matrix_world.copy()
+        # matrix indexing (row, colums) changed in Blender rev.42816, for explanation see also:
+        # http://wiki.blender.org/index.php/User:TrumanBlending/Matrix_Indexing
+        pos = matrix.col[3]
+        direction = matrix.col[2]
+        up = pos + matrix.col[1]
 
         to = pos - direction
 
         x = int(render.resolution_x * render.resolution_percentage * 0.01)
         y = int(render.resolution_y * render.resolution_percentage * 0.01)
 
-        yi.paramsClearAll()
+        yi.paramsClearAll() 
 
-        if bpy.types.THEBOUNTY.useViewToRender:
-            yi.paramsSetString("type", "perspective")
-            yi.paramsSetFloat("focal", 0.7)
-            bpy.types.THEBOUNTY.useViewToRender = False
+        yi.paramsSetString("type", cam.bounty.camera_type)
 
-        else:
-            # use Blender camera properties
-            cam = camera.data 
-            # thebounty camera subclass properties
-            camera = camera.data.bounty
-            
-            camType = camera.camera_type
+        if cam.bounty.use_clipping:
+            yi.paramsSetFloat("nearClip", cam.clip_start)
+            yi.paramsSetFloat("farClip", cam.clip_end)
 
-            yi.paramsSetString("type", camType)
+        if cam.bounty.camera_type == "orthographic":
+            yi.paramsSetFloat("scale", cam.ortho_scale)
 
-            if camera.use_clipping:
-                yi.paramsSetFloat("nearClip", cam.clip_start)
-                yi.paramsSetFloat("farClip", cam.clip_end)
+        elif cam.bounty.camera_type in {"perspective", "architect"}:
+            # Blenders GSOC 2011 project "tomato branch" merged into trunk.
+            # Check for sensor settings and use them in yafaray exporter also.
+            if cam.sensor_fit == 'AUTO':
+                horizontal_fit = (x > y)
+                sensor_size = cam.sensor_width
+            elif cam.sensor_fit == 'HORIZONTAL':
+                horizontal_fit = True
+                sensor_size = cam.sensor_width
+            else:
+                horizontal_fit = False
+                sensor_size = cam.sensor_height
 
-            if camType == "orthographic":
-                yi.paramsSetFloat("scale", cam.ortho_scale)
+            if horizontal_fit:
+                f_aspect = 1.0
+            else:
+                f_aspect = x / y
 
-            elif camType in {"perspective", "architect"}:
-                # Blenders GSOC 2011 project "tomato branch" merged into trunk.
-                # Check for sensor settings and use them in yafaray exporter also.
-                if cam.sensor_fit == 'AUTO':
-                    horizontal_fit = (x > y)
-                    sensor_size = cam.sensor_width
-                elif cam.sensor_fit == 'HORIZONTAL':
-                    horizontal_fit = True
-                    sensor_size = cam.sensor_width
-                else:
-                    horizontal_fit = False
-                    sensor_size = cam.sensor_height
+            yi.paramsSetFloat("focal", cam.lens / (f_aspect * sensor_size))
 
-                if horizontal_fit:
-                    f_aspect = 1.0
-                else:
-                    f_aspect = x / y
+            # DOF params, only valid for real camera
+            # use DOF object distance if present or fixed DOF
+            if cam.dof_object is not None:
+                # use DOF object distance
+                #dist = (pos.xyz - cam.dof_object.location.xyz).length
+                dof_distance = (pos.xyz - cam.dof_object.location.xyz).length #dist
+            else:
+                # use fixed DOF distance
+                dof_distance = cam.dof_distance
 
-                yi.paramsSetFloat("focal", cam.lens / (f_aspect * sensor_size))
+            yi.paramsSetFloat("dof_distance", dof_distance)
+            yi.paramsSetFloat("aperture", cam.bounty.aperture)
+            # bokeh params
+            yi.paramsSetString("bokeh_type", cam.bounty.bokeh_type)
+            yi.paramsSetString("bokeh_bias", cam.bounty.bokeh_bias)
+            yi.paramsSetFloat("bokeh_rotation", cam.bounty.bokeh_rotation)
 
-                # DOF params, only valid for real camera
-                # use DOF object distance if present or fixed DOF
-                if cam.dof_object is not None:
-                    # use DOF object distance
-                    #dist = (pos.xyz - cam.dof_object.location.xyz).length
-                    dof_distance = (pos.xyz - cam.dof_object.location.xyz).length #dist
-                else:
-                    # use fixed DOF distance
-                    dof_distance = cam.dof_distance
-
-                yi.paramsSetFloat("dof_distance", dof_distance)
-                yi.paramsSetFloat("aperture", camera.aperture)
-                # bokeh params
-                yi.paramsSetString("bokeh_type", camera.bokeh_type)
-                yi.paramsSetString("bokeh_bias", camera.bokeh_bias)
-                yi.paramsSetFloat("bokeh_rotation", camera.bokeh_rotation)
-
-            elif camType == "angular":
-                yi.paramsSetBool("circular", camera.circular)
-                yi.paramsSetBool("mirrored", camera.mirrored)
-                yi.paramsSetFloat("max_angle", camera.max_angle)
-                yi.paramsSetFloat("angle", camera.angular_angle)
+        elif cam.bounty.camera_type == "angular":
+            yi.paramsSetBool("circular", cam.bounty.circular)
+            yi.paramsSetBool("mirrored", cam.bounty.mirrored)
+            yi.paramsSetFloat("max_angle", cam.bounty.max_angle)
+            yi.paramsSetFloat("angle", cam.bounty.angular_angle)
 
         yi.paramsSetInt("resx", x)
         yi.paramsSetInt("resy", y)
@@ -330,15 +299,6 @@ class yafObject(object):
                 yi.paramsSetFloat("cover", obj.vol_cover)
                 yi.paramsSetFloat("density", obj.vol_density)
                 yi.paramsSetString("texture", texture.name)
-
-        elif obj.vol_region == 'Grid Volume' and obj.volDensityFile is not "":
-            # allow relative path's
-            volfilePath = bpy.path.abspath(obj.volDensityFile)
-            realfilePath = os.path.realpath(volfilePath)
-            fileDensityPath = os.path.normpath(realfilePath)
-            #
-            yi.paramsSetString("density_file", fileDensityPath)
-            yi.paramsSetString("type", "GridVolume")
             
         # common parameters
         yi.paramsSetFloat("sigma_a", obj.vol_absorp)
@@ -532,14 +492,14 @@ class yafObject(object):
                     strandEnd = 0.01
                     strandShape = 0.0                    
                     hairMat = "default"  
-                    #                                     
+                                        
                     if obj.active_material is not None:
                         hairMat = obj.active_material
                         strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
                     # exception: if clay render is activated
                     if self.scene.bounty.gs_clay_render:
                         hairMat = "clay"
-                    # hair render resolution 
+                    #
                     pSys.set_resolution(self.scene, obj, 'RENDER')    
                     steps = pSys.settings.draw_step
                     steps = 3 ** steps # or (power of 2 rather than 3) + 1 # Formerly : len(particle.hair_keys)
@@ -547,7 +507,7 @@ class yafObject(object):
                             
                     totalNumberOfHairs = ( len(pSys.particles) + len(pSys.child_particles) )
                     #
-                    prtvis = True # TODO:
+                    prtvis = True # False
                     #for particle in pSys.particles:
                     #    if particle.is_exist and particle.is_visible:
                     #        prtvis = True
@@ -571,7 +531,7 @@ class yafObject(object):
                         yi.endGeometry()
                     yi.printInfo("Exporter: Particle creation time: {0:.3f}".format(time.time() - tstart))
                     
-                    #
+                    #---------------------------------------------------------------------------------------
                     if pSys.settings.use_render_emitter:
                         renderEmitter = True
                 else:

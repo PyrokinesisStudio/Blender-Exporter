@@ -59,71 +59,64 @@ def call_camera_update(self, context):
             cam.type = 'PERSP'
 
 class TheBountyCameraSettings(bpy.types.PropertyGroup):
-    @classmethod
-    def register(cls):
-        bpy.types.Camera.bounty = PointerProperty(
-            name="",
-            description="TheBounty Camera settings",
-            type=cls,
-        )
-        cls.camera_type = EnumProperty(
+    #
+    camera_type = EnumProperty(
             name="Camera Type",
             items=enum_camera_types,
             update=call_camera_update,
             default='perspective'
-        )        
-        cls.angular_angle = FloatProperty(
+     )        
+    angular_angle = FloatProperty(
             name="Angle",
             min=0.0, max=180.0, precision=3,
             default=90.0
-        )
-        cls.max_angle = FloatProperty(
+    )
+    max_angle = FloatProperty(
             name="Max Angle",
             min=0.0, max=180.0, precision=3,
             default=90.0
-        )
-        cls.mirrored = BoolProperty(
+    )
+    mirrored = BoolProperty(
             name="Mirrored",
             default=False
-        )
-        cls.circular = BoolProperty(
+    )
+    circular = BoolProperty(
             name="Circular",
             default=False
-        )
-        cls.use_clipping = BoolProperty(
+    )
+    use_clipping = BoolProperty(
             name="Use clipping",
             default=False
-        )
-        cls.bokeh_type = EnumProperty(
+    )
+    bokeh_type = EnumProperty(
             name="Bokeh type",
             items=enum_bokeh_types,
             default='disk1'
-        )
-        cls.aperture = FloatProperty(
+    )
+    aperture = FloatProperty(
             name="Aperture",
             min=0.0, max=20.0, precision=5,
             default=0.0
-        )
-        cls.bokeh_rotation = FloatProperty(
+    )
+    bokeh_rotation = FloatProperty(
             name="Bokeh rotation",
             min=0.0, max=180, precision=3,
             default=0.0
-        )
-        cls.bokeh_bias = EnumProperty(
+    )
+    bokeh_bias = EnumProperty(
             name="Bokeh bias",
             items= enum_bokeh_bias,
             default='uniform'
-        )
-            
-    @classmethod
-    def unregister(cls):
-        del bpy.types.Camera.bounty
-        
+    )
+
+      
 def register():
     bpy.utils.register_class(TheBountyCameraSettings)
-
+    bpy.types.Camera.bounty = PointerProperty(type=TheBountyCameraSettings )
+    
 def unregister():
     bpy.utils.unregister_class(TheBountyCameraSettings)
+    del bpy.types.Camera.bounty
             
             
             

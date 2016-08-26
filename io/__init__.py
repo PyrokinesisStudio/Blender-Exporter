@@ -19,10 +19,10 @@
 # <pep8 compliant>
 
 #import yafrayinterface
-from . import yaf_export
-from . import yaf_world
-from . import yaf_integrator
-from . import yaf_texture
-from . import yaf_object
-from . import yaf_light
-from . import yaf_material
+from . import tby_export
+from . import tby_world
+from . import tby_integrator
+from . import tby_texture
+from . import tby_object
+from . import tby_light
+from . import tby_material

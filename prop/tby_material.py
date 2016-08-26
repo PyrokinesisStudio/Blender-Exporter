@@ -27,7 +27,6 @@ from bpy.props import (FloatProperty,
                        PointerProperty,
                        StringProperty)
 
-from .. import EXP_BRANCH
 
 enum_material_types = (
     ('shinydiffusemat', "Shiny Diffuse",    ""),
@@ -36,52 +35,40 @@ enum_material_types = (
     ('glass',           "Glass",            ""),
     ('rough_glass',     "Rough Glass",      ""),
     ('blend',           "Blend",            ""),
+    ('translucent',     "Translucent(SSS)", ""),
 )
-#
-if "merge_SSS" in EXP_BRANCH:
-    enum_material_types += (('translucent', "Translucent(SSS)", ""), )
 
 enum_reflectance_mode = (
     ('oren-nayar', "Oren-Nayar", "Reflectance Model"),
     ('lambert', "Lambert", "Reflectance Model"),
 )
-#-----------------------------------------
-# syncronize some colors with Blender
-# for better visualization on viewport
-#-----------------------------------------
-def syncBlenderColors(self, context):
-    #
-    context.object.active_material.diffuse_color = context.object.active_material.bounty.diff_color   
+enum_sss_presets = (
+    ('cream',       "Cream",        ""),
+    ('ketchup',     "Ketchup",      ""),
+    ('marble',      "Marble",       ""),
+    ('milkskimmed', "Milk Skimmed", ""),
+    ('milkwhole',   "Milk Whole",   ""),
+    ('potato',      "Potato",       ""),
+    ('skinbrown',   "Skin Brown",   ""),
+    ('skinpink',    "Skin Pink",    ""),
+    ('skinyellow',  "Skin Yellow",  ""),
+    ('custom',      "Custom",       ""),
+)   
   
-
-def items_mat1(self, context):
-    mat_one = []
-    for mat in bpy.data.materials:
-        if mat.name not in self.name:            
-            mat_one +=((mat.name, mat.name, "First blend material"),)
-            
-    return mat_one
-
-def items_mat2(self, context):
-    mat_two = []
-    for mat in bpy.data.materials:
-        if mat.name not in self.name:
-            mat_two +=((mat.name, mat.name, "Second blend material"),)
-            
-    return mat_two
 
 class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     #---------------------------
     # list of material properies
     #---------------------------
-    node_output = StringProperty( 
-            name = "Output Node",
-            description = "Material node tree output node to link to the current material"
+    blendOne = StringProperty(
+            name="Material One",
+            description="Name of the material one in blend material",
+            default="blendone"
     )
-    nodetree = StringProperty(
-            name="Node Tree",
-            description="Name of the shader node tree for this material",
-            default=""
+    blendTwo = StringProperty(
+            name="Material Two",
+            description="Name of the material one in blend material",
+            default="blendtwo"
     )
     mat_type = EnumProperty(
             name="Material type",
@@ -93,8 +80,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             description="Diffuse albedo color material",
             subtype='COLOR',
             min=0.0, max=1.0,
-            default=(0.8, 0.8, 0.8),
-            update=syncBlenderColors
+            default=(0.8, 0.8, 0.8)
     )
     emittance = FloatProperty(
             name="Emit",
@@ -199,7 +185,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             name="Reflection strength",
             description="Amount of glossy reflection",
             min=0.0, max=1.0, step=1, precision=3,
-            soft_min=0.0, soft_max=1.0, default=0.000
+            soft_min=0.0, soft_max=1.0, default=0.0001
     )    
     exp_u = FloatProperty(
             name="Exponent U",
@@ -242,14 +228,14 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             soft_min=1.0, soft_max=30.0, default=1.800
     )    
     absorption = FloatVectorProperty(
-            name="Color and absorption",
+            name="Absorption Color",
             description="Glass volumetric absorption color. White disables absorption",
             subtype='COLOR',
             min=0.0, max=1.0, step=1, precision=3,
             default=(1.0, 1.0, 1.0)
     )    
     absorption_dist = FloatProperty(
-            name="Abs. distance",
+            name="Distance of Absorption",
             description="Absorption distance scale",
             min=0.0, max=100.0,
             step=1, precision=4,
@@ -272,7 +258,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             default=(1.0, 1.0, 1.0)
     )    
     dispersion_power = FloatProperty(
-            name="Disp. power",
+            name="Power",
             description="Strength of dispersion effect, disabled when 0",
             min=0.0, max=5.0,
             step=1, precision=4,
@@ -298,20 +284,16 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             min=0.0, max=1.0, step=3, precision=3,
             soft_min=0.0, soft_max=1.0,
             default=0.500
-    )       
-    blendmaterial1 = EnumProperty(
-            name="Material one",
-            description="First blend material",
-            items=items_mat1
-    )    
-    blendmaterial2 = EnumProperty(
-            name="Material two",
-            description="Second blend material",
-            items=items_mat2
-    )        
+    )      
     #--------------------------------------------
     #  Translucent SubSurface Scattering settings
     #--------------------------------------------
+    sss_presets = EnumProperty(
+            name="SSS",
+            description="Scattering presets",
+            items=enum_sss_presets,
+            default='cream',
+    )
     sssColor = FloatVectorProperty(
             name="Diffuse color",
             description="Diffuse color",
@@ -330,13 +312,13 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             name="Absorption Color",
             description="Absorption Color",
             subtype='COLOR',
-            min=0.0, max=1.0,
-            default=(0.0, 0.0, 0.0)
+            min=0.0, max=2.0,
+            default=(0.80, 0.80, 0.80)
     )    
     sssSigmaS = FloatVectorProperty(
             name="Scatter color",
             description="Scatter color",
-            subtype='COLOR',
+            subtype='COLOR', precision=4,
             min=0.0, max=1.0,
             default=(0.7, 0.7, 0.7)
     )        
@@ -344,15 +326,15 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             name="SigmaS factor",
             description="Sigma factor for SSS",
             min=0.1, max=100.0,
-            step=0.01, precision=3,
-            default=1.0
+            step=0.1, precision=2,
+            default=10.0
     )    
     sss_transmit = FloatProperty(
             name="Transmittance",
             description="Transmittance",
             min=0.0, max=1.0,
-            step=0.01, precision=3,
-            default=1.0
+            step=0.1, precision=3,
+            default=0.50
     )        
     sssIOR = FloatProperty(
             name="IOR",
