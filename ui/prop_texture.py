@@ -501,6 +501,7 @@ class TheBounty_PT_mapping(TextureSlotPanel, Panel):
     @classmethod
     def poll(cls, context):
         idblock = context_tex_datablock(context)
+        if idblock == context.lamp: return False
         if isinstance(idblock, Brush) and not context.sculpt_object:
             return False
 
@@ -534,8 +535,6 @@ class TheBounty_PT_mapping(TextureSlotPanel, Panel):
 
             
             if tex.texture_coords == 'UV':
-                #pass
-                
                 '''
                  Maybe UV layers ist not supported in TheBounty engine
                 '''
@@ -597,7 +596,9 @@ class TheBounty_PT_influence(TextureSlotPanel, Panel):
     @classmethod
     def poll(cls, context):
         idblock = context_tex_datablock(context)
-        if ( isinstance(idblock, Brush) or isinstance(idblock, World)):
+        if idblock == context.lamp:
+            return False
+        if ( isinstance(idblock, Brush)):
             return False
 
         if not getattr(context, "texture_slot", None):

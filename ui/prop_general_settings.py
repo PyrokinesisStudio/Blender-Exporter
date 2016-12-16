@@ -91,7 +91,7 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         col.prop(scene, "gs_clamp_rgb", toggle=True)
 
         col = split.column()
-        col.prop(scene, "gs_use_instances", text="Use instances", toggle=True)
+        col.prop(render, "use_instances", text="Use instances", toggle=True)
         
         split = layout.split(percentage=0.5)
         col = split.column()

@@ -90,10 +90,10 @@ class exportWorld:
                     if world.bg_mapping_type == "SPHERE":
                         worldMappingCoord = "spherical"
                         
-                    yi.paramsSetString("ibl_mapping", worldMappingCoord)                    
+                    yi.paramsSetString("mapping", worldMappingCoord)                    
                         
                     yi.paramsSetString("type", "textureback")
-                    yi.paramsSetString("ibl_texture", "world_texture")
+                    yi.paramsSetString("texture", "world_texture")
                     yi.paramsSetBool("ibl", world.bg_use_ibl)
                     yi.paramsSetBool("with_caustic", world.bg_with_caustic)
                     yi.paramsSetBool("with_diffuse", world.bg_with_diffuse)

@@ -160,15 +160,8 @@ class Thebounty_OT_SyncBlendMaterial(Operator):
                 bpy.data.materials.new('blendone')
             mat.bounty.blendOne = 'blendone'
         #       
-        mat1 = bpy.data.materials[mat.bounty.blendOne]
-        
-        if len(obj.data.materials) < 2:
-            obj.data.materials.append(mat1)
-            
-        if len(obj.data.materials) > 1:
-            if mat.bounty.blendOne not in obj.data.materials:
-                obj.data.materials.append(mat1)
-        
+        if mat.bounty.blendOne not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendOne])
         #-------------------------
         # blend material two
         #-------------------------
@@ -177,15 +170,9 @@ class Thebounty_OT_SyncBlendMaterial(Operator):
                 bpy.data.materials.new('blendtwo')
             mat.bounty.blendTwo = 'blendtwo'
         #
-        mat2 = bpy.data.materials[mat.bounty.blendTwo]
+        if mat.bounty.blendTwo not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendTwo])
         
-        if len(obj.data.materials) < 3: 
-            obj.data.materials.append(mat2)
-        # 
-        if len(obj.data.materials) > 2:
-            if mat.bounty.blendTwo not in obj.data.materials:
-                obj.data.materials.append(mat2)
-        #--------------------------------------------------------------------------
         return {'FINISHED'}
 # 
 opClasses.append(Thebounty_OT_SyncBlendMaterial)
@@ -357,7 +344,7 @@ class Thebounty_OT_ParseIBL(Operator):
     
     @classmethod
     def poll(cls, context):
-        world = context.world
+        world = context.scene.world
         return world and (world.bounty.bg_type == "textureback")
     #
     def execute(self, context):
@@ -438,6 +425,42 @@ class Thebounty_OT_ParseIBL(Operator):
         return self.iblValues
     
 opClasses.append(Thebounty_OT_ParseIBL)
+
+#
+class Thebounty_OT_alignIBL(Operator):
+    bl_idname = "world.align_ibl"
+    bl_label = "Interactive IBL Alignament"
+    bl_description='Interactive texture background  alignment to your scene'
+    
+    @classmethod
+    def poll(cls, context):
+        world = context.scene.world
+        #bpy.context.scene.world.active_texture
+        texture = world.active_texture
+        if world and (world.bounty.bg_type == "textureback") and texture and texture.type == 'IMAGE' and texture.image:
+            return True
+        
+        return False
+    
+    def execute(self, context):
+        # blender parameters
+        # TODO: refine code
+        world = context.scene.world
+        world.use_sky_paper = False
+        world.use_sky_blend = False
+        world.use_sky_real = True
+        
+        world.texture_slots[0].texture_coords='EQUIRECT'
+        world.texture_slots[0].use_map_horizon = True
+
+        # exporter parameters
+        world.bounty.bg_mapping_type = 'SPHERE'
+        world.bounty.bg_rotation = 180
+        
+        return {'FINISHED'}
+        
+opClasses.append(Thebounty_OT_alignIBL)    
+    
 
 def register():
     for cls in opClasses:

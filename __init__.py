@@ -37,8 +37,6 @@ BIN_PATH = os.environ['BOUNTY_ROOT']
 PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
 
 sys.path.insert(0, BIN_PATH)
-#if sys.platform == 'win32':
-#    os.environ['PATH'] = BIN_PATH +';'+ os.environ['PATH']
 
 #--------------------------
 # import exporter modules
