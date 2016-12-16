@@ -23,7 +23,7 @@ import os, subprocess, sys
 import threading
 import time
 import yafrayinterface
-from .. import PLUGIN_PATH , BIN_PATH
+from .. import PLUGIN_PATH
 from .tby_object import exportObject
 from .tby_light  import exportLight
 from .tby_world  import exportWorld

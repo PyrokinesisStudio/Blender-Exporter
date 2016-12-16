@@ -96,7 +96,7 @@ class TheBountyMaterialWrite:
     #
     textureLayerParams = {
         "element": "shader_node", "type":"layer", "name":'', "input":'mapname', "mode":'MIX',
-        "stencil":'', "negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
+        "stencil":False, "negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
         "color_input": False, "use_alpha": False, "upper_color":(1,1,1), "upper_value":0.0, 
         "upper_layer":'', "colfac": 1.0, "valfac":1.0, "do_color":False, "do_scalar": True}
     
@@ -302,20 +302,12 @@ class TheBountyMaterialWrite:
         #
         materialParams = {
 
-            #"type"              : mat.bounty.mat_type,
             "diffuse_color"     : linked_node.inputs['Diffuse'].diff_color      if nodemat else mat.diffuse_color,
             "color"             : linked_node.inputs['Glossy'].glossy_color     if nodemat else mat.bounty.glossy_color,
             "glossy_reflect"    : linked_node.inputs['Specular'].glossy_reflect if nodemat else mat.bounty.glossy_reflect,
-            #"exponent"          : mat.bounty.exponent,
             "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect if nodemat else mat.bounty.diffuse_reflect,
-            #"as_diffuse"        : mat.bounty.as_diffuse,
-            #"anisotropic"       : mat.bounty.anisotropic,
-            #"exp_u"             : mat.bounty.exp_u,
-            #"exp_v"             : mat.bounty.exp_v,
-            "diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type   if nodemat else mat.bounty.brdf_type,
-            "sigma"             : linked_node.inputs['BRDF'].sigma       if nodemat else mat.bounty.sigma,
-            "IOR"               : mat.bounty.IOR_reflection,
-            'mirror_color'      : mat.bounty.coat_mir_col                
+            "diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type          if nodemat else mat.bounty.brdf_type,
+            "sigma"             : linked_node.inputs['BRDF'].sigma              if nodemat else mat.bounty.sigma,                
         }
         return materialParams
             
@@ -328,10 +320,8 @@ class TheBountyMaterialWrite:
         # Add IOR and mirror color for coated glossy
         #-------------------------------------------
         if mat.bounty.mat_type == "coated_glossy":
-            #
-            #yi.paramsSetFloat("IOR", params.get('IOR', mat.bounty.IOR_reflection))
             yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
-            mir_col = params.get('mirror_color', mat.bounty.coat_mir_col)
+            mir_col = mat.bounty.coat_mir_col
             yi.paramsSetColor("mirror_color", mir_col[0], mir_col[1], mir_col[2])
         
         diffuse_color = params.get('diffuse_color', mat.diffuse_color)
@@ -532,16 +522,16 @@ class TheBountyMaterialWrite:
             "type"              : mat.bounty.mat_type,
             "color"             : linked_node.inputs['Diffuse'].diff_color          if nodemat else mat.diffuse_color,
             "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect     if nodemat else mat.bounty.diffuse_reflect,
-            "emit"              : linked_node.emittance         if nodemat else mat.bounty.emittance,
-            "diffuse_brdf"      : linked_node.brdf_type         if nodemat else mat.bounty.brdf_type,
-            "sigma"             : linked_node.sigma             if nodemat else mat.bounty.sigma,
+            "emit"              : linked_node.emittance                             if nodemat else mat.bounty.emittance,
+            "diffuse_brdf"      : linked_node.brdf_type                             if nodemat else mat.bounty.brdf_type,
+            "sigma"             : linked_node.sigma                                 if nodemat else mat.bounty.sigma,
             "transparency"      : linked_node.inputs['Transparency'].transparency   if nodemat else mat.bounty.transparency,
             "translucency"      : linked_node.inputs['Translucency'].translucency   if nodemat else mat.bounty.translucency,
-            "transmit_filter"   : linked_node.transmit          if nodemat else mat.bounty.transmit_filter,
+            "transmit_filter"   : linked_node.transmit                              if nodemat else mat.bounty.transmit_filter,
             "specular_reflect"  : linked_node.inputs['Specular'].specular_reflect   if nodemat else mat.bounty.specular_reflect,
             "mirror_color"      : linked_node.inputs['Mirror'].mirror_color         if nodemat else mat.bounty.mirror_color,
-            "fresnel_effect"    : linked_node.fresnel_effect    if nodemat else mat.bounty.fresnel_effect,
-            "IOR"               : linked_node.IOR_reflection    if nodemat else mat.bounty.IOR_reflection,                            
+            "fresnel_effect"    : linked_node.fresnel_effect                        if nodemat else mat.bounty.fresnel_effect,
+            "IOR"               : linked_node.IOR_reflection                        if nodemat else mat.bounty.IOR_reflection,                            
         }
         return materialParams
        
@@ -550,12 +540,18 @@ class TheBountyMaterialWrite:
         yi = self.yi
         yi.paramsClearAll()
         '''
-        layers = []
-        if linked_node is not None:
-            for link in [l for l in linked_node.inputs if l.is_linked and l.name in shinyLayers]:
-                layers.append(link.name)
-                print('layer name: ', link.name)
+        www.facebook.com/groups/RecursosProgramacion
         '''
+        if linked_node is not None:
+            diffuse = linked_node.inputs['Diffuse']
+            print('\nDiffuse color: ', diffuse.getParams()['color'])
+            if diffuse.is_linked:
+                print('\nDiffuse layer: ', diffuse.getParams()['DiffuseLayer'].keys())
+                
+            transparency = linked_node.inputs['Transparency']#['stencil']
+            #if linked_node.inputs['Transparency'].is_linked:
+            print('\nTransparency parameters: ', transparency.getParams()['transparency'])
+                
         params = self.shinyParams(mat, linked_node)
         
         diffColor = params.get('color', mat.diffuse_color)
@@ -770,12 +766,10 @@ class TheBountyMaterialWrite:
                 if linked_node.bl_label in validMaterialTypes:
                     #print('label: ',linked_node.bl_label)
                     mat.bounty.mat_type = linked_node.bl_label
-                    print(linked_node.getParams())
-                    #paramsSet = linked_node.getParams()
-                    #print('parameters: ', paramsSet)                    
                     self.useMaterialNodes = True
                 else:
                     bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
+                    linked_node = None
                     print('Not valid node has got connected. Ignoring nodetree')
         
         #

@@ -21,7 +21,6 @@
 
 import bpy
 from bpy.types import Node, NodeSocket
-#from bpy.props import (FloatProperty, FloatVectorProperty, StringProperty, BoolProperty, EnumProperty, IntVectorProperty)
 
 from . import prop_node_sockets
 #
@@ -84,6 +83,7 @@ bounty_node_class.append(TheBountyMaterialNodeTree)
 class TheBountyMaterialNode:
     # test for lock node sizes
     bl_width_min = bl_width_max = 180
+    params={}
       
     @classmethod
     def poll( cls, context):
@@ -116,37 +116,7 @@ class TheBountyMaterialNode:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
                 linked_node.traverse_node_tree( material_node)
-        material_node.listedNodes.append(self)
-        
-        '''
-        for socket in self.inputs:
-            
-            if socket.is_linked:
-                print('linked socket: ', socket.name)
-                linked_node = socket.links[0].from_node
-                linked_node.traverse_node_tree(material_node)
-                # start
-                for input in linked_node.inputs:
-                    if input.is_linked:
-                        new_node = input.links[0].from_node
-                        new_node.traverse_node_tree(material_node)
-                        print('new node: ', new_node.name)
-                        #print('input on node: ', input.bl_label, 'values: ', input.getValues())
-                        #material_node.nodeValues.append((input.bl_idname, input.exportValues())) # getValues()))
-                    material_node.nodeValues = input.exportValues()
-                # end
-                
-                if linked_node.name not in material_node.nodetreeListNames:
-                    material_node.nodetreeListNames.append(linked_node.name)
-                #material_node.nodetreeListNodes.append(linked_node.bl_label)
-            # si no es linked que hacemos??
-            else:
-                print('unlinked socket: ', socket.name, ', value: ', socket.default_value)
-            
-        #return material_node.nodetreeListNames, 
-        #return material_node.nodeValues
-        '''  
-    
+        #material_node.listedNodes.append(self)
 #
 bounty_node_class.append(TheBountyMaterialNode)
 
@@ -159,8 +129,8 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
     bl_icon = 'NODETREE'
     bl_width_min = 120
     bl_width_max = 130
-    #
     listedNodes = []
+    params={}
 
     def init(self, context):
         self.inputs.new('NodeSocketShader', "Surface")        
@@ -178,16 +148,17 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
                 nodeList.append( node)
         return nodeList
     #
-    def traverse_node_tree( self):
+    def getParams(self):
         #
-        self.listedNodes.clear()
-        for socket in self.inputs:
-            if socket.is_linked:
-                linked_node = socket.links[0].from_node
-                linked_node.traverse_node_tree( self)
-        #
-        return self.filterNodeList(self.listedNodes)  
-#
+        self.params.set()
+        if self.inputs['Surface'].is_linked:
+            input = self.inputs['Surface'].links[0].from_node
+            linked_node = socket.links[0].from_node
+            if input in validShaderTypes:
+                self.params = input.getParams()
+            #else:
+            #    bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
+
 bounty_node_class.append(TheBountyMaterialOutputNode)
         
 #------------------------------------------------
@@ -197,34 +168,53 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'ShinyDiffuseShaderNode'
     bl_label = 'shinydiffusemat'
     bl_icon = 'MATERIAL'
-       
+    shinyparams = {}
+    #
+    brdf_type = MatProperty.brdf_type
+    sigma = MatProperty.sigma  
+    emittance = MatProperty.emittance
+    transmit = MatProperty.transmit_filter
+    fresnel_effect = MatProperty.fresnel_effect
+    IOR_reflection = MatProperty.IOR_reflection
+         
     #
     def init(self, context):
         # slots shaders
         self.outputs.new('NodeSocketColor', "Shader")
         
-        self.inputs.new('diffuse_color',"Diffuse")
-        
-        self.inputs.new('emittance', 'Emittance')
-        
-        self.inputs.new('brdf', 'BRDF')
+        self.inputs.new('diffuse_color', 'Diffuse')
         
         self.inputs.new('transparency', 'Transparency')
         
         self.inputs.new('translucency', 'Translucency')
         
         self.inputs.new('mirror', 'Mirror')
+        self.inputs['Mirror'].enabled=True
         
         self.inputs.new('specular', 'Specular')
-        
-        self.inputs.new('fresnel', 'Fresnel')
         
         self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
         # Additional buttons displayed on the node.
-        pass
+        mat = context.active_object.active_material
+        
+        col = layout.column()
+        col.prop(self, "transmit", slider=True)
+        col.prop(self, "emittance", slider=True)
+        col.prop(self, "brdf_type")
+        col.prop(self, "sigma", text='Sigma', slider=True)
+        col.prop(self, "fresnel_effect", toggle=True)
+        col.prop(self, "IOR_reflection")
+        
+        
     
+    def getParams(self):
+        #
+        self.shinyparams['Diffuse']= self.inputs['Diffuse'].getParams()
+        self.shinyparams['Transparency'] = self.inputs['Transparency'].getParams()
+        
+        return self.shinyparams   
 #
 bounty_node_class.append(TheBountyShinyDiffuseShaderNode)
 
@@ -246,6 +236,8 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
         
         self.inputs.new('glossy_color',"Glossy Color")
         
+        self.inputs.new('mirror', 'SSSpecular')
+        
         self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
@@ -253,7 +245,7 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
         mat = context.active_object.active_material
                 
         col = layout.column()
-        col.prop(mat.bounty, "sssSpecularColor")
+        #col.prop(mat.bounty, "sssSpecularColor")
         col.prop(mat.bounty, "exponent", text="Specular Exponent")
         
         #row = layout.row()
@@ -273,12 +265,13 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
 bounty_node_class.append(TheBountyTranslucentShaderNode)
 
 #------------------------------------------------
-# Glossy node
+# Glossy node 
 #------------------------------------------------
 class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlossyShaderNode'
     bl_label = 'glossy'
     bl_icon = 'MATERIAL'
+    
     
     # properties
     anisotropic = MatProperty.anisotropic
@@ -288,14 +281,14 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     as_diffuse = MatProperty.as_diffuse
     coat_mir_col = MatProperty.coat_mir_col
     IOR_reflection = MatProperty.IOR_reflection
+    brdf_type = MatProperty.brdf_type
+    sigma = MatProperty.sigma
     
     def init(self, context):
         #
         self.outputs.new('NodeSocketColor', "Shader")
         
-        self.inputs.new('diffuse_color',"Diffuse")    
-        self.inputs.new('brdf', 'BRDF')
-        
+        self.inputs.new('diffuse_color',"Diffuse")        
         self.inputs.new('glossy_color',"Glossy")
         self.inputs.new('glossy_reflect',"Specular")
         self.inputs.new('bumpmap', 'Bumpmap')
@@ -305,6 +298,8 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
         mat = context.active_object.active_material
         
         col = layout.column()
+        col.prop(self, "brdf_type")
+        col.prop(self, "sigma", text='Sigma', slider=True)
         exp = col.column()
         exp.enabled = not self.anisotropic
         exp.prop(self, "exponent")
@@ -333,6 +328,7 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlassShaderNode'
     bl_label = 'glass'
     bl_icon = 'MATERIAL'
+    glassparams = {}
     
     # properties..
     absorption =        MatProperty.absorption
@@ -369,6 +365,11 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
         col.prop(self, "glass_transmit", slider=True)
         col.prop(self, "fake_shadows")
         col.prop(self, "IOR_refraction")
+    #
+    def getParams(self):
+        #for input in self.inputs:
+        self.glassparams['Mirror']= self.inputs['Mirror'].getParams()
+        #self.glassparams['Bumpmap'] = self.inputs['Bumpmap'].getParams()
 #
 bounty_node_class.append(TheBountyGlassShaderNode)
 
@@ -425,7 +426,8 @@ class TheBountyBrdfNode(Node, TheBountyMaterialNode):
         layout.prop(self,'sigma', text='', slider=True)       
 #
 bounty_node_class.append(TheBountyBrdfNode)   
-'''       
+'''
+       
 #------------------------------------------------
 # Imagemap node
 #------------------------------------------------
@@ -436,6 +438,7 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     bl_idname = 'TheBountyImageMapNode'
     bl_label = 'Image'
     bl_width_min = 225
+    textParams={}
     
     # reuse properties
     image_map = TexProperty.image_map
@@ -452,16 +455,16 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     negative = TexProperty.negative
     no_rgb = TexProperty.no_rgb
     stencil = TexProperty.stencil
+    # test
+    default_value = TexProperty.zero_to_one
+    from_dupli = TexProperty.bool_option
     
     def init(self, context):
         self.outputs.new('NodeSocketColor', 'Color')
         
     def draw_buttons(self, context, layout):
         #
-        layout.label('Image file')
-        row = layout.row(align=True)
-        row.operator('image.unpack', text='')
-        row.prop_search(self, 'image_map', bpy.data, "images")
+        layout.prop_search(self, 'image_map', bpy.data, "images")
         layout.prop(self, 'influence', text='Texture Influence', slider=True)
         # blending
         row = layout.row()
@@ -470,11 +473,13 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
         row = layout.row()
         row.prop(self, 'no_rgb')
         row.prop(self, 'stencil')
+        layout.prop(self, 'default_value', text='Default value', slider=True)
         
         layout.label('Texture Mapping')
-        layout.prop(self, 'texture_coord')
+        layout.prop(self, 'texture_coord', text='Coordinates')
         layout.prop(self, 'projection_type')
         row = layout.row()
+        row.prop(self, 'from_dupli', text='Dupli', toggle=True)
         row.prop(self, 'mapping_x', text='')
         row.prop(self, 'mapping_y', text='')
         row.prop(self, 'mapping_z', text='')
@@ -485,8 +490,25 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
         col = row.column(align=True)
         col.label('Scale')
         col.prop(self, 'scale', text='')
-        
-#
+    
+    
+    def getParams(self):
+        #
+        self.textParams['texture_coord'] = self.texture_coord
+        self.textParams['projection_type'] = self.projection_type
+        self.textParams['mapping_x'] = self.mapping_x
+        self.textParams['mapping_y'] = self.mapping_y
+        self.textParams['mapping_z'] = self.mapping_z
+        self.textParams['offset'] = [ o for o in self.offset]
+        self.textParams['scale'] = [s for s in self.scale]
+        #
+        self.textParams['blend'] = self.blend
+        self.textParams['negative'] = self.negative
+        self.textParams['no_rgb'] = self.no_rgb
+        self.textParams['stencil'] = self.stencil
+        #
+        return self.textParams
+    
 bounty_node_class.append(TheBountyImageMapNode)
 
 '''
@@ -519,16 +541,14 @@ class TheBountyNodeCategory(NodeCategory):
         engine = context.scene.render.engine
         return context.space_data.tree_type =='TheBountyMaterialNodeTree' and engine == 'THEBOUNTY'
 
-'''# all categories in a list
+# all categories in a list
 TheBountyMaterialNodeCategories = [
     # identifier, label, items list
     
     TheBountyNodeCategory("TheBountyMaterial", "Material", items=[
         # output node
         NodeItem(TheBountyMaterialOutputNode.bl_idname),
-        ]),
-'''
-TheBountyMaterialNodeCategories = [    
+        ]),                   
     TheBountyNodeCategory("TheBountyShaders", "Shaders", items=[
         # shader nodes, use bl_idname's 
         NodeItem(TheBountyShinyDiffuseShaderNode.bl_idname),

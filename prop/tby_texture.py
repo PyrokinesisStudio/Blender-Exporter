@@ -138,7 +138,16 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
             name = "Scale", description = "", subtype = "XYZ", 
             min=-100.0, max=100.0, step=1, precision=2, default = (1.0, 1.0, 1.0)
     )
-    
+    zero_to_one = bpy.props.FloatProperty(
+            name="Amount", description="",
+            min=0.0, max=1.0, step=1, precision=3,
+            soft_min=0.0, soft_max=1.0, default=1.00
+    )
+    min_one_to_one = bpy.props.FloatProperty(
+            name="Amount", description="",
+            min=-1.0, max=1.0, step=1, precision=3,
+            soft_min=-1.0, soft_max=1.0, default=1.00
+    )    
     influence = bpy.props.FloatProperty(
             name="Influence", description="Amount of texture/color influence on a  material ( 0 : color, 1: texture)",
             min=0.0, max=1.0, step=1, precision=3,
@@ -163,6 +172,10 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
     )
     stencil = bpy.props.BoolProperty(
             name='Stencil', description='',
+            default=False
+    )
+    bool_option = bpy.props.BoolProperty(
+            name='Boolean', description='',
             default=False
     )
 

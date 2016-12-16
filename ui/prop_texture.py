@@ -655,7 +655,7 @@ class TheBounty_PT_influence(TextureSlotPanel, Panel):
                 value = shaderNodes[node]
                 factor_but(col, value[0], value[1], value[2])
                 if node == "Bump" and getattr(tex, "use_map_normal") and texture.bounty.tex_type == 'IMAGE':
-                    col.prop(texture, "yaf_is_normal_map", "Use map as normal map")
+                    col.prop(texture, "is_normal_map", "Use map as normal map")
 
         elif isinstance(idblock, World):  # for setup world texture
             split = layout.split()
