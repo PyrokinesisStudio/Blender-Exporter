@@ -32,7 +32,6 @@ bl_info = {
 
 import sys
 import os
-import ctypes
 
 
 PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
