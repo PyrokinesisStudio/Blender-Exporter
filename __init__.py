@@ -23,7 +23,7 @@ bl_info = {
     "description": "TheBounty Renderer integration for Blender",
     "author": "Pedro Alcaide (povmaniaco), rubdos, TynkaTopi, paultron",
     "version": (0, 1, 6, 4),
-    "blender": (2, 75, 0),
+    "blender": (2, 78, 0),
     "location": "Info Header > Engine dropdown menu",
     "wiki_url": "https://github.com/TheBounty/Blender-Exporter/wiki",
     "tracker_url": "https://github.com/TheBounty/Blender-Exporter/issues",
@@ -35,38 +35,9 @@ import os
 import ctypes
 
 
-PLUGIN_PATH = os.path.join(__path__[0], 'bin', 'plugins')
-BIN_PATH = os.path.join(__path__[0], 'bin')
-sys.path.append(BIN_PATH)
-
-#---------------------------------------------------------------
-# The order of libs is very important. Please do not alter it.
-#---------------------------------------------------------------
-if sys.platform == 'win32':
-    for file in os.listdir(BIN_PATH):
-        # load dll's from a MSVC build's
-        if file in {'yafaraycore.dll'}:
-            dllArray = ['zlib', 'libiconv', 'libpng16', 'jpeg8', 'libtiff', 'libxml2', 'Half', 'Iex', \
-                        'Imath', 'IlmThread', 'IlmImf', 'yafaraycore', 'yafarayplugin']
-            break
-        # load dll's from a GCC build's
-        else:
-            dllArray = ['libzlib', 'libiconv-2', 'libxml2', 'libjpeg-8', 'libpng16', 'libtiff-5', \
-                        'libfreetype', 'libHalf', 'libIex', 'libIlmThread', 'libImath', \
-                        'libIlmImf', 'libyafaraycore', 'libyafarayplugin']
-
-elif sys.platform == 'darwin':
-    dllArray = ['libyafaraycore.dylib', 'libyafarayplugin.dylib']
-
-else: # linux
-    dllArray = ['libyafaraycore.so', 'libyafarayplugin.so']
-
-# load libraries
-for dll in dllArray:
-    try:
-        ctypes.cdll.LoadLibrary(os.path.join(BIN_PATH, dll))
-    except Exception as e:
-        print("ERROR: Failed to load library {0}, {1}".format(dll, repr(e)))
+PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
+BIN_PATH = os.environ['BOUNTY_ROOT']
+sys.path.insert(0,BIN_PATH)
 
 #--------------------------
 # import exporter modules
