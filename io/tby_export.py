@@ -120,26 +120,48 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
    
     def object_on_visible_layer(self, obj):
         obj_visible = False
-        for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
-            obj_visible |= layer_visible
+        # test
+        for i in range(len(self.scene.layers)):
+            if obj.layers[i] and self.scene.layers[i]:
+                #if self.scene.render.layers[i]:
+                obj_visible = True
+        #for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
+        #    obj_visible |= layer_visible
         return obj_visible
+    #
+    def exportableObjects(self, obj):
+        # geometry object visibility cases:
+        #    renderables:
+        #        is hidden on viewport (obj.hide), but is renderable because:
+        #            not obj.hide_render is enabled
+        #            object_on_visible_layer is True
+        #    not renderables:
+        #        object is showed on viewport only for scene distribution issues but:
+        #            obj.hide_render is enabled
+        if not obj.hide_render:
+            if obj.is_visible(self.scene) or self.object_on_visible_layer(obj):
+                return True
+        
+        return False
     
     # test for create scene collections objects in 'one pass'( lamps, meshes,..)
     def exportObjects(self):
-        sceneMeshes = list() #set()   # MESH 
+        sceneMeshes = list()   # MESH 
         sceneSurfaces = list() # SURFACE 
         sceneCurves = list()   # CURVE
         sceneFonts = list()    # FONT 
         sceneEmpties = list()  # EMPTY
         sceneLamps = list()    # LAMP
+        sceneGeometry = list() # for accumulate different geometry objects
         
         for obj in self.scene.objects:
             if obj.type =='LAMP':       sceneLamps.append(obj)
             if obj.type =='MESH':       sceneMeshes.append(obj)
             if obj.type =='CURVE':      sceneCurves.append(obj)
             if obj.type =='SURFACE':    sceneSurfaces.append(obj)
-            # test
-            #sceneMeshes += sceneCurves
+        # test
+        sceneMeshes += sceneCurves
+        sceneGeometry += sceneMeshes
         
         self.yi.printInfo("Exporter: Processing Lamps...")
 
@@ -148,7 +170,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #---------------------------
         for obj in sceneLamps:
             #if obj.type == 'LAMP':
-            if not obj.hide_render and obj.is_visible(self.scene):
+            if not obj.hide_render and (obj.is_visible(self.scene)or obj.hide):
                 if obj.is_duplicator:
                     obj.create_dupli_list(self.scene)
                     for obj_dupli in obj.dupli_list:
@@ -164,21 +186,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                     self.lights.createLight(self.yi, obj, obj.matrix_world)
             #else:
             #    continue
-        '''
-        for obj in [o for o in self.scene.objects if not o.hide_render and o.is_visible(self.scene) and o.type == 'LAMP']:
-            if obj.is_duplicator:
-                obj.create_dupli_list(self.scene)
-                for obj_dupli in obj.dupli_list:
-                    matrix = obj_dupli.matrix.copy()
-                    self.lights.createLight(self.yi, obj_dupli.object, matrix)
-
-                if obj.dupli_list:
-                    obj.free_dupli_list()
-            else:
-                if obj.parent and obj.parent.is_duplicator:
-                    continue
-                self.lights.createLight(self.yi, obj, obj.matrix_world)
-        '''
+        
         self.yi.printInfo("Exporter: Processing Geometry...")
 
         #-----------------------------
@@ -186,9 +194,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-----------------------------
         baseIds = {}
         dupBaseIds = {}
-
-        for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        
+        #for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        #and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        for obj in [o for o in sceneGeometry if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        and self.object_on_visible_layer(o)]:
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))
@@ -221,8 +231,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                             self.geometry.writeMesh(obj, matrix)
 
             # no need to write empty object from here on, so continue with next object in loop
-            elif obj.type == 'EMPTY':
-                continue
+            #elif obj.type == 'EMPTY':
+            #    continue
 
             # Exporting objects with shared mesh data blocks as instances
             elif obj.data.users > 1 and self.scene.render.use_instances:
