@@ -125,6 +125,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             if obj.layers[i] and self.scene.layers[i]:
                 #if self.scene.render.layers[i]:
                 obj_visible = True
+                break
         #for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
         #    obj_visible |= layer_visible
         return obj_visible
@@ -184,8 +185,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                     if obj.parent and obj.parent.is_duplicator:
                         continue
                     self.lights.createLight(self.yi, obj, obj.matrix_world)
-            #else:
-            #    continue
         
         self.yi.printInfo("Exporter: Processing Geometry...")
 
@@ -208,7 +207,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                     #self.exportTexture(obj_dupli.object)
                     for mat_slot in obj_dupli.object.material_slots:
                         if mat_slot.material not in self.exportedMaterials:
-                            self.exportMaterial(mat_slot.material)
+                            self.exportMaterial(obj_dupli, mat_slot.material)
 
                     if not self.scene.render.use_instances:
                         matrix = obj_dupli.matrix.copy()
@@ -455,7 +454,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             if scene.gs_z_channel and not scene.img_output == 'OPEN_EXR':
                 # TODO: need review that option for load both files when z-depth is rendered
                 # except when use exr format
-                lay.load_from_file("{0}.{1}".format(self.output, self.file_type))
+                #lay.load_from_file("{0}.{1}".format(self.output, self.file_type))
                 lay.load_from_file("{0}_zbuffer.{1}".format(self.output, self.file_type))
                 
             else:
@@ -486,11 +485,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 lay = result.layers[0]
                 try:
                     lay = result.layers[0]
-                    if bpy.app.version < (2, 74, 4 ):
-                        lay.rect, lay.passes[0].rect = tile 
-                    else:
+                    #if bpy.app.version < (2, 74, 4 ):
+                    #    lay.rect, lay.passes[0].rect = tile 
+                    #else:
                         #result.layers[0].passes[0]
-                        lay.passes[0].rect, lay.passes[1].rect = tile
+                    lay.passes[0].rect, lay.passes[1].rect = tile
                 except:
                     pass
 

@@ -280,11 +280,12 @@ class TheBounty_PT_blend_texture(TextureTypePanel, Panel):
 
         tex = context.texture
         layout.prop(tex, "progression")
-        if tex.progression not in 'LINEAR':  # TODO: remove this if other progression types are supported
-            layout.label(text="Not yet supported")
-        else:
-            layout.label(text=" ")
 
+        sub = layout.row()
+
+        sub.active = (tex.progression in {'LINEAR', 'QUADRATIC', 'EASING', 'RADIAL'})
+        sub.prop(tex, "use_flip_axis", expand=True)
+                
 
 class TheBounty_PT_image_texture(TextureTypePanel, Panel):
     bl_label = "Map Image"
@@ -298,12 +299,12 @@ class TheBounty_PT_image_texture(TextureTypePanel, Panel):
         layout.template_image(tex, "image", tex.image_user)
         
         
-def imageTexturePoll(cls, context):
-    idblock = context_tex_datablock(context)
-    engine = context.scene.render.engine
-    tex = context.texture
-    
-    return tex and (tex.bounty.tex_type == cls.tex_type and (engine in cls.COMPAT_ENGINES))
+    def imageTexturePoll(cls, context):
+        idblock = context_tex_datablock(context)
+        engine = context.scene.render.engine
+        tex = context.texture
+        
+        return tex and (tex.bounty.tex_type == cls.tex_type and (engine in cls.COMPAT_ENGINES))
     
 
 class TheBounty_PT_image_sampling(TextureTypePanel, Panel):
@@ -314,7 +315,7 @@ class TheBounty_PT_image_sampling(TextureTypePanel, Panel):
     
     @classmethod
     def poll(cls, context):
-        return imageTexturePoll(cls, context)
+        return TheBounty_PT_image_texture.imageTexturePoll(cls, context)
     #
     def draw(self, context):
         idblock = context_tex_datablock(context)
@@ -345,7 +346,7 @@ class TheBounty_PT_image_mapping(TextureTypePanel, Panel):
     def poll(cls, context):
         idblock = context_tex_datablock(context)
         #
-        return imageTexturePoll(cls, context) and not isinstance(idblock, World)
+        return TheBounty_PT_image_texture.imageTexturePoll(cls, context) and not isinstance(idblock, World)
         
     
     def draw(self, context):

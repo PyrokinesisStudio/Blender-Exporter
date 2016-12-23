@@ -489,14 +489,24 @@ class exportObject(object):
                     # set particle material values. if don't have
                     # material assigned in blender, use default one
                     #-----------------------------------------------
+                    #
+                    yi.printWarning(" ALERT!!: "+ format(pSys.settings.name) + " " + format(mod.particle_system.name))
                     strandStart = 0.01
                     strandEnd = 0.01
                     strandShape = 0.0                    
-                    hairMat = "default"  
-                                        
+                    hairMat = "default"
+                    
+                    # test for fix hair material
                     if obj.active_material is not None:
-                        hairMat = obj.active_material
-                        strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
+                        mat_index = pSys.settings.material - 1
+                        if len(obj.material_slots) != 0:
+                            #hairMatName = obj.material_slots[mat_index].name
+                            hairMat = bpy.data.materials[obj.material_slots[mat_index].name] #[hairMatName]                    
+                                       
+                            #if obj.active_material is not None:
+                            #hairMat = obj.active_material
+                            strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
+                    #yi.printWarning("material is: " + hairMat.name)
                     # exception: if clay render is activated
                     if self.scene.bounty.gs_clay_render:
                         hairMat = "clay"

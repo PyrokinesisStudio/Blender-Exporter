@@ -338,24 +338,25 @@ class THEBOUNTY_PT_Spot_lamp(TheBountyLightTypePanel, Panel):
     #
     def draw_spot_shape(self, context):
         layout = self.layout
-        lamp = context.lamp.bounty
+        lamp = context.lamp #.bounty
         
         layout.label("Spot shape settings:")
         
         row = layout.row()
-        row.prop(context.lamp, "spot_size", text="Size")
-        row.prop(context.lamp, "spot_blend", text="Blend", slider=True)
+        row.prop(lamp, "spot_size", text="Size")
+        row.prop(lamp, "spot_blend", text="Blend", slider=True)
         
         split = layout.split()
         col = split.column(align=True)
-        col.prop(lamp, "show_dist_clip", toggle=True)
-        if lamp.show_dist_clip:
-            col.prop(context.lamp, "distance")
-            col.prop(context.lamp, "shadow_buffer_clip_start", text="Clip Start")
-            col.prop(context.lamp, "shadow_buffer_clip_end", text=" Clip End")
+        col.prop(lamp.bounty, "show_dist_clip", toggle=True)
+        if lamp.bounty.show_dist_clip:
+            col.prop(lamp, "distance")
+            col.prop(lamp, "shadow_buffer_clip_start", text="Clip Start")
+            col.prop(lamp, "shadow_buffer_clip_end", text=" Clip End")
 
         col = split.column()
-        col.prop(context.lamp, "show_cone", toggle=True)
+        col.prop(lamp, "show_cone", toggle=True)
+
 # end type panel test -----------------------------------------------------------------
 
        

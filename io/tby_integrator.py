@@ -59,7 +59,8 @@ def haveSSS():
 #
 def checkPreview(preview, scene):
     transp_BG = False if preview else scene.bg_transp
-    transp_Refract_BG = False if (preview or not transp_BG) else scene.bg_transp_refract
+    #transp_Refract_BG = False if (preview or not transp_BG) else scene.bg_transp_refract
+    transp_Refract_BG = False if not transp_BG else scene.bg_transp_refract
     
     return transp_BG, transp_Refract_BG
         

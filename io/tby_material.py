@@ -306,8 +306,8 @@ class TheBountyMaterialWrite:
             "color"             : linked_node.inputs['Glossy'].glossy_color     if nodemat else mat.bounty.glossy_color,
             "glossy_reflect"    : linked_node.inputs['Specular'].glossy_reflect if nodemat else mat.bounty.glossy_reflect,
             "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect if nodemat else mat.bounty.diffuse_reflect,
-            "diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type          if nodemat else mat.bounty.brdf_type,
-            "sigma"             : linked_node.inputs['BRDF'].sigma              if nodemat else mat.bounty.sigma,                
+            #"diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type          if nodemat else mat.bounty.brdf_type,
+            #"sigma"             : linked_node.inputs['BRDF'].sigma              if nodemat else mat.bounty.sigma,                
         }
         return materialParams
             
@@ -540,7 +540,7 @@ class TheBountyMaterialWrite:
         yi = self.yi
         yi.paramsClearAll()
         '''
-        www.facebook.com/groups/RecursosProgramacion
+        chequear los nodos admitidos por cada slot
         '''
         if linked_node is not None:
             diffuse = linked_node.inputs['Diffuse']

@@ -69,6 +69,10 @@ capitalizeImageFileExtension = {
         'hdr':'HDR',
         'exr':'OPEN_EXR',
 }
+flipAxis = {
+        'VERTICAL': False,
+        'HORIZONTAL': True,
+}
 
 def noise2string(ntype):
     a = {
@@ -107,8 +111,11 @@ class exportTexture:
             yi.printInfo("Exporter: Creating Texture: '{0}' type {1}".format(name, tex.bounty.tex_type))
             yi.paramsSetString("type", "blend")
 
-            stype = switchBlendType.get(tex.progression, 'lin')  # set blend type for blend texture, default is 'lin'
+            stype = switchBlendType.get(tex.progression, 'lin')
             yi.paramsSetString("stype", stype)
+            flip = flipAxis.get(tex.use_flip_axis, False)
+            yi.paramsSetBool("invertXY", flip )
+            print('flip..', flip)
 
             textureConfigured = True
 

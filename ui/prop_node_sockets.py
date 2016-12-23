@@ -112,6 +112,9 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
     diff_color = MatProperty.diff_color
     diffuse_reflect = MatProperty.diffuse_reflect
     
+    def validLink(self, node):
+        pass
+    
     # useful helper functions
     def default_value_get(self):
         return self.diff_color
@@ -138,6 +141,7 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
         #self.matParams['DiffuseLayer']= None
         #self.matParams['diffuse_shader']= None
         if self.is_linked:
+            print(self.links[0].from_node.bl_label)
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
                 self.matParams['diffuse_shader']='diff_layer'
