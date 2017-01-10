@@ -59,8 +59,8 @@ def haveSSS():
 #
 def checkPreview(preview, scene):
     transp_BG = False if preview else scene.bg_transp
-    #transp_Refract_BG = False if (preview or not transp_BG) else scene.bg_transp_refract
-    transp_Refract_BG = False if not transp_BG else scene.bg_transp_refract
+    transp_Refract_BG = False if (preview or not transp_BG) else scene.bg_transp_refract
+    #transp_Refract_BG = False if not transp_BG else scene.bg_transp_refract
     
     return transp_BG, transp_Refract_BG
         
@@ -133,7 +133,7 @@ class exportIntegrator:
                 yi.paramsSetFloat("caustic_radius", scene.intg_caustic_radius)
 
         elif lightIntegrator == "bidirectional":
-            yi.paramsSetBool("do_LightImage", scene.intg_do_lightImage)
+            #yi.paramsSetBool("do_LightImage", scene.intg_do_lightImage)
             if not haveLights():
                 yi.printWarning('Bidirectional Integrator need a lights on scene for work')
                 return False

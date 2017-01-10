@@ -264,8 +264,12 @@ class exportObject(object):
         self.yi.paramsSetInt("samples", obj.ml_samples)
         self.yi.paramsSetInt("object", ID)
         self.yi.createLight(object.name)
+        # test for hidden meshlight object
+        objType=0
+        if obj.ml_hidde_mesh:
+            objType = 256
 
-        self.writeGeometry(ID, object, matrix, 0, ml_mat)  # obType in 0, default, the object is rendered
+        self.writeGeometry(ID, object, matrix, objType, ml_mat)
 
     def writeVolumeObject(self, object, matrix):
         # use object subclass properties

@@ -39,11 +39,6 @@ class THEBOUNTY_PT_integrator(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene.bounty
-
-        #----------------------------------------------------------------------------------
-        # povman: sync integrator names in core 'registerFactory' functions
-        # directlighting, photonmapping, pathtracing, DebugIntegrator, bidirectional, SPPM
-        #----------------------------------------------------------------------------------
         integrator = scene.intg_light_method
         layout.prop(scene, "intg_light_method", text="")
         # for recursive raytracing..

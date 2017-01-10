@@ -135,10 +135,10 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
         split = layout.split()
         col = split.column(align=True)
         col.prop(lamp, "show_dist_clip", toggle=True)
-        if lamp.show_dist_clip:
-            col.prop(context.lamp, "distance")
-            col.prop(context.lamp, "shadow_buffer_clip_start", text="Clip Start")
-            col.prop(context.lamp, "shadow_buffer_clip_end", text=" Clip End")
+        #if lamp.show_dist_clip:
+        col.prop(context.lamp, "distance")
+        col.prop(context.lamp, "shadow_buffer_clip_start", text="Clip Start")
+        col.prop(context.lamp, "shadow_buffer_clip_end", text=" Clip End")
 
         col = split.column()
         col.prop(context.lamp, "show_cone", toggle=True)

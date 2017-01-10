@@ -385,7 +385,9 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         filePath = os.path.realpath(filePath)
         filePath = os.path.normpath(filePath)
 
-        [self.sizeX, self.sizeY, self.bStartX, self.bStartY, self.bsizeX, self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
+        [self.sizeX,   self.sizeY, 
+         self.bStartX, self.bStartY, 
+         self.bsizeX,  self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
 
         if render.use_border:
             self.resX = self.bsizeX
@@ -500,10 +502,10 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 result = self.begin_result(0, 0, w, h)
                 try:
                     lay = result.layers[0]
-                    if bpy.app.version < (2, 74, 4 ):
-                        lay.rect, lay.passes[0].rect = tile 
-                    else:
-                        lay.passes[0].rect, lay.passes[1].rect = tile
+                    #if bpy.app.version < (2, 74, 4 ):
+                    #    lay.rect, lay.passes[0].rect = tile 
+                    #else:
+                    lay.passes[0].rect, lay.passes[1].rect = tile
                 except BaseException as e:
                     pass
 

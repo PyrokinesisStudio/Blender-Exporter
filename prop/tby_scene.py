@@ -436,7 +436,13 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             name="Do lightimage",
             description="Enable or disabled the use of lightimage option for bidir",
             default=True
-    )        
+    )
+    intg_max_path_len = IntProperty(
+            name="Max Pathlen",
+            description="",
+            min=8,
+            default=32
+    )           
     #--------------------------
     # Anti-aliasing properties
     #--------------------------
