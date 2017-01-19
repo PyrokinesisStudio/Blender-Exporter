@@ -145,7 +145,7 @@ class Thebounty_OT_UpdateBlend(Operator):
     # test: try to add blend's material selected to slots for easy edit
     #--------------------------------------------------------------------------
     bl_idname = "material.parse_blend"
-    bl_label = "Sync with material slots or Fix empty item"
+    bl_label = "Sync material slots or Fix empty selector"
     bl_description = "Sync material slots with selected materials or fix empty selected item"
     
     @classmethod
@@ -165,14 +165,8 @@ class Thebounty_OT_UpdateBlend(Operator):
                 bpy.data.materials.new('blendone')
             mat.bounty.blendOne = 'blendone'
         #
-        mat1 = bpy.data.materials[mat.bounty.blendOne]
-        
-        if len(obj.data.materials) < 2:
-            obj.data.materials.append(mat1)
-                        
-        if len(obj.data.materials) > 1:
-            if obj.data.materials[1].name is not mat.bounty.blendOne:
-                obj.data.materials[1] = mat1
+        if mat.bounty.blendOne not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendOne])
         #----------------------------------------
         # sync material slot 2 or fix empty item
         #----------------------------------------
@@ -181,13 +175,8 @@ class Thebounty_OT_UpdateBlend(Operator):
                 bpy.data.materials.new('blendtwo')
             mat.bounty.blendTwo = 'blendtwo'
         #
-        mat2 = bpy.data.materials[mat.bounty.blendTwo]
-        if len(obj.data.materials) < 3: 
-            obj.data.materials.append(mat2)
-        # 
-        if len(obj.data.materials) > 2:
-            if obj.data.materials[2].name is not mat.bounty.blendTwo:
-                obj.data.materials[2] = mat2
+        if mat.bounty.blendTwo not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendTwo])
         
         return {'FINISHED'}
     
@@ -373,7 +362,7 @@ class Thebounty_OT_ParseIBL(Operator):
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
-            evfile = self.iblValues.get('EV')
+            evfile = self.iblValues.get('EVfile')
             newval = os.path.join(iblFolder, evfile) 
             worldTexture.image.filepath = newval
         
@@ -402,13 +391,31 @@ class Thebounty_OT_ParseIBL(Operator):
         while line != "":
             line = f.readline()
             if line.startswith('ICOfile'):
-                self.parseValue(line, 2) # string
-            # string / path:
+                self.iblValues['ICOfile']= self.parseValue(line, 2) # string
+            #
             if line.startswith('PREVIEWfile'):
-                self.iblValues['PRE']= self.parseValue(line, 2)        
-            # string / path:
+                self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
+            
+            #[Background]
             if line.startswith('BGfile'):
-                self.iblValues['BG']= self.parseValue(line, 2)
+                self.iblValues['BGfile']= self.parseValue(line, 2) # string
+            #
+            if line.startswith('BGheight'):
+                self.iblValues['BGheight']= self.parseValue(line, 1) # integer
+            
+            # [Enviroment]
+            if line.startswith('EVfile'):
+                self.iblValues['EVfile']= self.parseValue(line, 2) # string
+            #
+            if line.startswith('EVheight'):
+                self.iblValues['EVheight']= self.parseValue(line, 1) # integer
+            #
+            if line.startswith('EVgamma'):
+                self.iblValues['EVgamma']= self.parseValue(line, 0) # float
+            
+            # [Reflection]   
+            if line.startswith('REFfile'):
+                self.iblValues['REFfile']= self.parseValue(line, 2) # string
                 
             # integer:
             if line.startswith('BGheight'):

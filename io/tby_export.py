@@ -98,57 +98,34 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.lightIntegrator = exportIntegrator(self.yi, self.is_preview)
               
         # textures before materials
-        self.yaf_texture = exportTexture(self.yi)
+        self.textures = exportTexture(self.yi)
              
         # and materials
-        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.yaf_texture.loadedTextures)
+        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.textures.loadedTextures)
 
     def exportScene(self):
         #
-        for obj in self.scene.objects:
-            self.exportTexture(obj)
+        self.exportTextures()
+        #for obj in self.scene.objects:
+        #    self.exportTexture(obj)
             
         self.exportMaterials()
         self.geometry.setScene(self.scene)
         self.exportObjects()
         self.geometry.createCamera()
         self.environment.setEnvironment(self.scene)
-
-    def exportTexture(self, obj):
-        # create two basic material definition for use when any blend component are selected.
+    
+    def exportTextures(self):
+        # find all used scene textures
+        #textureScene=[]
         self.createDefaultBlends()
-        
-        # First export textures from blend materials
-        for mat_slot in [m for m in obj.material_slots if m.material is not None]:
-            #    
-            if mat_slot.material.bounty.mat_type == 'blend':
-                #-------------------------------------------
-                # comprobamos que no este vacio ni contenga el mismo blend
-                # si es asi, usamos el material 'blendone' por defecto
-                blendname = mat_slot.material.name
-                #if mat_slot.material.bounty.blendOne =="":
-                if mat_slot.material.bounty.blendOne in {"", blendname}:
-                    mat_slot.material.bounty.blendOne = 'blendone'
-                # es seguro que este material esta creado?. Si, se ha creado automaticamente
-                mat1 = bpy.data.materials[mat_slot.material.bounty.blendOne]
-                
-                if mat_slot.material.bounty.blendTwo in {"", blendname, mat1.name}:
-                    mat_slot.material.bounty.blendTwo = 'blendtwo'
-                #
-                mat2 = bpy.data.materials[mat_slot.material.bounty.blendTwo]
-                #                
-                for blendMat in [mat1, mat2]:
-                    for blendTex in [bt for bt in blendMat.texture_slots if (bt and bt.texture and bt.use)]:
-                        if self.is_preview and blendTex.texture.name == 'fakeshadow':
-                            continue
-                        self.yaf_texture.writeTexture(self.scene, blendTex.texture)
-            else:
-                #
-                for tex in [t for t in mat_slot.material.texture_slots if (t and t.texture and t.use)]:
-                    if self.is_preview and tex.texture.name == "fakeshadow":
-                        continue
-                    self.yaf_texture.writeTexture(self.scene, tex.texture)
-
+        for tex in bpy.data.textures:
+            # skip 'preview' and 'world environment' textures
+            if (self.is_preview and tex.name == "fakeshadow") or not tex.users_material:
+                continue
+            self.textures.writeTexture(self.scene, tex)
+    
+   
     def object_on_visible_layer(self, obj):
         obj_visible = False
         for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
@@ -191,7 +168,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 obj.dupli_list_create(self.scene)
 
                 for obj_dupli in [od for od in obj.dupli_list if not od.object.type == 'EMPTY']:
-                    self.exportTexture(obj_dupli.object)
+                    #self.exportTexture(obj_dupli.object)
                     for mat_slot in obj_dupli.object.material_slots:
                         if mat_slot.material not in self.exportedMaterials: #materials:
                             self.exportMaterial(mat_slot.material)
@@ -404,8 +381,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             self.yi.setInputGamma(scene.bounty.gs_gamma_input, scene.bounty.sc_apply_gammaInput)
 
         self.yi.startScene()
-        self.exportScene()# to above, line 92
-        self.lightIntegrator.exportIntegrator(self.scene.bounty) # lightIntegrator, line 26
+        self.exportScene()
+        self.lightIntegrator.exportIntegrator(self.scene.bounty)
         self.lightIntegrator.exportVolumeIntegrator(self.scene)
 
         # must be called last as the params from here will be used by render()

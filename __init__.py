@@ -23,7 +23,7 @@ bl_info = {
     "description": "TheBounty Renderer integration for Blender",
     "author": "Pedro Alcaide (povmaniaco), rubdos, TynkaTopi, paultron",
     "version": (0, 1, 6, 4),
-    "blender": (2, 75, 0),
+    "blender": (2, 78, 0),
     "location": "Info Header > Engine dropdown menu",
     "wiki_url": "https://github.com/TheBounty/Blender-Exporter/wiki",
     "tracker_url": "https://github.com/TheBounty/Blender-Exporter/issues",
@@ -32,7 +32,6 @@ bl_info = {
 
 import sys
 import os
-import ctypes
 
 BIN_PATH = os.environ['BOUNTY_ROOT'] # os.path.join(__path__[0], 'bin')
 PLUGIN_PATH = BIN_PATH +'/plugins' #os.path.join(__path__[0], 'bin', 'plugins')

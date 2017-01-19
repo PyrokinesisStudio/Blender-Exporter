@@ -361,6 +361,7 @@ class exportTexture:
             if clipping == 'checker':
                 yi.paramsSetBool("even_tiles", tex.use_checker_even)
                 yi.paramsSetBool("odd_tiles", tex.use_checker_odd)
+                yi.paramsSetFloat("checker_dist", tex.checker_distance)
 
             # crop min/max
             yi.paramsSetFloat("cropmin_x", tex.crop_min_x)
