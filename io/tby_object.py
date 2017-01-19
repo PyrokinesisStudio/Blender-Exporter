@@ -24,8 +24,47 @@ import time
 import math
 import mathutils
 import yafrayinterface
+from bpy.path import abspath
+#
+from . import tby_smoke as df3
 
+def setSmoke(self, object):
+    #
+    domain = False
+    mod = None
+    #
+    for modifier in object.modifiers:
+        if modifier.name == 'Smoke':
+            mod = modifier
+            if modifier.smoke_type == 'DOMAIN':
+                domain = True
+                
+    return domain, mod
 
+def readSmoke(self, modifier):
+    # read smoke
+    big_res = []
+    channeldata = []
+    
+    set = modifier.domain_settings
+    if set.use_adaptive_domain:
+
+        for v in set.density_grid:
+            channeldata.append(v.real)
+        #
+        big_res.append(set.domain_resolution[0])
+        big_res.append(set.domain_resolution[1])
+        big_res.append(set.domain_resolution[2])
+        #
+        #if set.use_high_resolution:
+        #    big_res[0] *= (set.amplify + 1)
+        #    big_res[1] *= (set.amplify + 1)
+        #    big_res[2] *= (set.amplify + 1)
+             
+                   
+    return (big_res[0], big_res[1], big_res[2], channeldata)
+
+        
 def multiplyMatrix4x4Vector4(matrix, vector):
     result = mathutils.Vector((0.0, 0.0, 0.0, 0.0))
     for i in range(4):
@@ -126,6 +165,11 @@ class exportObject(object):
         yi.paramsSetPoint("from", pos[0], pos[1], pos[2])
         yi.paramsSetPoint("up", up[0], up[1], up[2])
         yi.paramsSetPoint("to", to[0], to[1], to[2])
+        #test for use  camera clipping
+        if cam.bounty.use_clipping:
+            yi.paramsSetFloat("nearClip", cam.clip_start)
+            yi.paramsSetFloat("farClip", cam.clip_end)
+        # end test
         yi.createCamera("cam")
 
     def getBBCorners(self, obj):
@@ -263,9 +307,13 @@ class exportObject(object):
         self.yi.paramsSetInt("samples", obj.ml_samples)
         self.yi.paramsSetInt("object", ID)
         self.yi.createLight(object.name)
+        
+        obType = 256  # Makes object invisible to the renderer (doesn't enter the kdtree)
 
-        self.writeGeometry(ID, object, matrix, 0, ml_mat)  # obType in 0, default, the object is rendered
-
+        self.writeGeometry(ID, object, matrix, obType, ml_mat)
+    
+    #--------------------------------------------------------------------------    
+    
     def writeVolumeObject(self, object, matrix):
         # use object subclass properties
         obj = object.bounty
@@ -299,11 +347,71 @@ class exportObject(object):
                 yi.paramsSetFloat("cover", obj.vol_cover)
                 yi.paramsSetFloat("density", obj.vol_density)
                 yi.paramsSetString("texture", texture.name)
+                
+        elif obj.vol_region == 'Grid Volume':
+            # common values
+            densfile = None        
+            densfile = abspath(obj.volDensityFile)
+            #------------------------------------------------
+            # using smoke data from scene
+            #------------------------------------------------
+            if obj.use_smoke_data:
+                dimValue = []
+                domain = False
+                modifier = None
+                [domain, modifier] = setSmoke(self, object)
+                if domain == True:
+                    #
+                    dimValue = readSmoke(self, modifier)
+                    #
+                    if dimValue[3].__len__() > 0:
+                        #
+                        #self.rawPBRT(dimValue)
+                        #
+                        data= dimValue[3]
+                        #print('Init df3 class')
+                        temp = df3.df3(dimValue[0], dimValue[1], dimValue[2])
+                        sX, sY, sZ = temp.size()
+                        
+                        #      
+                        for z in range(sZ):                       
+                            for y in range(sY):                                        
+                                for x in range(sX):
+                                    #temp.set(x, y, z, data[(z * (sX * sY) + y * sX + x)]) # the best??
+                                    temp.set(x, y, z, data[((z * sY) + y) * sX + x])
+                                    #temp.set(x, y, z, data[(z*sY+y)*sX+x])
+                                    # voxa use: ((z*sY+y)*sX+x)
+                        depth = 8
+                        if modifier:
+                            set = modifier.domain_settings 
+                            depth = set.resolution_max           
+                        # TODO: make path file to user folder?
+                        dfile = 'd:/devs/resources/df3/bakesmoke.df3'
+                        if densfile is not None:
+                            #dfile = densfile
+                            pass
+                        try:
+                            print('Write smoke data from scene..')
+                            temp.exportDF3(dfile, depth)
+                        except:
+                            print('Not smoke data. Try to generate smoke again')
+            #-----------------------------------------------------------------
+            # using external file
+            #-----------------------------------------------------------------
+            if densfile is not None:
+                if os.path.exists(densfile):
+                    yi.paramsSetString("density_file", densfile)
+                    yi.paramsSetString("type", "GridVolume")
+                else:
+                    yi.paramsSetString("type", "UniformVolume")
             
-        # common parameters
+        #----------------------------------------------    
+        # common parameters for volume objects
+        #----------------------------------------------
         yi.paramsSetFloat("sigma_a", obj.vol_absorp)
         yi.paramsSetFloat("sigma_s", obj.vol_scatter)
         yi.paramsSetInt("attgridScale", self.scene.world.bounty.v_int_attgridres)
+        #-------------------------------------------------------------------------       
 
         # Calculate BoundingBox: get the low corner (minx, miny, minz)
         # and the up corner (maxx, maxy, maxz) then apply object scale,
@@ -320,10 +428,33 @@ class exportObject(object):
         yi.paramsSetFloat("maxX", min(max(vec[0::3]), 1e10))
         yi.paramsSetFloat("maxY", min(max(vec[1::3]), 1e10))
         yi.paramsSetFloat("maxZ", min(max(vec[2::3]), 1e10))
-
-        yi.createVolumeRegion("VR.{0}-{1}".format(obj.name, str(obj.__hash__())))
+        
+        yi.createVolumeRegion("VR.{0}-{1}".format(object.name, str(object.__hash__())))
         bpy.data.meshes.remove(mesh)
 
+    def rawPBRT(self, data): #x, y, z, w):
+        #-----------------------------------------------
+        # small code to  write raw file for test on PBRT
+        #-----------------------------------------------
+        
+        dimValue = data
+        
+        f = open('d:/devs/raw.pbrt', 'w')
+        
+        f.write('Volume \"volumegrid\"\n')
+        f.write('\t\"integer nx\" '+ str(dimValue[0]) +'\n')
+        f.write('\t\"integer ny\" '+ str(dimValue[1]) +'\n')
+        f.write('\t\"integer nz\" '+ str(dimValue[2]) +'\n')
+        # fake..
+        f.write('\t\"point p0\" [ 0.0 0.0 0.0 ] \"point p1\" [1.0000 1.0000 1.0000 ]\n')
+        f.write('\t\"float density\" [') 
+        for i in dimValue[3]:
+            f.write(' '+ str(i))
+        f.write(' ]')
+        f.close() 
+        
+        return True
+    
     def writeGeometry(self, ID, obj, matrix, obType=0, oMat=None):
 
         mesh = obj.to_mesh(self.scene, True, 'RENDER')

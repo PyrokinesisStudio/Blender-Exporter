@@ -148,7 +148,11 @@ class exportIntegrator:
             yi.paramsSetInt("bounces", scene.intg_bounces)
             yi.paramsSetInt("passNums", scene.intg_pass_num)
             yi.paramsSetBool("pmIRE", scene.intg_pm_ire)
-            yi.paramsSetFloat("times", scene.intg_times)             
+            # test
+            times = scene.intg_times
+            if not scene.intg_pm_ire:
+                times = scene.intg_accurate_radius
+            yi.paramsSetFloat("times", times)             
         
         #----------------------------------
         # Sub-Surface Scattering integrator

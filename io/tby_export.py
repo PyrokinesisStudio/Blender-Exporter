@@ -115,7 +115,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.environment.setEnvironment(self.scene)
 
     def exportTexture(self, obj):
-        # create two basic material defination for use when any blend component are selected.
+        # create two basic material definition for use when any blend component are selected.
         self.createDefaultBlends()
         
         # First export textures from blend materials
@@ -123,13 +123,17 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             #    
             if mat_slot.material.bounty.mat_type == 'blend':
                 #-------------------------------------------
-                if mat_slot.material.bounty.blendOne =="":
-                    mat_slot.material.bounty.blendOne = bpy.data.materials['blendone']
-                #
+                # comprobamos que no este vacio ni contenga el mismo blend
+                # si es asi, usamos el material 'blendone' por defecto
+                blendname = mat_slot.material.name
+                #if mat_slot.material.bounty.blendOne =="":
+                if mat_slot.material.bounty.blendOne in {"", blendname}:
+                    mat_slot.material.bounty.blendOne = 'blendone'
+                # es seguro que este material esta creado?. Si, se ha creado automaticamente
                 mat1 = bpy.data.materials[mat_slot.material.bounty.blendOne]
                 
-                if mat_slot.material.bounty.blendTwo =="":
-                    mat_slot.material.bounty.blendTwo = bpy.data.materials['blendtwo']
+                if mat_slot.material.bounty.blendTwo in {"", blendname, mat1.name}:
+                    mat_slot.material.bounty.blendTwo = 'blendtwo'
                 #
                 mat2 = bpy.data.materials[mat_slot.material.bounty.blendTwo]
                 #                
@@ -247,17 +251,15 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-------------------------
         # blend material one
         #-------------------------
-        if mat.bounty.blendOne == "":
+        if mat.bounty.blendOne in {"", mat.name}:
+            self.yi.printWarning("Not valid material for blend component. Using default 'blendone'")
             mat.bounty.blendOne ='blendone'            
         mat1 = bpy.data.materials[mat.bounty.blendOne] 
         
+        # check for recursive blend        
         if mat1.bounty.mat_type == 'blend':
-            if mat1.name != mat.name:
-                self.handleBlendMat(obj, mat1)
-            else:
-                self.yi.printWarning("Exporter: Problem with blend material {0}."
-                                     " You can't use blend material {1}, inside their own blend defination".format(mat.name, mat1.name))
-                return
+            self.yi.printWarning("Exporter: Recursive Blend material not allowed. Changed type to shinydiffusemat")
+            mat1.bounty.mat_type = 'shinydiffusemat'
         #
         if mat1 not in self.exportedMaterials:
             self.exportedMaterials.add(mat1)
@@ -266,18 +268,15 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-------------------------
         # blend material two
         #-------------------------
-        if mat.bounty.blendTwo == "":
+        if mat.bounty.blendTwo in {"", mat.name, mat1.name}:
+            self.yi.printWarning("Not valid material for blend component. Using default 'blendtwo'")
             mat.bounty.blendTwo = 'blendtwo'
         mat2 = bpy.data.materials[mat.bounty.blendTwo]
         
         # check for recursive 'blend'
         if mat2.bounty.mat_type == 'blend':
-            if mat2.name != mat.name:
-                self.handleBlendMat(obj, mat2)
-            else:
-                self.yi.printWarning("Exporter: Problem with blend material {0}."
-                                     " You can't use blend material {1}, inside their own blend defination".format(mat.name, mat2.name))
-                return
+            self.yi.printWarning("Exporter: Recursive Blend material not allowed. Change type to glossy")
+            mat2.bounty.mat_type = 'glossy'
             
         # write blend material two    
         if mat2 not in self.exportedMaterials:

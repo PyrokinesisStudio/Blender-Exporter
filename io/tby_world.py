@@ -21,6 +21,7 @@
 import bpy, os
 from bpy.path import abspath, clean_name
 from os.path import realpath, normpath, basename
+from ntpath import relpath
 
 
 class exportWorld:
@@ -31,12 +32,12 @@ class exportWorld:
         yi = self.yi
         
         # init..
-        world = bpy.context.scene.world
+        w = bpy.context.scene.world
         bg_type = "constant"
         bgColor = (0.0, 0.0, 0.0)
         useIBL = False
         iblSamples = 16
-        bgPower = 1 
+        bgPower = 1
         
         if scene.world:
             # exporter properties
