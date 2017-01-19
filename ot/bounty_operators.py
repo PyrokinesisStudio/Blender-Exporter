@@ -129,7 +129,7 @@ class TheBounty_OT_presets_ior_list(Operator):
     @classmethod
     def poll(cls, context):
         mat = context.material
-        return mat.bounty.mat_type in {"glass", "rough_glass"}
+        return mat.bounty.mat_type in {"glass", "rough_glass", "coated_glossy"}
 
     def execute(self, context):
         mat = context.material
@@ -141,8 +141,12 @@ opClasses.append(TheBounty_OT_presets_ior_list)
 #
 
 class Thebounty_OT_UpdateBlend(Operator):
+    #--------------------------------------------------------------------------
+    # test: try to add blend's material selected to slots for easy edit
+    #--------------------------------------------------------------------------
     bl_idname = "material.parse_blend"
-    bl_label = "Add blend's slots materials for easy edit"
+    bl_label = "Sync with material slots or Fix empty item"
+    bl_description = "Sync material slots with selected materials or fix empty selected item"
     
     
     @classmethod
@@ -154,18 +158,30 @@ class Thebounty_OT_UpdateBlend(Operator):
         obj = context.object
         mat = bpy.context.object.active_material
                
-        #--------------------------------------------------------------------------
-        # test: try to add blend's material selected to slots for easy edit
-        # state: atm don't work. Any change are only effective after first render
-        # TODO: find the way for allow real time update
+        #----------------------------------------
+        # sync material slot 1 or fix empty item
+        #----------------------------------------
+        if mat.bounty.blendOne == "":
+            if 'blendone' not in bpy.data.materials:
+                bpy.data.materials.new('blendone')
+            mat.bounty.blendOne = 'blendone'
+        #
         mat1 = bpy.data.materials[mat.bounty.blendOne]
+        
         if len(obj.data.materials) < 2:
             obj.data.materials.append(mat1)
-            
+                        
         if len(obj.data.materials) >= 2:
             if obj.data.materials[1].name is not mat.bounty.blendOne:
                 obj.data.materials[1] = mat1
-        #--------------------------------------------------------------------------
+        #----------------------------------------
+        # sync material slot 2 or fix empty item
+        #----------------------------------------
+        if mat.bounty.blendTwo == "":
+            if 'blendtwo' not in bpy.data.materials:
+                bpy.data.materials.new('blendtwo')
+            mat.bounty.blendTwo = 'blendtwo'
+        #
         mat2 = bpy.data.materials[mat.bounty.blendTwo]
         if len(obj.data.materials) < 3: 
             obj.data.materials.append(mat2)
@@ -176,16 +192,16 @@ class Thebounty_OT_UpdateBlend(Operator):
         #--------------------------------------------------------------------------
         return {'FINISHED'}
     
-opClasses.append(Thebounty_OT_UpdateBlend)            
+opClasses.append(Thebounty_OT_UpdateBlend)
+            
 #-------------------------------------------
-# Add support for use ibl files
+# Parse SSS presets
 #-------------------------------------------
 import re, os
 
 class Thebounty_OT_ParseSSS(Operator):
     bl_idname = "material.parse_sss"
-    bl_label = "Apply SSS preset values"
-    
+    bl_label = "Apply SSS preset values"    
     
     @classmethod
     def poll(cls, context):
@@ -323,14 +339,16 @@ class Thebounty_OT_ParseSSS(Operator):
             mat.sssIOR = mat.sssIOR
             mat.phaseFuction = mat.phaseFuction
             mat.sssSigmaS_factor = mat.sssSigmaS_factor
-            mat.glossy_reflect = mat.glossy_reflect
-            
-            
+            mat.glossy_reflect = mat.glossy_reflect            
+        material.diffuse_color = (0.0, 0.00, 0.0)    
         return {'FINISHED'}
       
 #
 opClasses.append(Thebounty_OT_ParseSSS)
 
+#-------------------------------------------
+# Add support for use ibl files
+#-------------------------------------------
 class Thebounty_OT_ParseIBL(Operator):
     bl_idname = "world.parse_ibl"
     bl_label = "Parse IBL"
@@ -367,7 +385,7 @@ class Thebounty_OT_ParseIBL(Operator):
     #---------------------
     def parseValue(self, line, valueType):
         items = re.split(" ", line)
-        item = items[2]  # items[1] is '='
+        item = items[2]  # items[1] is '=' char
         if valueType == 2:
             ext = (len(item) - 2)
             return item[1:ext]            
@@ -384,35 +402,41 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line[:7] == 'ICOfile':
+            if line.startswith('ICOfile'):
                 self.parseValue(line, 2) # string
-            #
-            if line[:11] == 'PREVIEWfile':
-                self.iblValues['PRE']= self.parseValue(line, 2) #PREVIEWfile          
-            #
-            if line[:6] == 'BGfile':
-                self.iblValues['BG']= self.parseValue(line, 2) #BGfile
-            #
-            if line[:8] == 'BGheight':
-                self.parseValue(line, 1) # integer
-            #
-            if line[:6] == 'EVfile':
-                self.iblValues['EV']= self.parseValue(line, 2) #EVfile
-            #
-            if line[:8] == 'EVheight':
-                self.parseValue(line, 1) # integer
-            #
-            if line[:7] == 'EVgamma':
-                self.parseValue(line, 0) # float
+            # string / path:
+            if line.startswith('PREVIEWfile'):
+                self.iblValues['PRE']= self.parseValue(line, 2)        
+            # string / path:
+            if line.startswith('BGfile'):
+                self.iblValues['BG']= self.parseValue(line, 2)
                 
-            if line[:7] == 'REFfile':
-                self.iblValues['REF']= self.parseValue(line, 2) #REFfile
+            # integer:
+            if line.startswith('BGheight'):
+                self.parseValue(line, 1)
                 
-            if line[:9] == 'REFheight':
-                self.parseValue(line, 1) # integer
+            # string / path: environment luminosity information
+            if line.startswith('EVfile'):
+                self.iblValues['EV']= self.parseValue(line, 2)
+            # integer:
+            if line.startswith('EVheight'):
+                self.parseValue(line, 1)
                 
-            if line[:8] == 'REFgamma':
-                self.parseValue(line, 0) # float
+            # float: gamma used with environment image 
+            if line.startswith('EVgamma'):
+                self.parseValue(line, 0)
+                
+            # string / path: image file used for reflection maps    
+            if line.startswith('REFfile'):
+                self.iblValues['REF']= self.parseValue(line, 2)
+            
+            # integer: amount of height 
+            if line.startswith('REFheight'):
+                self.parseValue(line, 1)
+            
+            # float: gamma value used with reflection image maps  
+            if line.startswith('REFgamma'):
+                self.parseValue(line, 0)
                      
         f.close()
         return self.iblValues
