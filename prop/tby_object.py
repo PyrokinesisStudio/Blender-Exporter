@@ -32,6 +32,7 @@ enum_volume_types=(
     ('ExpDensity Volume', "ExpDensity Volume", ""),
     ('Noise Volume', "Noise Volume", ""),
     ('Uniform Volume', "Uniform Volume", ""),
+    ('Grid Volume', "Grid Volume", ""),
 )
 
 enum_geometry_types=(
@@ -114,9 +115,20 @@ class TheBountyObjectSettings(bpy.types.PropertyGroup):
             description="Set the volume region",
             items= enum_volume_types,
             default='ExpDensity Volume'
+    )
+    volDensityFile = StringProperty(
+            name="Density file",
+            description="Density file data",
+            subtype='FILE_PATH',
+            default=""
+    )
+    use_smoke_data = BoolProperty(
+            name="Export volume data from scene",
+            description="Allow export smoke simulation to DF3 density file data",
+            default=False
     )    
     vol_height = FloatProperty(
-            name="Height",
+            name="Density height",
             description="Controls the density of the volume before it starts to fall off",
             min=0.0, max=1000.0,
             default=1.0

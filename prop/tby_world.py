@@ -104,7 +104,10 @@ class TheBountyWorldSettings(bpy.types.PropertyGroup):
             subtype='COLOR',
             min=0.0, max=1.0,
             default=(0.7, 0.7, 0.7)
-    )    
+    )
+    #----------------------------
+    # IBL properties
+    #----------------------------    
     bg_use_ibl = BoolProperty(
             name="Use Background light info",
             description="Use the background as the light source for your image",
@@ -131,13 +134,21 @@ class TheBountyWorldSettings(bpy.types.PropertyGroup):
             description="Number of samples for direct lighting from background",
             min=1, max=512,
             default=16
+    )
+    bg_align_with_camera = BoolProperty(
+            name="Align with camera",
+            description="Align image background with camera",
+            default=False
     )    
     bg_rotation = FloatProperty(
             name="Rotation",
             description="Rotation offset of background texture",
             min=0.0, max=360.0,
-            default=0.0
-    )    
+            default=180.0
+    )
+    #----------------------------
+    # sunsky
+    #----------------------------    
     bg_turbidity = FloatProperty(
             name="Turbidity",
             description="Turbidity of the atmosphere",
@@ -239,6 +250,9 @@ class TheBountyWorldSettings(bpy.types.PropertyGroup):
             min=0.0, max=10.0,
             default=1.0
     )
+    #----------------------------
+    # volume integrator
+    #----------------------------
     v_int_type = EnumProperty(
             name="Integrator type",
             description="Set the volume integrator",

@@ -302,13 +302,15 @@ class TheBountyGlossySpecular(TheBountyMaterialTypePanel, Panel):
         layout.separator()
 
         if mat.bounty.mat_type == "coated_glossy":
-            box = layout.box()
-            box.label(text="Coated layer for glossy:")
-            split = box.split()
+            #box = layout.box()
+            #box.label(text="Coated layer for glossy:")
+            #split = box.split()
+            split = layout.split()
             col = split.column()
             col.prop(mat.bounty, "coat_mir_col")
-            col = split.column(align=True)
+            col = split.column(align=False)
             col.label(text="Fresnel reflection:")
+            col.menu("TheBounty_presets_ior_list", text=bpy.types.TheBounty_presets_ior_list.bl_label)
             col.prop(mat.bounty, "IOR_reflection")
             col.label()
 

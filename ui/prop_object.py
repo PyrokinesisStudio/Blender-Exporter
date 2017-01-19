@@ -77,6 +77,11 @@ class TheBountyGeometryTypes(Panel):
                 col.prop(ob, "vol_sharpness")
                 col.prop(ob, "vol_cover")
                 col.prop(ob, "vol_density")
+                
+            if ob.vol_region == "Grid Volume":
+                col = layout.column(align=True)
+                col.prop(ob, "use_smoke_data")
+                col.prop(ob, "volDensityFile")
 
 
 if __name__ == "__main__":  # only for live edit.

@@ -17,6 +17,18 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
+metal_ior_list =[
+    ('Metals', [
+        ('Aluminum', 1.39),
+        ('Copper',   2.43),
+        ('Gold',     0.166),
+        ('Mylar"',   1.65),
+        ('Nickel',   1.08),
+        ('Platinum', 2.33),
+        ('Silver',   1.35),
+        ('Titanium', 2.16)
+        ]
+    )]
 
 ior_list = [
     ('Liquid', [

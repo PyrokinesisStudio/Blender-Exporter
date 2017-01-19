@@ -84,7 +84,7 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
                 layout.template_ID(context.world, "active_texture")
                 # it allows to change the used image
                 if  tex.yaf_tex_type == "IMAGE":
-                    layout.template_image(tex, "image", tex.image_user, compact=True)
+                    layout.template_image(tex, "image", tex.image_user, compact= True)
                 #else:
                 #    # TODO: create message about not allow texture type
                 #    pass
@@ -92,7 +92,9 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
                 layout.template_ID(context.world, "active_texture", new="texture.new")
             
             layout.label(text="Background Texture options")
+            layout.prop(world, "bg_align_with_camera", toggle=True)
             row = layout.row()
+            row.enabled = not world.bg_align_with_camera            
             row.prop(world,"bg_rotation")
             row.prop(world,"bg_mapping_type", text="")
             layout.separator()
