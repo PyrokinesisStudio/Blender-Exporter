@@ -148,7 +148,6 @@ class Thebounty_OT_UpdateBlend(Operator):
     bl_label = "Sync with material slots or Fix empty item"
     bl_description = "Sync material slots with selected materials or fix empty selected item"
     
-    
     @classmethod
     def poll(cls, context):
         material = context.material
@@ -171,7 +170,7 @@ class Thebounty_OT_UpdateBlend(Operator):
         if len(obj.data.materials) < 2:
             obj.data.materials.append(mat1)
                         
-        if len(obj.data.materials) >= 2:
+        if len(obj.data.materials) > 1:
             if obj.data.materials[1].name is not mat.bounty.blendOne:
                 obj.data.materials[1] = mat1
         #----------------------------------------
@@ -186,10 +185,10 @@ class Thebounty_OT_UpdateBlend(Operator):
         if len(obj.data.materials) < 3: 
             obj.data.materials.append(mat2)
         # 
-        if len(obj.data.materials) == 3:
+        if len(obj.data.materials) > 2:
             if obj.data.materials[2].name is not mat.bounty.blendTwo:
                 obj.data.materials[2] = mat2
-        #--------------------------------------------------------------------------
+        
         return {'FINISHED'}
     
 opClasses.append(Thebounty_OT_UpdateBlend)
