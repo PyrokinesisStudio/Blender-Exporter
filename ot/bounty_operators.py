@@ -141,8 +141,8 @@ opClasses.append(TheBounty_OT_presets_ior_list)
 
 class Thebounty_OT_UpdateBlend(Operator):
     bl_idname = "material.parse_blend"
-    bl_label = "Add blend's slots materials for easy edit"
-    
+    bl_label = "Sync material slots or Fix empty selector"
+    bl_description = "Sync material slot with selected materials or fix empty selected item"    
     
     @classmethod
     def poll(cls, context):
@@ -153,26 +153,27 @@ class Thebounty_OT_UpdateBlend(Operator):
         obj = context.object
         mat = bpy.context.object.active_material
                
-        #--------------------------------------------------------------------------
-        # test: try to add blend's material selected to slots for easy edit
-        # state: atm don't work. Any change are only effective after first render
-        # TODO: find the way for allow real time update
-        mat1 = bpy.data.materials[mat.bounty.blendOne]
-        if len(obj.data.materials) < 2:
-            obj.data.materials.append(mat1)
-            
-        if len(obj.data.materials) >= 2:
-            if obj.data.materials[1].name is not mat.bounty.blendOne:
-                obj.data.materials[1] = mat1
-        #--------------------------------------------------------------------------
-        mat2 = bpy.data.materials[mat.bounty.blendTwo]
-        if len(obj.data.materials) < 3: 
-            obj.data.materials.append(mat2)
-        # 
-        if len(obj.data.materials) == 3:
-            if obj.data.materials[2].name is not mat.bounty.blendTwo:
-                obj.data.materials[2] = mat2
-        #--------------------------------------------------------------------------
+        #-------------------------
+        # blend material one
+        #-------------------------
+        if mat.bounty.blendOne == "":
+            if 'blendone' not in bpy.data.materials:
+                bpy.data.materials.new('blendone')
+            mat.bounty.blendOne = 'blendone'
+        #       
+        if mat.bounty.blendOne not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendOne])
+        #-------------------------
+        # blend material two
+        #-------------------------
+        if mat.bounty.blendTwo == "":
+            if 'blendtwo' not in bpy.data.materials:
+                bpy.data.materials.new('blendtwo')
+            mat.bounty.blendTwo = 'blendtwo'
+        #
+        if mat.bounty.blendTwo not in obj.data.materials:
+            obj.data.materials.append(bpy.data.materials[mat.bounty.blendTwo])
+        
         return {'FINISHED'}
     
 opClasses.append(Thebounty_OT_UpdateBlend)            
@@ -355,7 +356,7 @@ class Thebounty_OT_ParseIBL(Operator):
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
-            evfile = self.iblValues.get('EV')
+            evfile = self.iblValues.get('EVfile')
             newval = os.path.join(iblFolder, evfile) 
             worldTexture.image.filepath = newval
         
@@ -383,35 +384,51 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line[:7] == 'ICOfile':
-                self.parseValue(line, 2) # string
+            if line.startswith('ICOfile'):
+                self.iblValues['ICOfile']= self.parseValue(line, 2) # string
             #
-            if line[:11] == 'PREVIEWfile':
-                self.iblValues['PRE']= self.parseValue(line, 2) #PREVIEWfile          
+            if line.startswith('PREVIEWfile'):
+                self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
+            
+            #[Background]
+            if line.startswith('BGfile'):
+                self.iblValues['BGfile']= self.parseValue(line, 2) # string
             #
-            if line[:6] == 'BGfile':
-                self.iblValues['BG']= self.parseValue(line, 2) #BGfile
+            if line.startswith('BGheight'):
+                self.iblValues['BGheight']= self.parseValue(line, 1) # integer
+            
+            # [Enviroment]
+            if line.startswith('EVfile'):
+                self.iblValues['EVfile']= self.parseValue(line, 2) # string
             #
-            if line[:8] == 'BGheight':
-                self.parseValue(line, 1) # integer
+            if line.startswith('EVheight'):
+                self.iblValues['EVheight']= self.parseValue(line, 1) # integer
             #
-            if line[:6] == 'EVfile':
-                self.iblValues['EV']= self.parseValue(line, 2) #EVfile
-            #
-            if line[:8] == 'EVheight':
-                self.parseValue(line, 1) # integer
-            #
-            if line[:7] == 'EVgamma':
-                self.parseValue(line, 0) # float
+            if line.startswith('EVgamma'):
+                self.iblValues['EVgamma']= self.parseValue(line, 0) # float
+            
+            # [Reflection]   
+            if line.startswith('REFfile'):
+                self.iblValues['REFfile']= self.parseValue(line, 2) # string
                 
-            if line[:7] == 'REFfile':
-                self.iblValues['REF']= self.parseValue(line, 2) #REFfile
+            if line.startswith('REFheight'):
+                self.iblValues['REFheight']= self.parseValue(line, 1) # integer
                 
-            if line[:9] == 'REFheight':
-                self.parseValue(line, 1) # integer
+            if line.startswith('REFgamma'):
+                self.iblValues['REFgamma']= self.parseValue(line, 0) # float
                 
-            if line[:8] == 'REFgamma':
-                self.parseValue(line, 0) # float
+            # [Sun]
+            if line.startswith('SUNcolor'):
+                self.iblValues['SUNcolor'] = (255,255,245)
+                
+            if line.startswith('SUNmulti'):
+                self.iblValues['SUNmulti']= self.parseValue(line, 0) # float
+                
+            if line.startswith('SUNu'):
+                self.iblValues['SUNu']= self.parseValue(line, 0) # float
+                
+            if line.startswith('SUNv'):
+                self.iblValues['SUNv']= self.parseValue(line, 0) # float
                      
         f.close()
         return self.iblValues
