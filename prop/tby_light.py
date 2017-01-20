@@ -28,15 +28,17 @@ from bpy.props import (EnumProperty,
                        )
 
 def set_shadow_method(self, context):
-    lamp = context.lamp
-    if context.lamp.bounty.show_dist_clip:
+    lamp = context.object.data
+    if lamp.bounty.show_dist_clip:
         lamp.shadow_method = 'BUFFER_SHADOW'
     else:
         lamp.shadow_method = 'RAY_SHADOW'
 
 def sync_sphere_light(self, context):
-    lamp = context.lamp
-    if context.lamp.bounty.use_sphere:
+    #
+    lamp = context.object.data
+    #
+    if lamp.bounty.use_sphere:
         lamp.use_sphere = True
         # reasonable default size
         lamp.distance = 1
@@ -46,10 +48,11 @@ def sync_sphere_light(self, context):
    
 #######
 def sync_with_distance(self, context):
-    lamp = context.lamp
-    radius = context.lamp.bounty.sphere_radius
-    if radius != context.lamp.distance:
-        context.lamp.distance = context.lamp.bounty.sphere_radius 
+    #
+    lamp = context.object.data
+    radius = lamp.bounty.sphere_radius
+    if radius != lamp.distance:
+        lamp.distance = lamp.bounty.sphere_radius 
        
 class TheBountyLightProperties(bpy.types.PropertyGroup):
     #
@@ -82,7 +85,7 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             description="Radius of directional cone",
             min=0.01, max=10000.0,
             soft_min=0.01, soft_max=100.0,
-            default=10.0 #, update=sync_with_size
+            default=10.0
     )      
     create_geometry = BoolProperty(
             name="Create and show geometry",
@@ -138,15 +141,6 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             description="Show clip start and clip end settings for spot lamp in 3D view",
             default=False, 
             update=set_shadow_method
-    )
-    hemi_type = EnumProperty(
-            name="Hemi light type",
-            description="180 degree costant light source",
-            items=(
-                ('infinite', "Infinite", "Infinite light like Sun"),
-                ('directional', "Directional", "Directional light like spotlight useful for concentrate light on specific areas"),
-            ),
-            default='infinite'
     )
     
 #

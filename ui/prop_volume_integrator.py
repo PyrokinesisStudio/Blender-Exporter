@@ -20,17 +20,17 @@
 
 import bpy
 from bpy.types import Panel
-from . prop_world import WorldButtonsPanel
+from . prop_world import TheBountyWorldButtonsPanel
 
-WorldButtonsPanel.COMPAT_ENGINES = {'THEBOUNTY'}
+TheBountyWorldButtonsPanel.COMPAT_ENGINES = {'THEBOUNTY'}
 
 
-class TheBounty_PT_vol_integrator(WorldButtonsPanel, Panel):
+class TheBounty_PT_vol_integrator(TheBountyWorldButtonsPanel, Panel):
     bl_label = "Volume Integrator"
     
     @classmethod
     def poll(cls, context):
-        return context.world and WorldButtonsPanel.poll(context)
+        return context.world and TheBountyWorldButtonsPanel.poll(context)
 
     def draw(self, context):
         layout = self.layout

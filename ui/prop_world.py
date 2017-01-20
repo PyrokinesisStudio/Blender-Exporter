@@ -26,7 +26,7 @@ properties_world.WORLD_PT_context_world.COMPAT_ENGINES.add('THEBOUNTY')
 properties_world.WORLD_PT_preview.COMPAT_ENGINES.add('THEBOUNTY')
 del properties_world
 
-class WorldButtonsPanel():
+class TheBountyWorldButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "world"
@@ -37,14 +37,14 @@ class WorldButtonsPanel():
         return (context.world and context.scene.render.engine in cls.COMPAT_ENGINES)
     
    
-class TheBounty_PT_world(WorldButtonsPanel, Panel):
+class TheBounty_PT_world(TheBountyWorldButtonsPanel, Panel):
     bl_label = "Background Settings"
     ibl = True
     bl_context = "world"
     
     @classmethod
     def poll(cls, context):
-        return context.world and WorldButtonsPanel.poll(context)
+        return context.world and TheBountyWorldButtonsPanel.poll(context)
 
 
     def draw(self, context):
@@ -83,14 +83,15 @@ class TheBounty_PT_world(WorldButtonsPanel, Panel):
                 #
                 layout.template_ID(context.world, "active_texture")
                 # it allows to change the used image
-                if  tex.yaf_tex_type == "IMAGE":
+                if  tex.bounty.tex_type == "IMAGE":
                     layout.template_image(tex, "image", tex.image_user, compact=True)
                 #else:
                 #    # TODO: create message about not allow texture type
                 #    pass
             else:
                 layout.template_ID(context.world, "active_texture", new="texture.new")
-            
+            #
+            layout.operator("world.align_ibl")
             layout.label(text="Background Texture options")
             row = layout.row()
             row.prop(world,"bg_rotation")

@@ -58,16 +58,37 @@ enum_sss_presets = (
 # syncronize some colors with Blender
 # for better visualization on viewport
 #-----------------------------------------
+def getNodeOutName(self, mat):
+    nodeOutName = 'None'
+    if mat.bounty.nodetree != "":
+        for out in bpy.data.node_groups[mat.bounty.nodetree].nodes:
+            if out.bl_idname == 'MaterialOutputNode' and out.inputs[0].is_linked:
+                nodeOutName = out.name
+                #print('out: ', nodeOutName)
+                break
+    return nodeOutName
+
 def syncBlenderColors(self, context):
     #
-    #if bpy.context.object.active_material.bounty.nodetree == "":
-    context.object.active_material.diffuse_color = context.object.active_material.bounty.diff_color
-    '''
-    else:
-        name = bpy.context.object.active_material.name
-        nodetype = bpy.context.object.active_material.bounty.mat_type
-        context.object.active_material.diffuse_color = bpy.data.node_groups[name].nodes[node.name].inputs[0].diff_color    
-    '''
+    diffuse = context.object.active_material.diffuse_color
+    if bpy.context.object.active_material.bounty.nodetree != "":
+        #
+        tree_name = bpy.context.object.active_material.bounty.nodetree
+        #print('node output ', bpy.context.object.active_material.bounty.node_output) 
+        nodeOutName = getNodeOutName(self, bpy.context.object.active_material)
+        #        
+        for socket in bpy.data.node_groups[tree_name].nodes[nodeOutName].inputs:
+            if socket.is_linked:
+                linked_node = socket.links[0].from_node
+                # Use 'bl_label' for node type
+                if linked_node.bl_label in {'shinydiffusemat', 'glossy', 'coated_glossy', 'translucent'}:
+                    diffuse = bpy.data.node_groups[tree_name].nodes[linked_node.get_name()].inputs[0].diff_color
+                    
+                elif linked_node.bl_label == 'glass':
+                    pass
+    #
+    context.object.active_material.diffuse_color = diffuse
+
 
 class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     #---------------------------
@@ -76,12 +97,26 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     blendOne = StringProperty(
             name="Material One",
             description="Name of the material one in blend material",
-            default="blendone"
+            default= "blendone"
     )
     blendTwo = StringProperty(
             name="Material Two",
             description="Name of the material two in blend material",
             default="blendtwo"
+    )
+    use_nodes = BoolProperty(
+            name="Use nodes",
+            description="Use nodes editor for define material properties",
+            default=False
+    )
+    node_output = StringProperty( 
+            name = "Output Node",
+            description = "Material nodetree output node, to link to the current material"
+    )
+    nodetree = StringProperty(
+            name="Node Tree",
+            description="Name of the shader node tree for this material",
+            default=""
     )
     mat_type = EnumProperty(
             name="Material type",
@@ -93,7 +128,8 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             description="Diffuse albedo color material",
             subtype='COLOR',
             min=0.0, max=1.0,
-            default=(0.8, 0.8, 0.8)
+            default=(0.8, 0.8, 0.8),
+            update=syncBlenderColors
     )
     emittance = FloatProperty(
             name="Emit",
@@ -162,17 +198,10 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     sigma = FloatProperty(
             name="Sigma",
             description="Roughness of the surface",
-            min=0.0, max=1.0, step=1, precision=4,
-            soft_min=0.0, soft_max=1.0,
-            default=0.10000
+            min=0.1, max=1.0, step=1, precision=6,
+            soft_min=0.1, soft_max=1.0,
+            default=0.100000
     ) 
-    mirr_color = FloatVectorProperty(
-            name="Mirror color",
-            description="Mirror Color",
-            subtype='COLOR',
-            min=0.0, max=1.0,
-            default=(1.0, 1.0, 1.0)
-    )   
     glossy_color = FloatVectorProperty(
             name="Glossy color",
             description="Glossy Color",
@@ -361,11 +390,11 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             min=-0.99, max=0.99, step=0.01, precision=2,
             default=0.0
     )
-
+    
 def register():
     bpy.utils.register_class(TheBountyMaterialProperties)
     bpy.types.Material.bounty = PointerProperty(type=TheBountyMaterialProperties )
     
 def unregister():
     bpy.utils.unregister_class(TheBountyMaterialProperties)
-    #bpy.types.Material.bounty = PointerProperty(type=TheBountyMaterialProperties )
+    

@@ -141,20 +141,20 @@ class TheBountyLightOutputNode(Node, TheBountyLightNode):
         #except:
         #    layout.label(context.object.data.name)
     #
-    def filterNodeList( self, nodes):
+    def filterNodeList(self, nodes):
         nodeList = []
         for node in nodes:
             if node not in nodeList:
                 nodeList.append( node)
         return nodeList
     #
-    def traverse_node_tree( self):
+    def traverse_node_tree(self):
         #
         self.listedNodes.clear()
         for socket in self.inputs:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
-                linked_node.traverse_node_tree( self)
+                linked_node.traverse_node_tree(self)
         #
         return self.filterNodeList(self.listedNodes)  
 #

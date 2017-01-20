@@ -56,6 +56,14 @@ def haveSSS():
         if mat.bounty.mat_type == "translucent":
             return True
     return False
+#
+def checkPreview(preview, scene):
+    transp_BG = False if preview else scene.bg_transp
+    transp_Refract_BG = False if (preview or not transp_BG) else scene.bg_transp_refract
+    #transp_Refract_BG = False if not transp_BG else scene.bg_transp_refract
+    
+    return transp_BG, transp_Refract_BG
+        
 
 class exportIntegrator:
     def __init__(self, interface, preview):
@@ -66,13 +74,10 @@ class exportIntegrator:
         yi = self.yi
 
         yi.paramsClearAll()
-
-        yi.paramsSetBool("bg_transp", scene.bg_transp)
-        transp_refract = False
-        if scene.bg_transp:
-            transp_refract = scene.bg_transp_refract
         #
-        yi.paramsSetBool("bg_transp_refract", transp_refract)
+        transp_BG, transp_Refract_BG = checkPreview(self.preview, scene)
+        yi.paramsSetBool("bg_transp", transp_BG)
+        yi.paramsSetBool("bg_transp_refract", transp_Refract_BG)
 
         yi.paramsSetInt("raydepth", scene.gs_ray_depth)
         yi.paramsSetInt("shadowDepth", scene.gs_shadow_depth)
@@ -128,7 +133,7 @@ class exportIntegrator:
                 yi.paramsSetFloat("caustic_radius", scene.intg_caustic_radius)
 
         elif lightIntegrator == "bidirectional":
-            yi.paramsSetBool("do_LightImage", scene.intg_do_lightImage)
+            #yi.paramsSetBool("do_LightImage", scene.intg_do_lightImage)
             if not haveLights():
                 yi.printWarning('Bidirectional Integrator need a lights on scene for work')
                 return False

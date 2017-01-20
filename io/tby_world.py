@@ -79,7 +79,7 @@ class exportWorld:
                     yi.paramsSetString("filename", image_file)
                     
                     # image interpolate
-                    yi.paramsSetString("interpolate", worldTexture.interpolation_type)
+                    yi.paramsSetString("interpolate", worldTexture.bounty.interpolation_type)
                     yi.paramsSetString("type", "image")
                     yi.createTexture("world_texture")
 

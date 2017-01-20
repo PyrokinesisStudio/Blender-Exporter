@@ -19,7 +19,7 @@
 # <pep8 compliant>
 
 import bpy
-import os
+import os, subprocess, sys
 import threading
 import time
 import yafrayinterface
@@ -49,9 +49,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     bl_label = "TheBounty Render"
     prog = 0.0
     tag = ""
-    #useViewToRender = False
-    #viewMatrix = None
-    sceneMat = []
     
     #--------------------------------
     # set console  verbosity levels
@@ -76,9 +73,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if self.is_preview:
             # at least, allow warning messages with material preview
             self.yi.setVerbosityWarning()
-            #to correct alpha problems in preview roughglass
-            self.scene.bounty.bg_transp = False
-            self.scene.bounty.bg_transp_refract = False
         else:
             #
             self.verbositylevel(self.scene.bounty.gs_verbosity_level)
@@ -107,9 +101,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportScene(self):
         #
         self.exportTextures()
-        #for obj in self.scene.objects:
-        #    self.exportTexture(obj)
-            
         self.exportMaterials()
         self.geometry.setScene(self.scene)
         self.exportObjects()
@@ -129,30 +120,72 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
    
     def object_on_visible_layer(self, obj):
         obj_visible = False
-        for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
-            obj_visible |= layer_visible
+        # test
+        for i in range(len(self.scene.layers)):
+            if obj.layers[i] and self.scene.layers[i]:
+                #if self.scene.render.layers[i]:
+                obj_visible = True
+                break
+        #for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
+        #    obj_visible |= layer_visible
         return obj_visible
-
+    #
+    def exportableObjects(self, obj):
+        # geometry object visibility cases:
+        #    renderables:
+        #        is hidden on viewport (obj.hide), but is renderable because:
+        #            not obj.hide_render is enabled
+        #            object_on_visible_layer is True
+        #    not renderables:
+        #        object is showed on viewport only for scene distribution issues but:
+        #            obj.hide_render is enabled
+        if not obj.hide_render:
+            if obj.is_visible(self.scene) or self.object_on_visible_layer(obj):
+                return True
+        
+        return False
+    
+    # test for create scene collections objects in 'one pass'( lamps, meshes,..)
     def exportObjects(self):
+        sceneMeshes = list()   # MESH 
+        sceneSurfaces = list() # SURFACE 
+        sceneCurves = list()   # CURVE
+        sceneFonts = list()    # FONT 
+        sceneEmpties = list()  # EMPTY
+        sceneLamps = list()    # LAMP
+        sceneGeometry = list() # for accumulate different geometry objects
+        
+        for obj in self.scene.objects:
+            if obj.type =='LAMP':       sceneLamps.append(obj)
+            if obj.type =='MESH':       sceneMeshes.append(obj)
+            if obj.type =='CURVE':      sceneCurves.append(obj)
+            if obj.type =='SURFACE':    sceneSurfaces.append(obj)
+        # test
+        sceneMeshes += sceneCurves
+        sceneGeometry += sceneMeshes
+        
         self.yi.printInfo("Exporter: Processing Lamps...")
 
         #---------------------------
         # export only visible lamps
         #---------------------------
-        for obj in [o for o in self.scene.objects if not o.hide_render and o.is_visible(self.scene) and o.type == 'LAMP']:
-            if obj.is_duplicator:
-                obj.create_dupli_list(self.scene)
-                for obj_dupli in obj.dupli_list:
-                    matrix = obj_dupli.matrix.copy()
-                    self.lights.createLight(self.yi, obj_dupli.object, matrix)
+        for obj in sceneLamps:
+            #if obj.type == 'LAMP':
+            if not obj.hide_render and (obj.is_visible(self.scene)or obj.hide):
+                if obj.is_duplicator:
+                    obj.create_dupli_list(self.scene)
+                    for obj_dupli in obj.dupli_list:
+                        matrix = obj_dupli.matrix.copy()
+                        self.lights.createLight(self.yi, obj_dupli.object, matrix)
 
-                if obj.dupli_list:
-                    obj.free_dupli_list()
-            else:
-                if obj.parent and obj.parent.is_duplicator:
-                    continue
-                self.lights.createLight(self.yi, obj, obj.matrix_world)
-
+                    if obj.dupli_list:
+                        obj.free_dupli_list()
+                        pass
+                else: # not duplicator
+                    if obj.parent and obj.parent.is_duplicator:
+                        continue
+                    self.lights.createLight(self.yi, obj, obj.matrix_world)
+        
         self.yi.printInfo("Exporter: Processing Geometry...")
 
         #-----------------------------
@@ -160,9 +193,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-----------------------------
         baseIds = {}
         dupBaseIds = {}
-
-        for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        
+        #for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        #and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        for obj in [o for o in sceneGeometry if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        and self.object_on_visible_layer(o)]:
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))
@@ -172,7 +207,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                     #self.exportTexture(obj_dupli.object)
                     for mat_slot in obj_dupli.object.material_slots:
                         if mat_slot.material not in self.exportedMaterials:
-                            self.exportMaterial(mat_slot.material)
+                            self.exportMaterial(obj_dupli, mat_slot.material)
 
                     if not self.scene.render.use_instances:
                         matrix = obj_dupli.matrix.copy()
@@ -195,8 +230,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                             self.geometry.writeMesh(obj, matrix)
 
             # no need to write empty object from here on, so continue with next object in loop
-            elif obj.type == 'EMPTY':
-                continue
+            #elif obj.type == 'EMPTY':
+            #    continue
 
             # Exporting objects with shared mesh data blocks as instances
             elif obj.data.users > 1 and self.scene.render.use_instances:
@@ -216,16 +251,15 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #
         if 'blendone' not in bpy.data.materials:
             m1 = bpy.data.materials.new('blendone')
-            m1.diffuse_color = (0.0, 0.0, 1.0)
             m1.bounty.mat_type = 'shinydiffusemat'
+            m1.diffuse_color = (1.0, 0.0, 0.0)
                         
         if 'blendtwo' not in bpy.data.materials:
             m2 = bpy.data.materials.new('blendtwo')
-            m1.diffuse_color =(1.0, 0.0, 0.0)
             m2.bounty.mat_type = 'glossy'
+            m2.diffuse_color = (0.0, 1.0, 0.0)
     
-    
-    def handleBlendMat(self, obj, mat):
+    def handleBlendMat(self, mat):        
         #-------------------------
         # blend material one
         #-------------------------
@@ -238,8 +272,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if mat1.bounty.mat_type == 'blend':
             self.yi.printWarning("Exporter: Recursive Blend material not allowed. Changed type to shinydiffusemat")
             mat1.bounty.mat_type = 'shinydiffusemat'
-            
-        # write blend material one
+        #
         if mat1 not in self.exportedMaterials:
             self.exportedMaterials.add(mat1)
             self.setMaterial.writeMaterial(mat1)
@@ -303,17 +336,18 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #----------------------------------------------
         # override all materials in 'clay render' mode
         #----------------------------------------------
-        for obj in [o for o in self.scene.objects if not self.scene.bounty.gs_clay_render]:
-            for mat_slot in obj.material_slots:
-                if mat_slot.material not in self.exportedMaterials:
-                    self.exportMaterial(obj, mat_slot.material)
+        if not self.scene.bounty.gs_clay_render:
+            for obj in self.scene.objects:
+                for slot in obj.material_slots:
+                    if slot.material not in self.exportedMaterials:
+                        self.exportMaterial(obj, slot.material)
 
     def exportMaterial(self, obj, material):
         if material:
             # must make sure all materials used by a blend mat
             # are written before the blend mat itself                
             if material.bounty.mat_type == 'blend':                    
-                self.handleBlendMat(obj, material)
+                self.handleBlendMat(material)
             else:
                 self.exportedMaterials.add(material)
                 self.setMaterial.writeMaterial(material, self.is_preview)
@@ -324,7 +358,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         # write image or XML-File with filename from framenumber
         frame_numb_str = "{:0" + str(len(str(self.scene.frame_end))) + "d}"
         output = os.path.join(output_path, frame_numb_str.format(self.scene.frame_current))
-        # try to create dir if it not exists...
+        # try to create folder if it not exists...
         if not os.path.exists(output_path):
             try:
                 os.makedirs(output_path)
@@ -351,7 +385,9 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         filePath = os.path.realpath(filePath)
         filePath = os.path.normpath(filePath)
 
-        [self.sizeX, self.sizeY, self.bStartX, self.bStartY, self.bsizeX, self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
+        [self.sizeX,   self.sizeY, 
+         self.bStartX, self.bStartY, 
+         self.bsizeX,  self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
 
         if render.use_border:
             self.resX = self.bsizeX
@@ -380,11 +416,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             self.yi.paramsClearAll()
             self.co = yafrayinterface.imageOutput_t()
             self.yi.setOutfile(self.outputFile)
-
+            
         else:
             self.setInterface(yafrayinterface.yafrayInterface_t())
             self.yi.setInputGamma(scene.bounty.gs_gamma_input, scene.bounty.sc_apply_gammaInput)
-
+        
         self.yi.startScene()
         self.exportScene()
         self.lightIntegrator.exportIntegrator(self.scene.bounty)
@@ -451,11 +487,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 lay = result.layers[0]
                 try:
                     lay = result.layers[0]
-                    if bpy.app.version < (2, 74, 4 ):
-                        lay.rect, lay.passes[0].rect = tile 
-                    else:
+                    #if bpy.app.version < (2, 74, 4 ):
+                    #    lay.rect, lay.passes[0].rect = tile 
+                    #else:
                         #result.layers[0].passes[0]
-                        lay.passes[0].rect, lay.passes[1].rect = tile
+                    lay.passes[0].rect, lay.passes[1].rect = tile
                 except:
                     pass
 
@@ -466,10 +502,10 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 result = self.begin_result(0, 0, w, h)
                 try:
                     lay = result.layers[0]
-                    if bpy.app.version < (2, 74, 4 ):
-                        lay.rect, lay.passes[0].rect = tile 
-                    else:
-                        lay.passes[0].rect, lay.passes[1].rect = tile
+                    #if bpy.app.version < (2, 74, 4 ):
+                    #    lay.rect, lay.passes[0].rect = tile 
+                    #else:
+                    lay.passes[0].rect, lay.passes[1].rect = tile
                 except BaseException as e:
                     pass
 

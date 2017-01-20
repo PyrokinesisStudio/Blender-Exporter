@@ -33,10 +33,10 @@ bl_info = {
 import sys
 import os
 
-
-PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
 BIN_PATH = os.environ['BOUNTY_ROOT']
-sys.path.insert(0,BIN_PATH)
+PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
+
+sys.path.insert(0, BIN_PATH)
 
 #--------------------------
 # import exporter modules
@@ -49,25 +49,29 @@ if "bpy" in locals():
     imp.reload(io)
     imp.reload(ui)
     imp.reload(ot)
+    print('Reloading..')
 else:
     import bpy
     from . import prop
     from . import io
     from . import ui
     from . import ot
-    
+    print('Importing..')
 
 def register():
     #
-    nodeitems_utils.register_node_categories("BOUNTY_NODES", ui.prop_material_nodes.TheBountyNodeCategories)
+    nodeitems_utils.register_node_categories("THEBOUNTY_MATERIAL_NODES", ui.prop_material_nodes.TheBountyMaterialNodeCategories)
+    nodeitems_utils.register_node_categories("THEBOUNTY_LIGHT_NODES", ui.prop_light_nodes.TheBountyLightNodeCategories)
     prop.register()
     bpy.utils.register_module(__name__)
     
     
 def unregister():
-    nodeitems_utils.unregister_node_categories("BOUNTY_NODES")
+    nodeitems_utils.unregister_node_categories("THEBOUNTY_MATERIAL_NODES")
+    nodeitems_utils.unregister_node_categories("THEBOUNTY_LIGHT_NODES")
+    # test
+    prop.unregister()
     bpy.utils.unregister_module(__name__)
-
 
 if __name__ == '__main__':
     register()

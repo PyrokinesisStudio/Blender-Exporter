@@ -19,16 +19,33 @@
 # <pep8 compliant>
 
 
-# review for fix error with path
-from bl_operators.presets import AddPresetBase
-from bpy.types import Operator
 
 import os
 import bpy
 from bpy.props import StringProperty, EnumProperty, BoolProperty
-from bpy.types import Menu, Operator
+#
+from bl_operators.presets import AddPresetBase
 
-class TheBountySettingsPresets(AddPresetBase, Operator):
+#-----------------------------------------------
+def getPresetpath():
+    """Support user defined scripts directory
+       Find the first ocurrence and return it as preset path"""
+    presetpath = ""
+    for p in bpy.utils.script_paths():
+        presetpath = os.path.join(p, 'addons', 'thebounty', 'presets')
+        if os.path.exists(presetpath):
+            break
+    #return presetpath
+    
+    # why not just do this
+    script_file = os.path.realpath(__file__)
+    directory = os.path.dirname(script_file)
+    directory = os.path.join(directory, "presets")
+    return directory
+
+#----------------------------------------------------------------
+
+class TheBountySettingsPresets(AddPresetBase, bpy.types.Operator):
     # Add render presets
     bl_idname = "bounty.render_preset_add"
     bl_label = "TheBounty Settings Presets"
@@ -96,19 +113,20 @@ class TheBountySettingsPresets(AddPresetBase, Operator):
     preset_subdir = "thebounty/render"
 
     
-class TheBountyMaterialPresets(AddPresetBase, Operator):
+class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
     # Add material presets
     bl_idname = "bounty.material_preset_add"
     bl_label = "Material Presets"
     preset_menu = "TheBountyMaterialPresets"
-    
+    # test
+
     preset_defines = [
         "material = bpy.context.object.active_material",
         "mat = material.bounty"
     ]    
-    preset_values = [    
+    preset_values = [   
         "mat.absorption",
-        "mat.diff_color",
+        "material.diffuse_color",
         "mat.absorption_dist",
         "mat.anisotropic",
         "mat.as_diffuse",

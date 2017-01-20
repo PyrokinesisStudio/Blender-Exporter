@@ -20,7 +20,7 @@
 
 import bpy
 import yafrayinterface
-from bpy_types import NodeTree
+#from bpy_types import NodeTree
 
 
 def proj2int(val):
@@ -65,11 +65,22 @@ switchMappingCoords = {
     'SPHERE': 'sphere',
 }
 
+shinyLayers = ['Diffuse', 'Transparency', 'Translucency', 'Mirror', 'Specular', 'Bumpmap']
+glossyLayers =['Diffuse', 'Glossy', 'Specular', 'Bumpmap']
+glassLayers =['Mirror', 'Bumpmap']
+
+validMaterialTypes=['shinydiffusemat', 'glossy', 'coated_glossy', 'glass', 'rough_glass', 'translucent', 'blend']
+
 class TheBountyMaterialWrite:
     def __init__(self, interface, mMap, texMap):
         self.yi = interface
         self.materialMap = mMap
         self.textureMap = texMap
+        # test
+        useMaterialNodes = False
+        linked_node = None
+        self.nodetreeListNames = []
+        self.nodeValues = {}
 
     def namehash(self, obj):
         nh = obj.name + "-" + str(obj.__hash__())
@@ -82,7 +93,13 @@ class TheBountyMaterialWrite:
                 used_textures.append(tex_slot)
 
         return used_textures
-
+    #
+    textureLayerParams = {
+        "element": "shader_node", "type":"layer", "name":'', "input":'mapname', "mode":'MIX',
+        "stencil":False, "negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
+        "color_input": False, "use_alpha": False, "upper_color":(1,1,1), "upper_value":0.0, 
+        "upper_layer":'', "colfac": 1.0, "valfac":1.0, "do_color":False, "do_scalar": True}
+    
     def writeTexLayer(self, name, mapName, ulayer, mtex, dcol, factor):
         #
         if mtex.name not in self.textureMap:
@@ -114,16 +131,16 @@ class TheBountyMaterialWrite:
         yi.paramsSetFloat("def_val", mtex.default_value)
 
         tex = mtex.texture  # texture object instance
-        isImage = tex.yaf_tex_type == 'IMAGE'
+        isImage = tex.bounty.tex_type == 'IMAGE'
 
         isColored = False
-        if (isImage or (tex.yaf_tex_type == 'VORONOI' and tex.color_mode not in 'INTENSITY')):
+        if (isImage or (tex.bounty.tex_type == 'VORONOI' and tex.color_mode not in 'INTENSITY')):
             isColored = True
         yi.paramsSetBool("color_input", isColored)
         
         useAlpha = False        
         if isImage:
-            useAlpha = (tex.yaf_use_alpha) and not(tex.use_calculate_alpha)
+            useAlpha = (tex.bounty.use_alpha) and not(tex.use_calculate_alpha)
 
         yi.paramsSetBool("use_alpha", useAlpha)
 
@@ -148,8 +165,14 @@ class TheBountyMaterialWrite:
         yi.paramsSetBool("do_scalar", not do_color)
 
         return True
-
-    def writeMappingNode(self, mapname, mtex): #texname, mtex):
+    # 
+    
+    textureMappingParams = {
+        "element":"shader_node", "type":"texture_mapper", "name":"", 
+        "texture":"", "texco":"", "proj_x":0, "proj_y":1, "proj_z":2, 
+        "mapping":"plain", "offset":0.0, "scale":1, "bump_strength":0.0         
+    }
+    def writeMappingNode(self, mapname, mtex):
         yi = self.yi
         yi.paramsPushList()
 
@@ -193,28 +216,46 @@ class TheBountyMaterialWrite:
             # blender a bit more
             nf = mtex.normal_factor * 2
             yi.paramsSetFloat("bump_strength", nf)
-
-    def writeGlassShader(self, mat):
+            
+    
+    def glassParams(self, mat, linked_node):
+        #
+        materialParams = {}
+        nodemat = self.useMaterialNodes and linked_node is not None
+        
+        materialParams = {                
+            "IOR"               : mat.bounty.IOR_refraction,
+            "filter_color"      : mat.bounty.filter_color,
+            "mirror_color"      : linked_node.inputs['Mirror'].glass_mir_col if nodemat else mat.bounty.glass_mir_col,
+            "transmit_filter"   : mat.bounty.glass_transmit,
+            "absorption"        : mat.bounty.absorption,
+            "absorption_dist"   : mat.bounty.absorption_dist,
+            "dispersion_power"  : mat.bounty.dispersion_power,
+            "fake_shadows"      : mat.bounty.fake_shadows,
+            "alpha"             : mat.bounty.refr_roughness,
+        }
+        return materialParams
+    
+    def writeGlassShader(self, mat, linked_node):
 
         yi = self.yi
         yi.paramsClearAll()
+        #
+        params = self.glassParams( mat, linked_node)
         
         # add refraction roughness for roughglass material
         if mat.bounty.mat_type == "rough_glass":
-            yi.paramsSetString("type", "rough_glass")
             yi.paramsSetFloat("alpha", mat.bounty.refr_roughness)
-        else:
-            yi.paramsSetString("type", "glass")
+        yi.paramsSetString("type", mat.bounty.mat_type)
 
         yi.paramsSetFloat("IOR", mat.bounty.IOR_refraction)  # added IOR for refraction
         filt_col = mat.bounty.filter_color
-        mir_col = mat.bounty.glass_mir_col
-        tfilt = mat.bounty.glass_transmit
+        mir_col = params.get('mirror_color', mat.bounty.glass_mir_col)
         abs_col = mat.bounty.absorption
 
         yi.paramsSetColor("filter_color", filt_col[0], filt_col[1], filt_col[2])
         yi.paramsSetColor("mirror_color", mir_col[0], mir_col[1], mir_col[2])
-        yi.paramsSetFloat("transmit_filter", tfilt)
+        yi.paramsSetFloat("transmit_filter", mat.bounty.glass_transmit)
 
         yi.paramsSetColor("absorption", abs_col[0], abs_col[1], abs_col[2])
         yi.paramsSetFloat("absorption_dist", mat.bounty.absorption_dist)
@@ -245,51 +286,71 @@ class TheBountyMaterialWrite:
                     bumpRoot = lname
                 
             if used:
-                self.writeMappingNode(mappername, mtex) #.texture.name, mtex)
+                self.writeMappingNode(mappername, mtex)
                 i += 1
 
         yi.paramsEndList()
-        if len(mcolRoot) > 0:
-            yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)
+        if mcolRoot.startswith('mircol_'):  yi.paramsSetString("mirror_color_shader", mcolRoot)            
+        if bumpRoot.startswith('bump_'):    yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
+    
+    def glossyParams(self, mat, linked_node):
+        #
+        materialParams = {}
+        nodemat = self.useMaterialNodes and linked_node is not None
+        #
+        materialParams = {
 
-    def writeGlossyShader(self, mat):
+            "diffuse_color"     : linked_node.inputs['Diffuse'].diff_color      if nodemat else mat.diffuse_color,
+            "color"             : linked_node.inputs['Glossy'].glossy_color     if nodemat else mat.bounty.glossy_color,
+            "glossy_reflect"    : linked_node.inputs['Specular'].glossy_reflect if nodemat else mat.bounty.glossy_reflect,
+            "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect if nodemat else mat.bounty.diffuse_reflect,
+            #"diffuse_brdf"      : linked_node.inputs['BRDF'].brdf_type          if nodemat else mat.bounty.brdf_type,
+            #"sigma"             : linked_node.inputs['BRDF'].sigma              if nodemat else mat.bounty.sigma,                
+        }
+        return materialParams
+            
+    def writeGlossyShader(self, mat, linked_node):
         yi = self.yi
         yi.paramsClearAll()
-
+        #
+        params = self.glossyParams(mat, linked_node)
         #-------------------------------------------
         # Add IOR and mirror color for coated glossy
         #-------------------------------------------
         if mat.bounty.mat_type == "coated_glossy":
-            #
             yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
             mir_col = mat.bounty.coat_mir_col
             yi.paramsSetColor("mirror_color", mir_col[0], mir_col[1], mir_col[2])
         
-        diffuse_color = mat.diffuse_color
-        glossy_color = mat.bounty.glossy_color
+        diffuse_color = params.get('diffuse_color', mat.diffuse_color)
+        glossy_color = params.get('color', mat.bounty.glossy_color)
+        glossy_reflect = params.get("glossy_reflect", mat.bounty.glossy_reflect)
 
         yi.paramsSetColor("diffuse_color", diffuse_color[0], diffuse_color[1], diffuse_color[2])
         yi.paramsSetColor("color", glossy_color[0], glossy_color[1], glossy_color[2])
-        yi.paramsSetFloat("glossy_reflect", mat.bounty.glossy_reflect)
+        yi.paramsSetFloat("glossy_reflect", glossy_reflect)
         yi.paramsSetFloat("exponent", mat.bounty.exponent)
-        yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
+        yi.paramsSetFloat("diffuse_reflect", params.get('diffuse_reflect', mat.bounty.diffuse_reflect))
         yi.paramsSetBool("as_diffuse", mat.bounty.as_diffuse)
         yi.paramsSetBool("anisotropic", mat.bounty.anisotropic)
         yi.paramsSetFloat("exp_u", mat.bounty.exp_u)
         yi.paramsSetFloat("exp_v", mat.bounty.exp_v)
         #
+        brdf = 'lambert'
         if mat.bounty.brdf_type == "oren-nayar":  # oren-nayar fix for glossy
-            yi.paramsSetString("diffuse_brdf", "Oren-Nayar")
-            yi.paramsSetFloat("sigma", mat.bounty.sigma)
+            brdf = 'Oren-Nayar'
+            yi.paramsSetString("diffuse_brdf", brdf)
+            yi.paramsSetFloat("sigma", params.get('sigma', mat.bounty.sigma))
         #
         yi.paramsSetString("type", mat.bounty.mat_type)
 
         # init shader values..
-        diffRoot = glossRoot = glRefRoot = bumpRoot = ''
+        diffRoot = ''
+        glossRoot = ''
+        glRefRoot = ''
+        bumpRoot = ''
         # mcolRoot = '' is UNUSED ??  TODO: review for coated case */
 
         i = 0
@@ -313,7 +374,7 @@ class TheBountyMaterialWrite:
             #
             if mtex.use_map_specular:
                 lname = "glossref_layer%x" % i
-                if self.writeTexLayer(lname, mappername, glRefRoot, mtex, [mat.bounty.glossy_reflect], mtex.specular_factor):
+                if self.writeTexLayer(lname, mappername, glRefRoot, mtex, [glossy_reflect], mtex.specular_factor):
                     used = True
                     glRefRoot = lname
             #
@@ -324,39 +385,59 @@ class TheBountyMaterialWrite:
                     bumpRoot = lname
             #
             if used:
-                self.writeMappingNode(mappername, mtex) #.texture.name, mtex)
+                self.writeMappingNode(mappername, mtex)
             i += 1
 
         yi.paramsEndList()
         
-        if len(diffRoot) > 0:
-            yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(glossRoot) > 0:
-            yi.paramsSetString("glossy_shader", glossRoot)
-        if len(glRefRoot) > 0:
-            yi.paramsSetString("glossy_reflect_shader", glRefRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if glossRoot.startswith('gloss_'):      yi.paramsSetString("glossy_shader", glossRoot)
+        if glRefRoot.startswith('glossref_'):   yi.paramsSetString("glossy_reflect_shader", glRefRoot)            
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
     
-    def writeTranslucentShader(self, mat):
+    def sssParams(self, mat, linked_node):
+        #
+        materialParams = {}
+        nodemat = self.useMaterialNodes and linked_node is not None
+        
+        materialParams = {
+            "IOR"               : mat.bounty.sssIOR,
+            "color"             : mat.diffuse_color, 
+            "glossy_color"      : mat.bounty.glossy_color,
+            "specular_color"    : mat.bounty.sssSpecularColor,
+            "sigmaA"            : mat.bounty.sssSigmaA,
+            "sigmaS"            : mat.bounty.sssSigmaS,
+            "sigmaS_factor"     : mat.bounty.sssSigmaS_factor,
+            "diffuse_reflect"   : mat.bounty.diffuse_reflect,
+            "glossy_reflect"    : mat.bounty.glossy_reflect,
+            "sss_transmit"      : mat.bounty.sss_transmit,
+            "exponent"          : mat.bounty.exponent,
+            "g"                 : mat.bounty.phaseFuction
+        }
+        return materialParams
+    
+    def writeTranslucentShader(self, mat, linked_node):
         yi = self.yi
         yi.paramsClearAll()
+        #
+        params = self.sssParams(mat, linked_node)
+        
+        diffColor   = params.get('color', mat.diffuse_color)
+        glossyColor = params.get('glossy_color', mat.bounty.glossy_color)
+        specColor   = params.get('specular_color', mat.bounty.sssSpecularColor)
+        sigmaA      = params.get('sigmaA', mat.bounty.sssSigmaA)
+        sigmaS      = params.get('sigmaS', mat.bounty.sssSigmaS)
+        
         yi.paramsSetString("type", "translucent")
-        yi.paramsSetFloat("IOR", mat.bounty.sssIOR)
-        
-        diffColor   = mat.diffuse_color
-        glossyColor = mat.bounty.glossy_color;
-        specColor   = mat.bounty.sssSpecularColor
-        sigmaA      = mat.bounty.sssSigmaA
-        sigmaS      = mat.bounty.sssSigmaS
-        
+        yi.paramsSetFloat("IOR", params.get('IOR', mat.bounty.sssIOR))
         yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
         yi.paramsSetColor("glossy_color", glossyColor[0], glossyColor[1], glossyColor[2])
         yi.paramsSetColor("specular_color", specColor[0], specColor[1], specColor[2])
         yi.paramsSetColor("sigmaA", sigmaA[0], sigmaA[1], sigmaA[2])
         yi.paramsSetColor("sigmaS", sigmaS[0], sigmaS[1], sigmaS[2])
+        
         yi.paramsSetFloat("sigmaS_factor", mat.bounty.sssSigmaS_factor)
         yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
         yi.paramsSetFloat("glossy_reflect", mat.bounty.glossy_reflect)
@@ -365,7 +446,12 @@ class TheBountyMaterialWrite:
         yi.paramsSetFloat("g", mat.bounty.phaseFuction) # fix phase function, report by wizofboz
         
         # init shader values..
-        diffRoot = glossRoot = glRefRoot = transpRoot = translRoot = bumpRoot = ''
+        diffRoot = ''
+        glossRoot = ''
+        glRefRoot = ''
+        transpRoot = ''
+        translRoot = ''
+        bumpRoot = ''
         
         i=0
         used_mtextures = self.getUsedTextures(mat)
@@ -415,99 +501,87 @@ class TheBountyMaterialWrite:
             i +=1
         
         yi.paramsEndList()
-        if len(diffRoot) > 0:   yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(glossRoot) > 0:  yi.paramsSetString("glossy_shader", glossRoot)
-        if len(glRefRoot) > 0:  yi.paramsSetString("glossy_reflect_shader", glRefRoot)
-        if len(bumpRoot) > 0:   yi.paramsSetString("bump_shader", bumpRoot)
-        if len(transpRoot) > 0: yi.paramsSetString("sigmaA_shader", transpRoot)
-        if len(translRoot) > 0: yi.paramsSetString("sigmaS_shader", translRoot)
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if glossRoot.startswith('gloss_'):      yi.paramsSetString("glossy_shader", glossRoot)
+        if glRefRoot.startswith('glossref'):    yi.paramsSetString("glossy_reflect_shader", glRefRoot)
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)
+        if transpRoot.startswith('transp_'):    yi.paramsSetString("sigmaA_shader", transpRoot)
+        if translRoot.startswith('translu_'):   yi.paramsSetString("sigmaS_shader", translRoot)
 
         return yi.createMaterial(self.namehash(mat))
-    #-------->
     
-    def shinyMat(self, mat):
+    #-----------------------------------------------------
+    # Shiny diffuse material
+    #-----------------------------------------------------
+    def shinyParams(self, mat, linked_node):
         #
-        node_type = mat.bounty.mat_type
-        if mat.bounty.nodetree != "":
-            ntree = mat.bounty.nodetree
-            node_inputs = bpy.data.node_groups[mat.name].nodes[mat.bounty.node_output].inputs
-            print(node_inputs[0].name)
-            #shiny = {
-            #    "color"             : bpy.data.node_groups[mat.name].nodes[mat.bounty.node_output].inputs[0].diff_color,
-                #"transparency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[2].transparency,
-                #"translucency"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].translucency,
-                #"diffuse_reflect"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].diffuse_reflect,
-                #"emit"              : bpy.data.node_groups[mat.name].nodes[node_type].inputs[0].emittance,
-                #"transmit_filter"   : bpy.data.node_groups[mat.name].nodes[node_type].inputs[3].transmit,
-                #"specular_reflect"  : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].specular_reflect,
-                #"mirror_color"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[4].mirror_color,
-                #"fresnel_effect"    : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].fresnel_effect,
-                #"IOR"               : bpy.data.node_groups[mat.name].nodes[node_type].inputs[5].IOR_reflection,
-                #"diffuse_brdf"      : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].brdf_type,
-                #"sigma"             : bpy.data.node_groups[mat.name].nodes[node_type].inputs[1].sigma
-            #}
-            
-            #else:
-        shiny = {
-                "color"             : mat.bounty.diff_color,
-                "transparency"      : mat.bounty.transparency,
-                "translucency"      : mat.translucency,
-                "diffuse_reflect"   : mat.bounty.diffuse_reflect,
-                "emit"              : mat.bounty.emittance,
-                "transmit_filter"   : mat.bounty.transmit_filter,
-                "specular_reflect"  : mat.bounty.specular_reflect,
-                "mirror_color"      : mat.bounty.mirr_color,
-                "fresnel_effect"    : mat.bounty.fresnel_effect,
-                "IOR"               : mat.bounty.IOR_reflection,
-                "diffuse_brdf"      : mat.bounty.brdf_type,
-                "sigma"             : mat.bounty.sigma
-            }
-        return shiny
-            
-    def writeShinyDiffuseShader(self, mat):
+        materialParams = {}
+        nodemat = self.useMaterialNodes and linked_node is not None
+        #
+        materialParams = {
+            "type"              : mat.bounty.mat_type,
+            "color"             : linked_node.inputs['Diffuse'].diff_color          if nodemat else mat.diffuse_color,
+            "diffuse_reflect"   : linked_node.inputs['Diffuse'].diffuse_reflect     if nodemat else mat.bounty.diffuse_reflect,
+            "emit"              : linked_node.emittance                             if nodemat else mat.bounty.emittance,
+            "diffuse_brdf"      : linked_node.brdf_type                             if nodemat else mat.bounty.brdf_type,
+            "sigma"             : linked_node.sigma                                 if nodemat else mat.bounty.sigma,
+            "transparency"      : linked_node.inputs['Transparency'].transparency   if nodemat else mat.bounty.transparency,
+            "translucency"      : linked_node.inputs['Translucency'].translucency   if nodemat else mat.bounty.translucency,
+            "transmit_filter"   : linked_node.transmit                              if nodemat else mat.bounty.transmit_filter,
+            "specular_reflect"  : linked_node.inputs['Specular'].specular_reflect   if nodemat else mat.bounty.specular_reflect,
+            "mirror_color"      : linked_node.inputs['Mirror'].mirror_color         if nodemat else mat.bounty.mirror_color,
+            "fresnel_effect"    : linked_node.fresnel_effect                        if nodemat else mat.bounty.fresnel_effect,
+            "IOR"               : linked_node.IOR_reflection                        if nodemat else mat.bounty.IOR_reflection,                            
+        }
+        return materialParams
+       
+    def writeShinyDiffuseShader(self, mat, linked_node):
+        
         yi = self.yi
-        shinyParams = self.shinyMat(mat)
-        
-        bCol = shinyParams.get('color', (0.8, 0.8, 0.8))
-        mirCol = shinyParams.get('mirror_color', (0.8, 0.8, 0.8))
-        
-        specular_reflect = shinyParams.get('specular_reflect', 0.0)
-        transparency = shinyParams.get('transparency', 0.0)
-        translucency = shinyParams.get('translucency', 0.0)
-        brdf = shinyParams.get('diffuse_brdf', 'lambert')
-        bEmit = shinyParams.get('emit', 0.0)
-
         yi.paramsClearAll()
-
-        yi.paramsSetString("type", "shinydiffusemat")
+        '''
+        chequear los nodos admitidos por cada slot
+        '''
+        if linked_node is not None:
+            diffuse = linked_node.inputs['Diffuse']
+            print('\nDiffuse color: ', diffuse.getParams()['color'])
+            if diffuse.is_linked:
+                print('\nDiffuse layer: ', diffuse.getParams()['DiffuseLayer'].keys())
+                
+            transparency = linked_node.inputs['Transparency']#['stencil']
+            #if linked_node.inputs['Transparency'].is_linked:
+            print('\nTransparency parameters: ', transparency.getParams()['transparency'])
+                
+        params = self.shinyParams(mat, linked_node)
         
-        if self.preview:
-            #---------------------------------------------------
-            # fix know issue with the use of own variable diff_color
-            # and the background texture on material preview
-            #---------------------------------------------------
-            bCol = mat.diffuse_color
-            # for fix dark texture backgroung in material preview
-            #if mat.name.startswith("checker"):
-            #    bEmit = 0.50
+        diffColor = params.get('color', mat.diffuse_color)
+        mirCol = params.get('mirror_color', mat.bounty.mirror_color)
+        
+        specular_reflect = params.get('specular_reflect', mat.bounty.specular_reflect)
+        transparency = params.get('transparency', mat.bounty.transparency)
+        translucency = params.get('translucency', mat.bounty.translucency)
+        brdf = params.get('diffuse_brdf', mat.bounty.brdf_type)
+
+        yi.paramsSetString("type", 'shinydiffusemat')
+        
         ##
-        yi.paramsSetColor("color", bCol[0], bCol[1], bCol[2])
+        yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
         yi.paramsSetFloat("transparency", transparency)
         yi.paramsSetFloat("translucency", translucency)
-        yi.paramsSetFloat("diffuse_reflect", shinyParams.get('diffuse_reflect', 1.0))
-        yi.paramsSetFloat("emit", bEmit)
-        yi.paramsSetFloat("transmit_filter", shinyParams.get('transmit_filter', 1.0))
+        yi.paramsSetFloat("diffuse_reflect", params.get('diffuse_reflect', mat.bounty.diffuse_reflect))
+        yi.paramsSetFloat("emit", params.get('emit', mat.bounty.emittance))
+        yi.paramsSetFloat("transmit_filter", params.get('transmit_filter', mat.bounty.transmit_filter))
 
         yi.paramsSetFloat("specular_reflect", specular_reflect)
         yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
-        yi.paramsSetBool("fresnel_effect", shinyParams.get('fresnel_effect', False))
-        yi.paramsSetFloat("IOR", shinyParams.get('IOR', 1.0))
+        yi.paramsSetBool("fresnel_effect", params.get('fresnel_effect', False))
+        yi.paramsSetFloat("IOR", params.get('IOR', mat.bounty.IOR_reflection))
         
         yi.paramsSetString("diffuse_brdf", brdf)
         if brdf == "oren_nayar":
-            yi.paramsSetFloat("sigma", shinyParams.get('sigma', 0.1))
-        ##
-
+            yi.paramsSetFloat("sigma", params.get('sigma', mat.bounty.sigma))
+        #
+        
         i = 0
         used_textures = self.getUsedTextures(mat)
 
@@ -559,38 +633,51 @@ class TheBountyMaterialWrite:
                     bumpRoot = lname
             #
             if used:
-                self.writeMappingNode(mappername, mtex) #.texture.name, mtex)
+                self.writeMappingNode(mappername, mtex)
             i += 1
 
         yi.paramsEndList()
-        if len(diffRoot) > 0:
-            yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(mcolRoot) > 0:
-            yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if len(transpRoot) > 0:
-            yi.paramsSetString("transparency_shader", transpRoot)
-        if len(translRoot) > 0:
-            yi.paramsSetString("translucency_shader", translRoot)
-        if len(mirrorRoot) > 0:
-            yi.paramsSetString("mirror_shader", mirrorRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)        
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if mcolRoot.startswith('mircol_'):      yi.paramsSetString("mirror_color_shader", mcolRoot)
+        if transpRoot.startswith('transp_'):    yi.paramsSetString("transparency_shader", transpRoot)
+        if translRoot.startswith('translu_'):   yi.paramsSetString("translucency_shader", translRoot)
+        if mirrorRoot.startswith('mirr_'):      yi.paramsSetString("mirror_shader", mirrorRoot)
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
-    
 
-    def writeBlendShader(self, mat):
+    def blendParams(self, mat, linked_node):
+        #
+        materialParams = {}
+        nodemat = self.useMaterialNodes and linked_node is not None
+        
+        materialParams = {
+            'material1'     : linked_node.blendOne      if nodemat else mat.bounty.blendOne,
+            'material2'     : linked_node.blendTwo      if nodemat else mat.bounty.blendTwo,
+            "blend_value"   : linked_node.blend_amount  if nodemat else mat.bounty.blend_value
+        }          
+        return materialParams
+    #
+    def writeBlendShader(self, mat, linked_node):
         yi = self.yi
         yi.paramsClearAll()
-
-        yi.printInfo("Exporter: Blend material with: [" + mat.bounty.blendOne + "] [" + mat.bounty.blendTwo + "]")
-        yi.paramsSetString("type", "blend_mat")
-        
-        mat1 = bpy.data.materials[mat.bounty.blendOne]
-        yi.paramsSetString("material1", self.namehash(mat1))
         #
-        mat2 = bpy.data.materials[mat.bounty.blendTwo]
-        yi.paramsSetString("material2", self.namehash(mat2))
+        params = self.blendParams(mat, linked_node)
+
+        yi.paramsSetString("type", "blend_mat")
+        try:
+            mat1 = bpy.data.materials[params.get('material1')]
+            blendone = self.namehash(mat1)
+        except:
+            blendone = 'defaultMat'
+        yi.paramsSetString("material1", blendone)
+        #
+        try:
+            mat2 = bpy.data.materials[params.get('material2')]
+            blendtwo = self.namehash(mat2)
+        except:
+            blendtwo = 'defaultMat'
+        yi.paramsSetString("material2", blendtwo)
         
         i = 0
 
@@ -611,18 +698,21 @@ class TheBountyMaterialWrite:
                     maskRoot = layername
             #
             if used:
-                self.writeMappingNode(mappername, mtex) #mtex.texture.name, mtex)
+                self.writeMappingNode(mappername, mtex)
             i += 1
 
         yi.paramsEndList()
 
         # if we have a blending map, disable the blend_value
-        if len(maskRoot) > 0:
+        blendValue = params.get('blend_value', mat.bounty.blend_value)
+        if maskRoot.startswith("mask_"):
             yi.paramsSetString("mask", maskRoot)
-            yi.paramsSetFloat("blend_value", 0)
-        else:
-            yi.paramsSetFloat("blend_value", mat.bounty.blend_value)
-
+            blendValue = 0
+        #
+        yi.paramsSetFloat("blend_value", blendValue)
+        #
+        yi.printInfo("Exporter: Blend material with: [" + blendone + "] [" + blendtwo + "]")
+        
         return yi.createMaterial(self.namehash(mat))
 
     def writeMatteShader(self, mat):
@@ -643,28 +733,63 @@ class TheBountyMaterialWrite:
         self.yi.paramsSetColor("color", 0.8, 0.8, 0.8)
         self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
         return yi.createMaterial("defaultMat")
-
-    def writeMaterial(self, mat, preview=False):
+    
+    def getNodeOut(self, mat):
+        nodeOutName = 'None'
+        if mat.bounty.nodetree != "":
+            for nodeOut in bpy.data.node_groups[mat.bounty.nodetree].nodes:
+                if nodeOut.bl_idname == 'MaterialOutputNode' and nodeOut.inputs[0].is_linked:
+                    nodeOutName = nodeOut.name
+                    print('out: ', nodeOutName)
+                    break
+        return nodeOutName
+                
+    def writeMaterial(self, mat, preview=False): 
+        #
         self.preview = preview
         self.yi.printInfo("Exporter: Creating Material: \"" + self.namehash(mat) + "\"")
         ymat = None
+        #paramsSet={}
+        #
+        self.useMaterialNodes = False
+        outNodeName = self.getNodeOut(mat)
+        linked_node = None
+        if mat.bounty.nodetree != "" and outNodeName is not 'None':            
+            inputNodeOut = bpy.data.node_groups[mat.bounty.nodetree].nodes[outNodeName].inputs[0]
+            print('out name: ', inputNodeOut.name)
+            # check nodetree
+            if inputNodeOut.is_linked:
+                # set linked_node..
+                linked_node = inputNodeOut.links[0].from_node
+                                  
+                # find valid node type
+                if linked_node.bl_label in validMaterialTypes:
+                    #print('label: ',linked_node.bl_label)
+                    mat.bounty.mat_type = linked_node.bl_label
+                    self.useMaterialNodes = True
+                else:
+                    bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
+                    linked_node = None
+                    print('Not valid node has got connected. Ignoring nodetree')
+        
+        #
         if mat.name == "y_null":
             ymat = self.writeNullMat(mat)
             
         elif mat.bounty.mat_type in {"glass", "rough_glass"}:
-            ymat = self.writeGlassShader(mat)
+            ymat = self.writeGlassShader(mat, linked_node)
             
         elif mat.bounty.mat_type in {"glossy", "coated_glossy"}:
-            ymat = self.writeGlossyShader(mat)
+            ymat = self.writeGlossyShader(mat, linked_node)
             
-        elif mat.bounty.mat_type == "shinydiffusemat":
-            ymat = self.writeShinyDiffuseShader(mat)
+        elif mat.bounty.mat_type == "shinydiffusemat":            
+            ymat = self.writeShinyDiffuseShader(mat, linked_node)
             
-        elif mat.bounty.mat_type == "blend":
-            ymat = self.writeBlendShader(mat)
+        elif mat.bounty.mat_type == "blend":            
+            ymat = self.writeBlendShader(mat, linked_node)
         #
         elif mat.bounty.mat_type == "translucent":
-            ymat = self.writeTranslucentShader(mat)
+            ymat = self.writeTranslucentShader(mat, linked_node)
         #
         else:
             ymat = self.writeNullMat(mat)

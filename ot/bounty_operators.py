@@ -138,21 +138,20 @@ class TheBounty_OT_presets_ior_list(Operator):
 #
 opClasses.append(TheBounty_OT_presets_ior_list)
 #
-
-class Thebounty_OT_UpdateBlend(Operator):
-    bl_idname = "material.parse_blend"
-    bl_label = "Sync material slots or Fix empty selector"
+class Thebounty_OT_SyncBlendMaterial(Operator):
+    bl_idname = "material.sync_blend"
+    bl_label = "Sync Blendmat slots or Fix empty selection"
     bl_description = "Sync material slot with selected materials or fix empty selected item"    
     
     @classmethod
     def poll(cls, context):
-        material = context.material
+        material = context.object.active_material
         return material and (material.bounty.mat_type == "blend")
     #
     def execute(self, context):
-        obj = context.object
+        #
+        obj = bpy.context.object
         mat = bpy.context.object.active_material
-               
         #-------------------------
         # blend material one
         #-------------------------
@@ -175,13 +174,10 @@ class Thebounty_OT_UpdateBlend(Operator):
             obj.data.materials.append(bpy.data.materials[mat.bounty.blendTwo])
         
         return {'FINISHED'}
-    
-opClasses.append(Thebounty_OT_UpdateBlend)            
-#-------------------------------------------
-# Add support for use ibl files
-#-------------------------------------------
-import re, os
-
+# 
+opClasses.append(Thebounty_OT_SyncBlendMaterial)
+              
+#
 class Thebounty_OT_ParseSSS(Operator):
     bl_idname = "material.parse_sss"
     bl_label = "Apply SSS preset values"
@@ -315,7 +311,7 @@ class Thebounty_OT_ParseSSS(Operator):
         
         elif mat.sss_presets=='custom':
             # colors
-            material.diffuse_color = material.diffuse_color
+            material.diffuse_color = mat.diff_color
             mat.sssSigmaS = mat.sssSigmaS
             mat.sssSigmaA = mat.sssSigmaA
             mat.sssSpecularColor = mat.sssSpecularColor
@@ -331,6 +327,11 @@ class Thebounty_OT_ParseSSS(Operator):
 #
 opClasses.append(Thebounty_OT_ParseSSS)
 
+#-------------------------------------------
+# Add support for use ibl files
+#-------------------------------------------
+import re, os
+
 class Thebounty_OT_ParseIBL(Operator):
     bl_idname = "world.parse_ibl"
     bl_label = "Parse IBL"
@@ -343,16 +344,19 @@ class Thebounty_OT_ParseIBL(Operator):
     
     @classmethod
     def poll(cls, context):
-        world = context.world
+        world = context.scene.world
         return world and (world.bounty.bg_type == "textureback")
     #
     def execute(self, context):
         world = context.world.bounty
         scene = context.scene
         file = world.ibl_file
+        filePath = bpy.path.abspath(world.ibl_file)
+        filePath = os.path.realpath(filePath)
+        filePath = os.path.normpath(filePath)
         # parse..
-        self.iblValues = self.parseIbl(file)
-        iblFolder = os.path.dirname(file) 
+        self.iblValues = self.parseIbl(filePath)
+        iblFolder = os.path.dirname(filePath) 
         #print(iblFolder)
         worldTexture = scene.world.active_texture
         if worldTexture.type == "IMAGE" and (worldTexture.image is not None):
@@ -384,63 +388,84 @@ class Thebounty_OT_ParseIBL(Operator):
         line = f.readline()
         while line != "":
             line = f.readline()
-            if line.startswith('ICOfile'):
-                self.iblValues['ICOfile']= self.parseValue(line, 2) # string
+            if line.startswith('ICOfile'): # string
+                self.iblValues['ICOfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('PREVIEWfile'):
-                self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
-            
-            #[Background]
-            if line.startswith('BGfile'):
-                self.iblValues['BGfile']= self.parseValue(line, 2) # string
+            if line.startswith('PREVIEWfile'): # string   
+                self.iblValues['PREVIEWfile'] = self.parseValue(line, 2)       
+            # [Background]
+            # BGfile = "file_Bg.jpg", BGmap = 1, BGu = 0.0, BGv = 0.0, BGheight = 3072, 
+            if line.startswith('BGfile'): # string
+                self.iblValues['BGfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('BGheight'):
-                self.iblValues['BGheight']= self.parseValue(line, 1) # integer
-            
+            if line.startswith('BGheight'): # integer
+                self.iblValues['BGheight'] = self.parseValue(line, 1)
             # [Enviroment]
-            if line.startswith('EVfile'):
-                self.iblValues['EVfile']= self.parseValue(line, 2) # string
+            #EVfile = "file_Env.hdr", EVmap = 1, EVu = 0.0, EVv = 0.0, EVheight = 180, EVmulti = 1.0, EVgamma = 2.2
+            if line.startswith('EVfile'): # string
+                self.iblValues['EVfile'] = self.parseValue(line, 2)
             #
-            if line.startswith('EVheight'):
-                self.iblValues['EVheight']= self.parseValue(line, 1) # integer
+            if line.startswith('EVheight'): # integer
+                self.iblValues['EVheight'] = self.parseValue(line, 1)
             #
-            if line.startswith('EVgamma'):
-                self.iblValues['EVgamma']= self.parseValue(line, 0) # float
-            
-            # [Reflection]   
-            if line.startswith('REFfile'):
-                self.iblValues['REFfile']= self.parseValue(line, 2) # string
+            if line.startswith('EVgamma'): # float
+                self.iblValues['EVgamma'] = self.parseValue(line, 0)
+            # [Reflection] 
+            #REFfile = "file_Ref.hdr", REFmap = 1,  REFu = 0.0, REFv = 0.0, REFheight = 1536, REFmulti = 1.0, REFgamma = 2.2  
+            if line.startswith('REFfile'): # string
+                self.iblValues['REFfile'] = self.parseValue(line, 2)
                 
-            if line.startswith('REFheight'):
-                self.iblValues['REFheight']= self.parseValue(line, 1) # integer
+            if line.startswith('REFheight'): # integer
+                self.iblValues['REFheight'] = self.parseValue(line, 1)
                 
-            if line.startswith('REFgamma'):
-                self.iblValues['REFgamma']= self.parseValue(line, 0) # float
-                
-            # [Sun]
-            if line.startswith('SUNcolor'):
-                self.iblValues['SUNcolor'] = (255,255,245)
-                
-            if line.startswith('SUNmulti'):
-                self.iblValues['SUNmulti']= self.parseValue(line, 0) # float
-                
-            if line.startswith('SUNu'):
-                self.iblValues['SUNu']= self.parseValue(line, 0) # float
-                
-            if line.startswith('SUNv'):
-                self.iblValues['SUNv']= self.parseValue(line, 0) # float
+            if line.startswith('REFgamma'): # float
+                self.iblValues['REFgamma'] = self.parseValue(line, 0)
                      
         f.close()
         return self.iblValues
     
 opClasses.append(Thebounty_OT_ParseIBL)
-# test
+
+#
+class Thebounty_OT_alignIBL(Operator):
+    bl_idname = "world.align_ibl"
+    bl_label = "Interactive IBL Alignament"
+    bl_description='Interactive texture background  alignment to your scene'
+    
+    @classmethod
+    def poll(cls, context):
+        world = context.scene.world
+        #bpy.context.scene.world.active_texture
+        texture = world.active_texture
+        if world and (world.bounty.bg_type == "textureback") and texture and texture.type == 'IMAGE' and texture.image:
+            return True
+        
+        return False
+    
+    def execute(self, context):
+        # blender parameters
+        # TODO: refine code
+        world = context.scene.world
+        world.use_sky_paper = False
+        world.use_sky_blend = False
+        world.use_sky_real = True
+        
+        world.texture_slots[0].texture_coords='EQUIRECT'
+        world.texture_slots[0].use_map_horizon = True
+
+        # exporter parameters
+        world.bounty.bg_mapping_type = 'SPHERE'
+        world.bounty.bg_rotation = 180
+        
+        return {'FINISHED'}
+        
+opClasses.append(Thebounty_OT_alignIBL)    
+    
 
 def register():
     for cls in opClasses:
         bpy.utils.register_class(cls)
     
-
 def unregister():
     for cls in opClasses:
         bpy.utils.unregister_class(cls)
