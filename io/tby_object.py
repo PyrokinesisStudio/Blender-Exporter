@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 
-import os
+import os, struct
 import bpy
 import time
 import math
@@ -169,7 +169,15 @@ class exportObject(object):
             self.writeBGPortal(obj, matrix)
 
         elif obj.particle_systems:  # Particle Hair system
-            self.writeParticleStrands(obj, matrix)
+            # TODO: add bake option in UI
+            bake = self.scene.bounty.gs_type_render == 'xml'
+            #
+            for pSys in obj.particle_systems:
+                if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
+                    if bake:
+                        self.bakeParticleStrands(obj, matrix, pSys)
+                    else:
+                        self.writeParticleStrands(obj, matrix, pSys)
 
         else:  # The rest of the object types
             self.writeMesh(obj, matrix)
@@ -192,7 +200,6 @@ class exportObject(object):
         self.yi.printInfo("Exporting Instance of {0} [ID = {1:d}]".format(name, oID))
 
         mat4 = obj2WorldMatrix.to_4x4()
-        # mat4.transpose() --> not needed anymore: matrix indexing changed with Blender rev.42816
 
         o2w = self.get4x4Matrix(mat4)
 
@@ -264,8 +271,10 @@ class exportObject(object):
         self.yi.paramsSetInt("samples", obj.ml_samples)
         self.yi.paramsSetInt("object", ID)
         self.yi.createLight(object.name)
+        # test for hidden meshlight object
+        objType = 0 #256 if obj.ml_hidde_mesh else 0
 
-        self.writeGeometry(ID, object, matrix, 0, ml_mat)  # obType in 0, default, the object is rendered
+        self.writeGeometry(ID, object, matrix, objType, ml_mat)
 
     def writeVolumeObject(self, object, matrix):
         # use object subclass properties
@@ -471,76 +480,281 @@ class exportObject(object):
             strandShape = material.strand.shape
         return strandStart, strandEnd, strandShape
     
-    def writeParticleStrands(self, obj, matrix):
+    def writeParticleStrands(self, obj, matrix, pSys):
 
         yi = self.yi
         totalNumberOfHairs = 0
         
         renderEmitter = False
-        if hasattr(obj, 'particle_systems') == False:
-            return
-        # Check for hair particles:
-        for pSys in obj.particle_systems:
-            for mod in [m for m in obj.modifiers if (m is not None) and (m.type == 'PARTICLE_SYSTEM')]:
-                if (pSys.settings.render_type == 'PATH') and mod.show_render and (pSys.name == mod.particle_system.name):
-                    yi.printInfo("Exporter: Creating Hair Particle System {!r}".format(pSys.name))
-                    tstart = time.time()
-                    #-----------------------------------------------
-                    # set particle material values. if don't have
-                    # material assigned in blender, use default one
-                    #-----------------------------------------------
-                    strandStart = 0.01
-                    strandEnd = 0.01
-                    strandShape = 0.0                    
-                    hairMat = "default"  
-                                        
-                    if obj.active_material is not None:
-                        hairMat = obj.active_material
-                        strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
-                    # exception: if clay render is activated
-                    if self.scene.bounty.gs_clay_render:
-                        hairMat = "clay"
-                    #
-                    pSys.set_resolution(self.scene, obj, 'RENDER')    
-                    steps = pSys.settings.draw_step
-                    steps = 3 ** steps # or (power of 2 rather than 3) + 1 # Formerly : len(particle.hair_keys)
-                    #print(steps)
+        # Check for modifiers..
+        for mod in [m for m in obj.modifiers if (m is not None) and (m.type == 'PARTICLE_SYSTEM')]:
+            if mod.show_render and (pSys.name == mod.particle_system.name):
+                yi.printInfo("Exporter: Creating Hair Particle System {!r}".format(pSys.name))
+                tstart = time.time()
+                #                    
+                strandStart = 0.01
+                strandEnd = 0.01
+                strandShape = 0.0
+                #
+                print('material: ', pSys.settings.material)
+                try:
+                    hairMat = obj.material_slots[pSys.settings.material - 1].material
+                    strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
+                except:
+                    hairMat = "default"             
+                # if clay render is activated..
+                if self.scene.bounty.gs_clay_render:
+                    hairMat = "clay"
+                #
+                pSys.set_resolution(self.scene, obj, 'RENDER')    
+                steps = pSys.settings.render_step
+                steps = 2 ** steps
+                print(steps)
                             
-                    totalNumberOfHairs = ( len(pSys.particles) + len(pSys.child_particles) )
+                totalNumberOfHairs = ( len(pSys.particles) + len(pSys.child_particles) )
+                #
+                for particleIdx in range(0, totalNumberOfHairs):
+                    CID = yi.getNextFreeID()
+                    yi.paramsClearAll()
+                    yi.startGeometry()
+                    yi.startCurveMesh(CID, 1)
                     #
-                    prtvis = True # False
-                    #for particle in pSys.particles:
-                    #    if particle.is_exist and particle.is_visible:
-                    #        prtvis = True
-                    for particleIdx in range(0, totalNumberOfHairs):
-                        #
-                        #initCo = obj.matrix_world.inverted()*(pSys.co_hair(obj, pindex, 0))
-                        # move here
-                        CID = yi.getNextFreeID()
-                        yi.paramsClearAll()
-                        yi.startGeometry()
-                        yi.startCurveMesh(CID, prtvis)
-                        #
-                        for step in range(0, steps):
-                            co = pSys.co_hair(obj, particleIdx, step)
-                            if not co.length_squared == 0:
-                                yi.addVertex(co[0], co[1], co[2])                            
-                        #
-                        yi.endCurveMesh(self.materialMap[hairMat], strandStart, strandEnd, strandShape)
-                        # TODO: keep object smooth
-                        #yi.smoothMesh(CID, 60.0)
-                        yi.endGeometry()
-                    yi.printInfo("Exporter: Particle creation time: {0:.3f}".format(time.time() - tstart))
-                    
-                    #---------------------------------------------------------------------------------------
-                    if pSys.settings.use_render_emitter:
-                        renderEmitter = True
-                else:
-                    self.writeMesh(obj, matrix)
+                    for step in range(0, steps):
+                        point = obj.matrix_world.inverted()*(pSys.co_hair(obj, particleIdx, step))
+                        if point.length_squared != 0:
+                            yi.addVertex(point[0], point[1], point[2])                            
+                    #
+                    yi.endCurveMesh(self.materialMap[hairMat], strandStart, strandEnd, strandShape)
+                    yi.endGeometry()
+                #
+                yi.printInfo("Exporter: Particle creation time: {0:.3f}".format(time.time() - tstart))
             
-            # total hair's for each particle system              
-            yi.printInfo("Exporter: Total hair's created: {0} ".format(totalNumberOfHairs))
+        # total hair's for each particle system              
+        yi.printInfo("Exporter: Total hair's created: {0} ".format(totalNumberOfHairs))
             
         # We only need to render emitter object once
-        if renderEmitter:
+        if pSys.settings.use_render_emitter:
             self.writeMesh(obj, matrix)
+            
+    def bakeParticleStrands(self, obj, matrix, pSys):
+        #------------------------------------------
+        # code heavily based on LuxBlend exporter
+        #------------------------------------------
+        yi = self.yi
+        # Check for modifiers visibility..
+        for mod in obj.modifiers:
+            if mod.show_render and (pSys.name == mod.particle_system.name):
+
+                yi.printInfo('Exporting Hair system {0}...'.format(pSys.name))
+                
+                strandStart = 0.01
+                strandEnd = 0.01
+                strandShape = 0.0
+                hair_size = 0.01
+                width_offset = 0.1                 
+                    
+                try:
+                    hairMat = obj.material_slots[pSys.settings.material - 1].material                    
+                    strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
+                except:
+                    hairMat = "default"
+                        
+                # if clay render is activated..
+                if self.scene.bounty.gs_clay_render:
+                    hairMat = "clay"
+                #
+                pSys.set_resolution(self.scene, obj, 'RENDER')
+                steps = 2 ** pSys.settings.render_step
+                num_parents = len(pSys.particles)
+                num_children = len(pSys.child_particles)
+        
+                
+                start = 0
+                if num_children != 0:
+                    # Number of virtual parents reduces the number of exported children
+                    virtual_parents = math.trunc(0.3 * pSys.settings.virtual_parents * pSys.settings.child_nbr * num_parents)
+                    start = num_parents + virtual_parents
+        
+                partsys_name = '%s_%s' % (obj.name, pSys.name)
+        
+                #if psys.settings.luxrender_hair.use_binary_output:
+                    # Put HAIR_FILES files in frame-numbered subfolders to avoid
+                    # clobbering when rendering animations
+                    #sc_fr = '%s/%s/%s/%05d' % ( efutil.export_path, efutil.scene_filename(), 
+                    #                            bpy.path.clean_name(self.geometry_scene.name),
+                    #                            self.visibility_scene.frame_current)
+                sc_fr = self.scene.render.filepath
+                if not os.path.exists(sc_fr):
+                    os.makedirs(sc_fr)
+        
+                hair_filename = '%s.hair' % bpy.path.clean_name(partsys_name)
+                hair_file_path = '/'.join([sc_fr, hair_filename])
+        
+                segments = []
+                points = []
+                thickness = []
+                colors = []
+                uv_coords = []
+                total_segments_count = 0
+                vertex_color_layer = None
+                uv_tex = None
+                colorflag = 0
+                uvflag = 0
+                thicknessflag = 0
+                image_width = 0
+                image_height = 0
+                image_pixels = []
+        
+                mesh = obj.to_mesh(self.scene, True, 'RENDER')
+                uv_textures = mesh.tessface_uv_textures
+                vertex_color = mesh.tessface_vertex_colors
+        
+                has_vertex_colors = vertex_color.active and vertex_color.active.data
+        
+                '''
+                if psys.settings.luxrender_hair.export_color == 'vertex_color':
+                    if has_vertex_colors:
+                        vertex_color_layer = vertex_color.active.data
+                        colorflag = 1
+        
+                if uv_textures.active and uv_textures.active.data:
+                    uv_tex = uv_textures.active.data
+                    if 0: #psys.settings.luxrender_hair.export_color == 'uv_texture_map':
+                        if uv_tex[0].image:
+                            image_width = uv_tex[0].image.size[0]
+                            image_height = uv_tex[0].image.size[1]
+                            image_pixels = uv_tex[0].image.pixels[:]
+                            colorflag = 1
+                    uvflag = 1
+                '''
+                info = 'Modify from LuxBlend exported to use with TheBounty'
+        
+                #transform = obj.matrix_world.inverted()
+                total_strand_count = 0
+        
+                if strandStart == strandEnd:
+                    thicknessflag = 0
+                    hair_size *= strandStart
+                else:
+                    thicknessflag = 1
+        
+                for pindex in range(start, num_parents + num_children):
+                    #det.exported_objects += 1
+                    point_count = 0
+                    i = 0
+        
+                    if num_children == 0:
+                        i = pindex
+        
+                    # A small optimization in order to speedup the export
+                    # process: cache the uv_co and color value
+                    uv_co = None
+                    col = None
+                    #seg_length = 1.0 
+                    
+                    for step in range(0, steps):
+                        co = obj.matrix_world.inverted()*(pSys.co_hair(obj, pindex, step))
+                        #        
+                        if not co.length_squared == 0:
+                            #co = (co[0], co[1], co[2])
+                            points.append(co)
+        
+                            if thicknessflag:
+                                if step > steps * width_offset:
+                                    thick = (strandStart * (steps - step - 1) + strandEnd * 
+                                            (step - steps * width_offset)) /(steps * (1 - width_offset) - 1)
+                                else:
+                                    thick = strandStart
+        
+                                thickness.append(thick * hair_size)
+        
+                            point_count += + 1
+                            # pov: bounty don't need uv data because is create with flat ribbon in core.
+                            '''
+                            if uvflag:
+                                if not uv_co:
+                                    uv_co = psys.uv_on_emitter(mod, psys.particles[i], pindex, uv_textures.active_index)
+        
+                                uv_coords.append(uv_co)
+                            
+                            if psys.settings.luxrender_hair.export_color == 'uv_texture_map' and not len(image_pixels) == 0:
+                                if not col:
+                                    x_co = round(uv_co[0] * (image_width - 1))
+                                    y_co = round(uv_co[1] * (image_height - 1))
+        
+                                    pixelnumber = (image_width * y_co) + x_co
+        
+                                    r = image_pixels[pixelnumber * 4]
+                                    g = image_pixels[pixelnumber * 4 + 1]
+                                    b = image_pixels[pixelnumber * 4 + 2]
+                                    col = (r, g, b)
+        
+                                colors.append(col)
+                            elif psys.settings.luxrender_hair.export_color == 'vertex_color' and has_vertex_colors:
+                                if not col:
+                                    col = psys.mcol_on_emitter(mod, psys.particles[i], pindex, vertex_color.active_index)
+        
+                                colors.append(col)
+                            '''
+        
+                    if point_count == 1:
+                        points.pop()
+        
+                        if thicknessflag:
+                            thickness.pop()
+                        point_count -= 1
+                    elif point_count > 1:
+                        segments.append(point_count - 1)
+                        total_strand_count += 1
+                        total_segments_count = total_segments_count + point_count - 1
+        
+                with open(hair_file_path, 'wb') as hair_file:
+                    # Binary hair file format from http://www.cemyuksel.com/research/hairmodels/
+                    print('steps: ', steps)
+                    print('hair size: ', hair_size)        
+                    # File header
+                    hair_file.write(b'HAIR')  # magic number
+                    hair_file.write(struct.pack('<I', total_strand_count))  # total strand count
+                    hair_file.write(struct.pack('<I', len(points)))  # total point count
+                    # bit array for configuration
+                    hair_file.write(struct.pack('<I',1 + 2 + 4 * thicknessflag + 16 * colorflag + 32 * uvflag))
+                    hair_file.write(struct.pack('<I', steps))      # default segments count
+                    hair_file.write(struct.pack('<f', hair_size))  # default thickness
+                    hair_file.write(struct.pack('<f', 0.0))        # default transparency
+                    color = (0.65, 0.65, 0.65)
+                    hair_file.write(struct.pack('<3f', *color))  # default color
+                    hair_file.write(struct.pack('<88s', info.encode()))  # information
+        
+                    # hair data
+                    hair_file.write(struct.pack('<%dH' % (len(segments)), *segments))
+        
+                    for point in points:
+                        hair_file.write(struct.pack('<3f', *point))
+                    
+                    if thicknessflag:
+                        for thickn in thickness:
+                            hair_file.write(struct.pack('<1f', thickn))
+                    '''
+                    if colorflag:
+                        for col in colors:
+                            hair_file.write(struct.pack('<3f', *col))
+        
+                    if uvflag:
+                        for uv in uv_coords:
+                            hair_file.write(struct.pack('<2f', *uv))
+                    '''
+                yi.printInfo('Binary hair file written: {0}'.format(hair_file_path))
+                # write parameters on .xml file
+                used_hairs = -1 # use all
+                used_tickness= 0.01 # use -1 for read values from .hair file
+                HID = yi.getNextFreeID()
+                yi.paramsClearAll()
+                yi.addHair(HID, hair_file_path, self.materialMap[hairMat], used_hairs, used_tickness, 1)
+                
+                if pSys.settings.use_render_emitter:
+                    matrix = obj.matrix_world.copy()
+                    self.writeMesh(obj, matrix)
+                    yi.printInfo('Writing Hair emitter')
+        
+        return
+    
