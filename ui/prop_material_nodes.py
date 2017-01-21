@@ -24,6 +24,7 @@ from bpy.types import Node, NodeSocket
 
 from . import prop_node_sockets
 #
+import nodeitems_utils
 from nodeitems_utils import NodeCategory, NodeItem, NodeItemCustom
 
 from ..prop.tby_material import TheBountyMaterialProperties as MatProperty
@@ -42,6 +43,7 @@ class TheBountyMaterialNodeTree(bpy.types.NodeTree):
     bl_idname = 'TheBountyMaterialNodeTree'
     bl_label = 'TheBounty NodeTree'
     bl_icon = 'MATERIAL'
+    MatNodeTypes = {}
 
     @classmethod
     def poll(cls, context):
@@ -108,6 +110,11 @@ class TheBountyMaterialNode:
     def get_name( self):
         #
         return self.name
+    
+    # test from sort
+    def draw_props(self, context, layout, indented_label):
+        pass
+    
     # base
     #
     def traverse_node_tree(self, material_node):
@@ -117,7 +124,7 @@ class TheBountyMaterialNode:
                 linked_node = socket.links[0].from_node
                 linked_node.traverse_node_tree( material_node)
         #material_node.listedNodes.append(self)
-#
+
 bounty_node_class.append(TheBountyMaterialNode)
 
 #------------------------------------------------
@@ -156,8 +163,8 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
             linked_node = socket.links[0].from_node
             if input in validShaderTypes:
                 self.params = input.getParams()
-            #else:
-            #    bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
+            else:
+                bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
 
 bounty_node_class.append(TheBountyMaterialOutputNode)
         
@@ -180,7 +187,7 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     #
     def init(self, context):
         # slots shaders
-        self.outputs.new('NodeSocketColor', "Shader")
+        self.outputs.new('NodeSocketShader', "Shader")
         
         self.inputs.new('diffuse_color', 'Diffuse')
         
@@ -189,7 +196,7 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         self.inputs.new('translucency', 'Translucency')
         
         self.inputs.new('mirror', 'Mirror')
-        self.inputs['Mirror'].enabled=True
+        #self.inputs['Mirror'].enabled=True
         
         self.inputs.new('specular', 'Specular')
         
@@ -230,7 +237,7 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
     #
     def init(self, context):
         # slots shaders
-        self.outputs.new('NodeSocketColor', "Shader")
+        self.outputs.new('NodeSocketShader', "Shader")
         
         self.inputs.new('diffuse_color',"Diffuse")
         
@@ -270,8 +277,7 @@ bounty_node_class.append(TheBountyTranslucentShaderNode)
 class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlossyShaderNode'
     bl_label = 'glossy'
-    bl_icon = 'MATERIAL'
-    
+    bl_icon = 'MATERIAL'    
     
     # properties
     anisotropic = MatProperty.anisotropic
@@ -286,7 +292,7 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     
     def init(self, context):
         #
-        self.outputs.new('NodeSocketColor', "Shader")
+        self.outputs.new('NodeSocketShader', "Shader")
         
         self.inputs.new('diffuse_color',"Diffuse")        
         self.inputs.new('glossy_color',"Glossy")
@@ -342,7 +348,7 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
 
     def init(self, context):
         #
-        self.outputs.new('NodeSocketColor', "Shader")
+        self.outputs.new('NodeSocketShader', "Shader")
         # add only connectable slots
         self.inputs.new('glass_mir_col', 'Mirror')
         self.inputs.new('bumpmap', 'Bumpmap')
@@ -531,15 +537,14 @@ class TheBountyMirrorNode(Node, TheBountyMaterialNode):
         col.prop(self, 'specular_reflect', slider=True)
 #
 bounty_node_class.append(TheBountyMirrorNode)    
-       
 '''
-
-   
+  
 class TheBountyNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
         engine = context.scene.render.engine
-        return context.space_data.tree_type =='TheBountyMaterialNodeTree' and engine == 'THEBOUNTY'
+        return (context.space_data.tree_type =='TheBountyMaterialNodeTree' and engine == 'THEBOUNTY')
+
 
 # all categories in a list
 TheBountyMaterialNodeCategories = [

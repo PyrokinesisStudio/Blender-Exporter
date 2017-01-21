@@ -36,7 +36,7 @@ def fixNodeSize(nmin, nmax):
 
 bounty_light_node_class=[]
 #
-class TheBountyLightNodeTree(bpy.types.NodeTree):
+class TheBountyLampNodeTree(bpy.types.NodeTree):
     #    
     bl_idname = 'TheBountyLightNodeTree'
     bl_label = 'TheBounty Light NodeTree'
@@ -75,7 +75,7 @@ class TheBountyLightNodeTree(bpy.types.NodeTree):
                 update=acknowledge_connection)
     
 #    
-bounty_light_node_class.append(TheBountyLightNodeTree)
+bounty_light_node_class.append(TheBountyLampNodeTree)
 
 ''' TheBounty node class base declaration
 '''  

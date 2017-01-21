@@ -28,37 +28,26 @@ def find_node_input(node, name):
     for input in node.inputs:
         if input.name == name:
             return input
-
     return None
 
 def panel_node_draw(layout, material, output_type, input_name):
     node = find_node(material, output_type)
-    if not node:
-        return False
-    else:
+    if node:
         if material.bounty.nodetree:
             ntree = bpy.data.node_groups[material.bounty.nodetree]
             input = find_node_input(node, input_name)
             layout.template_node_view(ntree, node, input)
+    else:
+        return False
 
     return True
 
 def find_node(material, nodetype):
-    if not (material and material.bounty and material.bounty.nodetree):
-        return None
-        
-    node_tree =  material.bounty.nodetree
-    
-    if node_tree == '':
-        return None
-    
-    ntree = bpy.data.node_groups[node_tree]
-    
-    for node in ntree.nodes:
-        nt = getattr(node, "bl_idname", None)
-        #print(nt)
-        if nt in nodetype:
-            return node
+    if material and material.bounty and material.bounty.nodetree:    
+        ntree = bpy.data.node_groups[material.bounty.nodetree]    
+        for node in ntree.nodes:
+            if getattr(node, "bl_idname", None) == nodetype:
+                return node
     return None
 
 def node_tree_selector_draw(layout, mat, nodetype):
@@ -123,7 +112,9 @@ class TheBountyMaterialTypePanel(TheBountyMaterialButtonsPanel):
         if context.scene.render.engine not in cls.COMPAT_ENGINES:
             return False
         #
-        return (check_material(mat) and (mat.bounty.mat_type in cls.material_type) and (context.material.bounty.nodetree == ""))
+        return (check_material(mat) 
+                and (mat.bounty.mat_type in cls.material_type) 
+                and (context.material.bounty.nodetree == ""))
 
 
 class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
@@ -134,7 +125,8 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
     @classmethod
     def poll(cls, context):
         #
-        return ((context.material or context.object) and (context.scene.render.engine in cls.COMPAT_ENGINES))
+        engine = context.scene.render.engine
+        return ((context.material or context.object) and (engine in cls.COMPAT_ENGINES))
 
     def draw(self, context):
         layout = self.layout
@@ -429,7 +421,7 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         #        
         split = layout.split()
         col = split.column()
-        col.prop(mat, "diffuse_color") #mat.bounty, "diff_color")
+        col.prop(mat, "diffuse_color")
         col.prop(mat.bounty, "diffuse_reflect", text="Diff. Reflect",slider=True)
         col = split.column()     
         col.prop(mat.bounty, "glossy_color")

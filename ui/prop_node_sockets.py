@@ -50,8 +50,7 @@ translucent_layers = ["diffuse_shader", "glossy_shader", "glossy_reflect_shader"
         
 ''' Base class for node sockets.
 '''   
-class TheBountyNodeSocket():
-    #
+class TheBountyNodeSocket:
     def getParams(self):
         pass
                 
@@ -141,11 +140,13 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
         #self.matParams['DiffuseLayer']= None
         #self.matParams['diffuse_shader']= None
         if self.is_linked:
-            print(self.links[0].from_node.bl_label)
+            print('linked to: ', self.links[0].from_node.bl_label)
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
                 self.matParams['diffuse_shader']='diff_layer'
                 self.matParams['DiffuseLayer']= linked_node.getParams()
+            else:
+                print('Not valid node: ', linked_node.bl_label)
         
         return self.matParams
     #
@@ -155,134 +156,9 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(diffuse_color_socket)
 
-#-------------------------------------------
-# Emission socket for shinydiffuse material
-#-------------------------------------------
-class emitt_socket(NodeSocket, TheBountyNodeSocket):
-    bl_idname = 'emittance'
-    bl_label = 'Emission Socket'
-    params={}  
-    
-    emittance = MatProperty.emittance
-    
-    # get/set default values
-    def default_value_get(self):
-        return self.emittance
-    
-    def default_value_set(self, value):
-        self.emittance = value
-    #
-    default_value = bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
-    #    
-    def draw(self, context, layout, node, text):
-        if self.is_linked:
-            layout.label(text)
-        else:
-            layout.prop(self, "emittance", slider=True)    
-    '''
-    def exportValues(self):
-        self.params['emit']=  self.emittance
-        if self.is_linked:
-            linked_node = self.links[0].from_node
-            try:
-                linked_node.exportValues(self)
-            except:
-                pass
-        #
-        return self.params
-    '''        
-    #
-    def draw_color(self, context, node):
-        return (float_socket)    
-#
-bounty_socket_class.append(emitt_socket)
 
-#-------------------------------------
-# BRDF socket
-#-------------------------------------
-class brdf_socket(NodeSocket, TheBountyNodeSocket):
-    bl_idname = 'brdf'
-    bl_label = 'BRDF Socket' 
-    params={}   
-    
-    #brdf_type = MatProperty.brdf_type
-    sigma = MatProperty.sigma
-    
-    enum_reflectance_mode = [
-        ('lambert', "Lambert", "Reflectance Model",0),
-        ('oren_nayar', "Oren-Nayar", "Reflectance Model",1),
-        
-    ]
-    # small trick..
-    enum_reflectance_default_mode = (('lambert', "Lambert", "Reflectance Model"),)
-        
-    # default values for a socket
-    def default_value_get(self):
-        return self.brdf_type
-    
-    def default_value_set(self, value):
-        self.brdf_type = 'lambert'
-        
-    brdf_type = EnumProperty(
-            name="BRDF",
-            description="Reflectance model",
-            items=enum_reflectance_mode,
-            default='lambert',
-    )        
-    default_value =  EnumProperty(items=enum_reflectance_mode, set=default_value_set)
-    #
-    def draw(self, context, layout, node, text):
-        col = layout.box()
-        if self.is_linked:
-            col.label("Reflectance model")
-        else:
-            col.prop(self, "brdf_type")
-            col.prop(self, "sigma", text='Sigma', slider=True)
-    #
-    def exportValues(self):
-        self.params['brdf_type']= self.brdf_type
-        self.params['sigma']= self.sigma
-        if self.is_linked:
-            linked_node = self.links[0].from_node
-            try:
-                linked_node.exportValues(self)
-            except:
-                print('Not export values on node')
-        return self.params
-    #
-    def draw_color(self, context, node):
-        return (float_socket)
-#
-bounty_socket_class.append(brdf_socket)
 
-'''
-class sigma_socket(NodeSocket):
-    bl_idname = 'sigma'
-    bl_label = 'Sigma Socket'
-    hide_value = True 
-    
-    sigma = MatProperty.sigma
-    
-    # default values for socket
-    def default_value_get(self):
-        return self.sigma
-    
-    def default_value_set(self, value):
-        self.sigma = value
-        
-    default_value =  FloatProperty( get=default_value_get, set=default_value_set)
-    #
-    def draw(self, context, layout, node, text):
-        if self.is_linked:
-            layout.label(text)
-        else:
-            layout.prop(self, "sigma", slider=True)    
-    #
-    def draw_color(self, context, node):
-        return (float_socket)
-#
-bounty_socket_class.append(sigma_socket)
-'''
+
 #-------------------------------------
 # translucency
 #-------------------------------------
@@ -292,7 +168,7 @@ class translucency_socket(NodeSocket, TheBountyNodeSocket):
     params={} 
     
     translucency = MatProperty.translucency
-    #transmit = MatProperty.transmit_filter
+    
     
     # default values for socket
     def default_value_get(self):
@@ -592,34 +468,6 @@ class fresnel_socket(NodeSocket, TheBountyNodeSocket):
 #
 bounty_socket_class.append(fresnel_socket) 
    
-#-----------------------------------------
-# Index of refraction socket (IOR)
-#-----------------------------------------
-class ior_socket(NodeSocket, TheBountyNodeSocket):
-    bl_idname = "IOR"
-    bl_label = "IOR Socket"
-    
-    IOR_reflection = MatProperty.IOR_reflection
-    
-    # default values for socket's
-    def default_value_get(self):
-        return self.IOR_reflection
-    
-    def default_value_set(self, value):
-        self.IOR_reflection = value
-    
-    default_value =  FloatProperty( get=default_value_get, set=default_value_set)
-        
-    def draw(self, context, layout, node, text):
-        if self.is_linked:
-            layout.label(text)
-        else:
-            layout.prop(self, "IOR_reflection")            
-    #
-    def draw_color(self, context, node):
-        return (float_socket)
-#
-bounty_socket_class.append(ior_socket)
 
 #------------------------
 # Color Specular sockect
@@ -644,11 +492,11 @@ class glass_mirror_color_socket(NodeSocket, TheBountyNodeSocket):
     default_value =  bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
     #        
     def draw(self, context, layout, node, text):
-        col = layout.row()
+        #
+        col = layout.column()
         label = "Reflect layer" if self.is_linked else "Mirror color"
         
         col.prop(self, "glass_mir_col", text="")
-        col.label(text=label) 
     #
     def draw_color(self, context, node):
         return (color_socket)
