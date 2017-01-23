@@ -170,7 +170,7 @@ class exportObject(object):
 
         elif obj.particle_systems:  # Particle Hair system
             # TODO: add bake option in UI
-            bake = self.scene.bounty.gs_type_render == 'xml'
+            bake = False #self.scene.bounty.gs_type_render == 'xml'
             #
             for pSys in obj.particle_systems:
                 if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
@@ -483,7 +483,7 @@ class exportObject(object):
     def writeParticleStrands(self, obj, matrix, pSys):
 
         yi = self.yi
-        totalNumberOfHairs = 0
+        totalHairs = 0
         
         renderEmitter = False
         # Check for modifiers..
@@ -511,16 +511,20 @@ class exportObject(object):
                 steps = 2 ** steps
                 print(steps)
                             
-                totalNumberOfHairs = ( len(pSys.particles) + len(pSys.child_particles) )
+                totalHairs = len(pSys.particles)
+                start = 0
+                if pSys.settings.child_type is not 'NONE' and len(pSys.child_particles) > 0:
+                    totalHairs = len(pSys.child_particles)
+                    start = len(pSys.particles)
                 #
-                for particleIdx in range(0, totalNumberOfHairs):
+                for particleIdx in range(start, totalHairs):
                     CID = yi.getNextFreeID()
                     yi.paramsClearAll()
                     yi.startGeometry()
                     yi.startCurveMesh(CID, 1)
                     #
                     for step in range(0, steps):
-                        point = obj.matrix_world.inverted()*(pSys.co_hair(obj, particleIdx, step))
+                        point = obj.matrix_world.inverted()* pSys.co_hair(obj, particleIdx, step)
                         if point.length_squared != 0:
                             yi.addVertex(point[0], point[1], point[2])                            
                     #
@@ -530,7 +534,7 @@ class exportObject(object):
                 yi.printInfo("Exporter: Particle creation time: {0:.3f}".format(time.time() - tstart))
             
         # total hair's for each particle system              
-        yi.printInfo("Exporter: Total hair's created: {0} ".format(totalNumberOfHairs))
+        yi.printInfo("Exporter: Total hair's created: {0} ".format(totalHairs))
             
         # We only need to render emitter object once
         if pSys.settings.use_render_emitter:
@@ -656,7 +660,6 @@ class exportObject(object):
                         co = obj.matrix_world.inverted()*(pSys.co_hair(obj, pindex, step))
                         #        
                         if not co.length_squared == 0:
-                            #co = (co[0], co[1], co[2])
                             points.append(co)
         
                             if thicknessflag:

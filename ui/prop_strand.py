@@ -49,6 +49,7 @@ class TheBounty_PT_strand_settings(Panel):
             sub.label(text="Size:")
             sub.prop(tan, "root_size", text="Root")
             sub.prop(tan, "tip_size", text="Tip")
+            #sub.prop(tan, "size_min", text="Minimum")
             sub = col.column()
             col.prop(tan, "shape")
             col.prop(tan, "use_blender_units")
