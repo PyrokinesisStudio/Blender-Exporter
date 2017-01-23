@@ -73,25 +73,17 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_type_render", text="")
-        sub = col.column()
-        sub.enabled = scene.gs_type_render == "into_blender"
-        sub.prop(scene, "gs_tile_order", text="")
+        col.prop(scene, "gs_tile_order", text="")
 
         col = split.column()
-        sub = col.column()
-        sub.enabled = scene.gs_transp_shad
-        sub = col.column()
-        #
-        threadMode ="Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
+        threadMode = "Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
         col.prop(scene, "gs_threads", text= threadMode)
-        sub = col.column()
-        sub.enabled = scene.gs_type_render == "into_blender"
-        sub.prop(scene, "gs_tile_size")
+        col.prop(scene, "gs_tile_size")
 
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_clamp_rgb", toggle=True)
-
+        
         col = split.column()
         col.prop(scene, "gs_use_instances", text="Use instances", toggle=True)
         
