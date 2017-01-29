@@ -37,6 +37,7 @@ def panel_node_draw(layout, material, output_type, input_name):
             ntree = bpy.data.node_groups[material.bounty.nodetree]
             input = find_node_input(node, input_name)
             layout.template_node_view(ntree, node, input)
+            #draw_nodes_properties_ui(layout, material, ntree) #context, ntree)
     else:
         return False
 
@@ -81,7 +82,78 @@ def blend_two_draw(layout, mat):
         return False
     return True
 
+def draw_nodes_properties_ui(layout, context, nt, input_name='Surface', output_node_type="MaterialOutputNode"):
+    output_node = next((n for n in nt.nodes
+                        if hasattr(n, 'bl_idname') and 
+                        n.bl_idname == output_node_type), None)
+    if output_node is None:
+        return
 
+    socket = output_node.inputs[input_name]
+    node = socket_node_input(nt, socket)
+
+    layout.context_pointer_set("nodetree", nt)
+    layout.context_pointer_set("node", output_node)
+    layout.context_pointer_set("socket", socket)
+
+    split = layout.split(0.35)
+    split.label(socket.name + ':')
+
+    if socket.is_linked:
+        # for lights draw the shading rate ui.
+        split.operator_menu_enum("node.add_%s" % input_name.lower(), "node_type", text=node.bl_idname) #label)
+    else:
+        split.operator_menu_enum("node.add_%s" % input_name.lower(), "node_type", text='None')
+
+    #if node is not None:
+    #    draw_node_properties_recursive(layout, context, nt, node)
+    
+def socket_node_input(nt, socket):
+    return next((l.from_node for l in nt.links if l.to_socket == socket), None)
+
+def draw_node_properties_recursive(layout, context, nt, node, level=0):
+
+    def indented_label(layout):
+        for i in range(level):
+            layout.label('',icon='BLANK1')
+
+    layout.context_pointer_set("nodetree", nt)
+    layout.context_pointer_set("node", node)
+    
+    # draw socket property in panel
+    def draw_props(node, layout):
+        # node properties
+        node.draw_props(context,layout,indented_label)
+
+        # inputs
+        for socket in node.inputs:
+            layout.context_pointer_set("socket", socket)
+
+            if socket.is_linked:
+                input_node = nodes.socket_node_input(nt, socket)
+                ui_open = socket.ui_open
+                icon = 'DISCLOSURE_TRI_DOWN' if ui_open else 'DISCLOSURE_TRI_RIGHT'
+                split = layout.split(common.label_percentage)
+                row = split.row()
+                indented_label(row)
+                row.prop(socket, "ui_open", icon=icon, text='', icon_only=True, emboss=False)
+                row.label(socket.name+":")
+                split.operator_menu_enum("node.add_surface" , "node_type", text=input_node.bl_idname , icon= 'DOT')
+                if socket.ui_open:
+                    draw_node_properties_recursive(layout, context, nt, input_node, level=level+1)
+            else:
+                split = layout.split()
+                row = split.row()
+                indented_label(row)
+                row.label(socket.name)
+                prop_panel = split.row( align=True )
+                if socket.default_value is not None:
+                    prop_panel.prop(socket,'default_value',text="")
+                prop_panel.operator_menu_enum("node.add_surface" , "node_type", text='',icon='DOT')
+
+    draw_props(node, layout)
+    layout.separator()
+################################################################################################################
 class TheBountyMaterialButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'

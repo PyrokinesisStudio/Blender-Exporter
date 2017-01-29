@@ -170,7 +170,7 @@ class exportObject(object):
 
         elif obj.particle_systems:  # Particle Hair system
             # TODO: add bake option in UI
-            bake = False #self.scene.bounty.gs_type_render == 'xml'
+            bake = self.scene.bounty.gs_type_render == 'xml'
             #
             for pSys in obj.particle_systems:
                 if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
@@ -574,7 +574,7 @@ class exportObject(object):
         
                 
                 start = 0
-                if num_children != 0:
+                if num_children > 0:
                     # Number of virtual parents reduces the number of exported children
                     virtual_parents = math.trunc(0.3 * pSys.settings.virtual_parents * pSys.settings.child_nbr * num_parents)
                     start = num_parents + virtual_parents
