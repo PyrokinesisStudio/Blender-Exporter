@@ -49,8 +49,10 @@ class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
         row=layout.row(align=True)
         row.prop(scene, "gs_transp_shad", toggle=True)
         row.prop(scene, "gs_shadow_depth")
-        row=layout.row(align=True)        
-        row.prop(scene, "gs_clay_render", toggle=True)
+        row=layout.row(align=True)
+        advice = "Edit 'clay' properties in any material panel" if scene.gs_clay_render else "Clay render"       
+        row.prop(scene, "gs_clay_render", text=advice, toggle=True)
+        #layout.label(label)
         
 
 class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
@@ -82,7 +84,7 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         col.prop(scene, "gs_clamp_rgb", toggle=True)
         
         col = split.column()
-        col.prop(scene, "gs_use_instances", text="Use instances", toggle=True)
+        col.prop(render, "use_instances", text="Use instances", toggle=True)
         
         split = layout.split(percentage=0.5)
         col = split.column()
