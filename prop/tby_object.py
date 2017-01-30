@@ -76,6 +76,11 @@ class TheBountyObjectSettings(bpy.types.PropertyGroup):
             description="Emit light at both sides of every face",
             default=False
     )
+    ml_hidde_mesh = BoolProperty(
+            name="Hidde mesh",
+            description="Hidde mesh emitter",
+            default=False
+    )
     #------------------
     # portal light
     #------------------    

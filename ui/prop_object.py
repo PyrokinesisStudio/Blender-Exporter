@@ -48,6 +48,7 @@ class TheBountyGeometryTypes(Panel):
             col.prop(ob, "ml_power")
             col.prop(ob, "ml_samples")
             col.prop(ob, "ml_double_sided")
+            row.prop(ob, "ml_hidde_mesh")
     
         elif ob.geometry_type == "portal_light":
     
