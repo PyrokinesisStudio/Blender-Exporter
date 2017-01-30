@@ -40,21 +40,18 @@ class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene.bounty
-        #render = scene.render
-        #
+        
         split = layout.split()
         col = split.column()
-        col.prop(scene, "gs_z_channel", toggle=True)
-        col.prop(scene, "gs_transp_shad", toggle=True)
-        col.prop(scene, "gs_clay_render", toggle=True)
-        col = split.column()
-        col.prop(scene, "gs_premult", text="Premultiply alpha", toggle=True)
-        sub = col.column()
-        sub.enabled = scene.gs_transp_shad
-        sub.prop(scene, "gs_shadow_depth")
-        sub = col.column()
-        sub.enabled = scene.gs_clay_render
-        sub.prop(scene, "gs_clay_col", text="")
+        row=layout.row()        
+        row.prop(scene, "gs_z_channel", toggle=True)
+        row.prop(scene, "gs_premult", text="Premultiply alpha", toggle=True)
+        row=layout.row(align=True)
+        row.prop(scene, "gs_transp_shad", toggle=True)
+        row.prop(scene, "gs_shadow_depth")
+        row=layout.row(align=True)        
+        row.prop(scene, "gs_clay_render", toggle=True)
+        
 
 class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
     bl_label = "General Settings"
