@@ -74,7 +74,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.yi = yi
         # setup specific values for render preview mode
         if self.is_preview:
-            self.yi.setVerbosityWarning()
+            self.yi.setVerbosityMute()
             #to correct alpha problems in preview roughglass
             self.scene.bounty.bg_transp = False
             self.scene.bounty.bg_transp_refract = False
@@ -106,9 +106,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportScene(self):
         #
         self.exportTextures()
-        #for obj in self.scene.objects:
-        #    self.exportTexture(obj)
-            
         self.exportMaterials()
         self.geometry.setScene(self.scene)
         self.exportObjects()
@@ -118,7 +115,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportTextures(self):
         # find all used scene textures
         #textureScene=[]
-        self.createDefaultBlends()
+        self.createDefaultMats()
         for tex in bpy.data.textures:
             # skip 'preview' and 'world environment' textures
             if (self.is_preview and tex.name == "fakeshadow") or not tex.users_material:
@@ -211,7 +208,44 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 self.geometry.writeObject(obj)
 
     #
-    def createDefaultBlends(self):
+    def defineClayMaterial(self, mat):
+        # code form write material
+        diffColor = mat.diffuse_color
+        mirCol = mat.bounty.mirr_color
+        bSpecr = mat.bounty.specular_reflect
+        bTransp = mat.bounty.transparency
+        bTransl = mat.translucency
+        bEmit = mat.bounty.emittance
+            
+        #
+        self.yi.paramsClearAll()            
+        self.yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
+        self.yi.paramsSetFloat("transparency", bTransp)
+        self.yi.paramsSetFloat("translucency", bTransl)
+        self.yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
+        self.yi.paramsSetFloat("emit", bEmit)
+        self.yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
+    
+        self.yi.paramsSetFloat("specular_reflect", bSpecr)
+        self.yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
+        self.yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
+        self.yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
+    
+        if mat.bounty.brdf_type == "oren-nayar":
+            self.yi.paramsSetString("diffuse_brdf", "oren_nayar")
+            self.yi.paramsSetFloat("sigma", mat.bounty.sigma)            
+            
+        # force type to sinydiffuse
+        mat.bounty.mat_type = "shinydiffusemat"      
+                   
+        self.yi.paramsSetString("type", "shinydiffusemat")
+
+        self.yi.printInfo("Exporter: Creating Material \"clayMat\"")
+        cmat = self.yi.createMaterial("clayMat")
+        self.materialMap["clay"] = cmat
+        
+    #
+    def createDefaultMats(self):
         #
         if 'blendone' not in bpy.data.materials:
             m1 = bpy.data.materials.new('blendone')
@@ -220,10 +254,21 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                         
         if 'blendtwo' not in bpy.data.materials:
             m2 = bpy.data.materials.new('blendtwo')
-            m1.diffuse_color =(1.0, 0.0, 0.0)
+            m2.diffuse_color =(1.0, 0.0, 0.0)
             m2.bounty.mat_type = 'glossy'
-    
-    
+        
+        if 'clay' not in bpy.data.materials:
+            clay = bpy.data.materials.new('clay')
+            clay.diffuse_color =(0.5, 0.5, 0.5)
+            clay.bounty.mat_type = 'shinydiffusemat'
+        
+        '''
+        if 'default' not in bpy.data.materials:
+            defmat = bpy.data.materials.new('default')
+            defmat.diffuse_color =(0.8, 0.8, 0.8)
+            defmat.bounty.mat_type = 'shinydiffusemat'
+        '''
+            
     def handleBlendMat(self, mat):
         #-------------------------
         # blend material one
@@ -277,34 +322,33 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         # create shiny diffuse material for use by default
         # it will be assigned, if object has no material(s)
         #---------------------------------------------------
+        
         self.yi.paramsClearAll()
         self.yi.paramsSetString("type", "shinydiffusemat")
         self.yi.paramsSetColor("color", 0.8, 0.8, 0.8)
         self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
         ymat = self.yi.createMaterial("defaultMat")
         self.materialMap["default"] = ymat
+        
         #---------------------------------------------------
         # create a shinydiffuse material for "Clay Render"
-        # exception: don't create for material preview mode
-        #---------------------------------------------------
-        if not self.is_preview:
-            self.yi.paramsClearAll()
-            self.yi.paramsSetString("type", "shinydiffusemat")
-            cCol = self.scene.bounty.gs_clay_col
-            self.yi.paramsSetColor("color", cCol[0], cCol[1], cCol[2])
-            self.yi.printInfo("Exporter: Creating Material \"clayMat\"")
-            cmat = self.yi.createMaterial("clayMat")
-            self.materialMap["clay"] = cmat
+        #---------------------------------------------------            
+        if self.scene.bounty.gs_clay_render:
+            #TODO:  heavily hardcoded.. need review
+            mat = bpy.data.materials['clay']
+            self.defineClayMaterial(mat)            
+            
         #----------------------------------------------
         # override all materials in 'clay render' mode
-        #----------------------------------------------
-        for obj in [o for o in self.scene.objects if not self.scene.bounty.gs_clay_render]:
-            for mat_slot in obj.material_slots:
-                if mat_slot.material not in self.exportedMaterials:
-                    self.exportMaterial(mat_slot.material)
-
+        #----------------------------------------------           
+        if not self.scene.bounty.gs_clay_render:
+            for obj in self.scene.objects:
+                for slot in obj.material_slots:
+                    if slot.material not in self.exportedMaterials:
+                        self.exportMaterial(slot.material)
+        
     def exportMaterial(self, material):
-        if material:
+        if material and (material not in self.exportedMaterials):
             # must make sure all materials used by a blend mat
             # are written before the blend mat itself                
             if material.bounty.mat_type == 'blend':
@@ -348,12 +392,10 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
 
         [self.sizeX, self.sizeY, self.bStartX, self.bStartY, self.bsizeX, self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
 
-        if render.use_border:
-            self.resX = self.bsizeX
-            self.resY = self.bsizeY
-        else:
-            self.resX = self.sizeX
-            self.resY = self.sizeY
+        #if render use border:
+        self.resX = self.bsizeX if render.use_border else self.sizeX
+        self.resY = self.bsizeY if render.use_border else self.sizeY
+        
         # render type setup
         if scene.bounty.gs_type_render == "file":
             self.setInterface(yafrayinterface.yafrayInterface_t())
@@ -387,7 +429,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
 
         # must be called last as the params from here will be used by render()
         tby_scene.exportRenderSettings(self.yi, self.scene)
-
+  
     def render(self, scene):
         #--------------------------------------------
         # povman: fix issue when freestyle is active
@@ -409,7 +451,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             
             self.yi.render(self.co)
             result = self.begin_result(0, 0, self.resX, self.resY)
-            lay = result.layers[0]
+            lay = result.layers[0] #.passes["Combined"]
 
             # exr format has z-buffer included, so no need to load '_zbuffer' - file
             if scene.gs_z_channel and not scene.img_output == 'OPEN_EXR':

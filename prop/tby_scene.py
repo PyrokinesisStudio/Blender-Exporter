@@ -191,7 +191,7 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
     gs_premult = BoolProperty(
             name="Premultiply",
             description="Premultipy Alpha channel for renders with transparent background",
-            default=True
+            default=False
     )    
     gs_transp_shad = BoolProperty(
             name="Transparent shadows",
