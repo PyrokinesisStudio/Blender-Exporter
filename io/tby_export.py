@@ -75,11 +75,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         # setup specific values for render preview mode
         if self.is_preview:
             self.yi.setVerbosityMute()
-            #to correct alpha problems in preview roughglass
-            self.scene.bounty.bg_transp = False
-            self.scene.bounty.bg_transp_refract = False
         else:
-            #
             self.verbositylevel(self.scene.bounty.gs_verbosity_level)
         
         # export go.. load plugins
