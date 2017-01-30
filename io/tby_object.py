@@ -478,55 +478,47 @@ class exportObject(object):
             strandShape = material.strand.shape
         return strandStart, strandEnd, strandShape
     
-    def writeParticleStrands(self, obj, matrix):
+    def writeParticleStrands(self, obj, matrix, pSys):
 
         yi = self.yi
-        totalHairs = 0
+        totalNumberOfHairs = 0
         
         renderEmitter = False
-        if hasattr(obj, 'particle_systems') == False:
-            return
-        # Check for hair particles:
-        for pSys in obj.particle_systems:
-            for mod in [m for m in obj.modifiers if (m is not None) and (m.type == 'PARTICLE_SYSTEM')]:
-                if (pSys.settings.render_type == 'PATH') and mod.show_render and (pSys.name == mod.particle_system.name):
-                    yi.printInfo("Exporter: Creating Hair Particle System {!r}".format(pSys.name))
-                    tstart = time.time()
-                    #-----------------------------------------------
-                    # set particle material values. if don't have
-                    # material assigned in blender, use default one
-                    #-----------------------------------------------
-                    strandStart = 0.01
-                    strandEnd = 0.01
-                    strandShape = 0.0                    
-                    hairMat = "default"  
-                                        
-                    if obj.active_material is not None:
-                        hairMat = obj.active_material
-                        strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
-                    # exception: if clay render is activated
-                    if self.scene.bounty.gs_clay_render:
-                        hairMat = "clay"
-                    #
-                    pSys.set_resolution(self.scene, obj, 'RENDER')    
-                    steps = pSys.settings.draw_step
-                    steps = 3 ** steps # or (power of 2 rather than 3) + 1 # Formerly : len(particle.hair_keys)
-                    #print(steps)
-                            
-                totalHairs = len(pSys.particles)
-                start = 0
-                if pSys.settings.child_type is not 'NONE' and len(pSys.child_particles) > 0:
-                    totalHairs = len(pSys.child_particles)
-                    start = len(pSys.particles)
+        # Check for modifiers..
+        for mod in [m for m in obj.modifiers if (m is not None) and (m.type == 'PARTICLE_SYSTEM')]:
+            if mod.show_render and (pSys.name == mod.particle_system.name):
+                yi.printInfo("Exporter: Creating Hair Particle System {!r}".format(pSys.name))
+                tstart = time.time()
+                #                    
+                strandStart = 0.01
+                strandEnd = 0.01
+                strandShape = 0.0
                 #
-                for particleIdx in range(start, totalHairs):
+                print('material: ', pSys.settings.material)
+                try:
+                    hairMat = obj.material_slots[pSys.settings.material - 1].material
+                    strandStart, strandEnd, strandShape = self.defineStrandValues(hairMat)
+                except:
+                    hairMat = "default"             
+                # if clay render is activated..
+                if self.scene.bounty.gs_clay_render:
+                    hairMat = "clay"
+                #
+                pSys.set_resolution(self.scene, obj, 'RENDER')    
+                steps = pSys.settings.render_step
+                steps = 2 ** steps
+                print(steps)
+                            
+                totalNumberOfHairs = ( len(pSys.particles) + len(pSys.child_particles) )
+                #
+                for particleIdx in range(0, totalNumberOfHairs):
                     CID = yi.getNextFreeID()
                     yi.paramsClearAll()
                     yi.startGeometry()
                     yi.startCurveMesh(CID, 1)
                     #
                     for step in range(0, steps):
-                        point = obj.matrix_world.inverted()* pSys.co_hair(obj, particleIdx, step)
+                        point = obj.matrix_world.inverted()*(pSys.co_hair(obj, particleIdx, step))
                         if point.length_squared != 0:
                             yi.addVertex(point[0], point[1], point[2])                            
                     #
@@ -536,10 +528,10 @@ class exportObject(object):
                 yi.printInfo("Exporter: Particle creation time: {0:.3f}".format(time.time() - tstart))
             
         # total hair's for each particle system              
-        yi.printInfo("Exporter: Total hair's created: {0} ".format(totalHairs))
+        yi.printInfo("Exporter: Total hair's created: {0} ".format(totalNumberOfHairs))
             
         # We only need to render emitter object once
-        if renderEmitter:
+        if pSys.settings.use_render_emitter:
             self.writeMesh(obj, matrix)
             
     def bakeParticleStrands(self, obj, matrix, pSys):
