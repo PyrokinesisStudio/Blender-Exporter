@@ -49,8 +49,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     bl_label = "TheBounty Render"
     prog = 0.0
     tag = ""
-    #useViewToRender = False
-    #viewMatrix = None
     sceneMat = []
     
     #--------------------------------
@@ -258,12 +256,12 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             clay.diffuse_color =(0.5, 0.5, 0.5)
             clay.bounty.mat_type = 'shinydiffusemat'
         
-        '''
+        
         if 'default' not in bpy.data.materials:
             defmat = bpy.data.materials.new('default')
             defmat.diffuse_color =(0.8, 0.8, 0.8)
             defmat.bounty.mat_type = 'shinydiffusemat'
-        '''
+        
             
     def handleBlendMat(self, mat):
         #-------------------------
@@ -337,11 +335,12 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #----------------------------------------------
         # override all materials in 'clay render' mode
         #----------------------------------------------           
-        if not self.scene.bounty.gs_clay_render:
-            for obj in self.scene.objects:
-                for slot in obj.material_slots:
-                    if slot.material not in self.exportedMaterials:
-                        self.exportMaterial(slot.material)
+        #if not self.scene.bounty.gs_clay_render:
+        for obj in self.scene.objects:
+            for slot in obj.material_slots:
+                if slot.material not in self.exportedMaterials:
+                    self.exportMaterial(slot.material)
+                        
         
     def exportMaterial(self, material):
         if material and (material not in self.exportedMaterials):
