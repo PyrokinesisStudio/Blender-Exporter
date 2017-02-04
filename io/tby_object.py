@@ -51,7 +51,6 @@ class exportObject(object):
 
         camera = self.scene.camera
         render = self.scene.render
-        cam = camera.data
         
         # get cam worldspace transformation matrix, e.g. if cam is parented matrix_local does not work
         matrix = camera.matrix_world.copy()
@@ -65,7 +64,9 @@ class exportObject(object):
 
         x = int(render.resolution_x * render.resolution_percentage * 0.01)
         y = int(render.resolution_y * render.resolution_percentage * 0.01)
-
+        #
+        cam = camera.data
+        #
         yi.paramsClearAll() 
 
         yi.paramsSetString("type", cam.bounty.camera_type)
@@ -168,23 +169,12 @@ class exportObject(object):
             self.writeBGPortal(obj, matrix)
 
         elif obj.particle_systems:  # Particle Hair system
+            # TODO: add bake option in UI
             bake = self.scene.bounty.gs_type_render == 'xml'
             #
             for pSys in obj.particle_systems:
                 if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
-                    if pSys.settings.bounty.strand_shape == 'cylinder':
-                        # this method create a lot of new geometry
-                        # then, its good only for small hair particle system
-                        # or for generate hight resolution closed hairs
-                        crv = bpy.data.curves.new('hair_tmp_curve', 'CURVE')
-                        crv_ob = bpy.data.objects.new("%s_ob" % crv.name, crv)
-                        crv_ob.hide_render = True
-                        # generate..
-                        self.generate_hair_curves(obj, pSys, crv_ob, crv, matrix)
-                        # Clean up the scene
-                        bpy.data.objects.remove(crv_ob)
-                        bpy.data.curves.remove(crv)
-                    elif bake and pSys.settings.bounty.bake_hair:
+                    if bake:
                         self.bakeParticleStrands(obj, matrix, pSys)
                     else:
                         self.writeParticleStrands(obj, matrix, pSys)
@@ -211,7 +201,6 @@ class exportObject(object):
         self.yi.printInfo("Exporting Instance of {0} [ID = {1:d}]".format(name, oID))
 
         mat4 = obj2WorldMatrix.to_4x4()
-        # mat4.transpose() --> not needed anymore: matrix indexing changed with Blender rev.42816
 
         o2w = self.get4x4Matrix(mat4)
 
@@ -284,7 +273,7 @@ class exportObject(object):
         self.yi.paramsSetInt("object", ID)
         self.yi.createLight(object.name)
         # test for hidden meshlight object
-        objType = 256 if obj.ml_hidde_mesh else 0
+        objType = 0 #256 if obj.ml_hidde_mesh else 0
 
         self.writeGeometry(ID, object, matrix, objType, ml_mat)
 
