@@ -39,20 +39,20 @@ class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
         scene = context.scene.bounty
-        
+        #
         split = layout.split()
         col = split.column()
-        row=layout.row()        
-        row.prop(scene, "gs_z_channel", toggle=True)
-        row.prop(scene, "gs_premult", text="Premultiply alpha", toggle=True)
-        row=layout.row(align=True)
-        row.prop(scene, "gs_transp_shad", toggle=True)
-        row.prop(scene, "gs_shadow_depth")
-        row=layout.row(align=True)
-        advice = "Edit 'clay' properties in any material panel" if scene.gs_clay_render else "Clay render"       
-        row.prop(scene, "gs_clay_render", text=advice, toggle=True)
-        #layout.label(label)
-        
+        col.prop(scene, "gs_z_channel", toggle=True)
+        col.prop(scene, "gs_transp_shad", toggle=True)
+        col.prop(scene, "gs_clay_render", toggle=True)
+        col = split.column()
+        col.prop(scene, "gs_premult", text="Premultiply alpha", toggle=True)
+        sub = col.column()
+        sub.enabled = scene.gs_transp_shad
+        sub.prop(scene, "gs_shadow_depth")
+        sub = col.column()
+        sub.enabled = scene.gs_clay_render
+        sub.prop(scene, "gs_clay_col", text="")
 
 class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
     bl_label = "General Settings"
@@ -71,17 +71,25 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_type_render", text="")
+        #sub = col.column()
+        #sub.enabled = scene.gs_type_render == "into_blender"
         col.prop(scene, "gs_tile_order", text="")
 
         col = split.column()
-        threadMode = "Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
+        sub = col.column()
+        sub.enabled = scene.gs_transp_shad
+        sub = col.column()
+        #
+        threadMode ="Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
         col.prop(scene, "gs_threads", text= threadMode)
+        #sub = col.column()
+        #sub.enabled = scene.gs_type_render == "into_blender"
         col.prop(scene, "gs_tile_size")
 
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_clamp_rgb", toggle=True)
-        
+
         col = split.column()
         col.prop(render, "use_instances", text="Use instances", toggle=True)
         

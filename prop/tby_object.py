@@ -40,12 +40,6 @@ enum_geometry_types=(
     ('portal_light', "Portal Light Object", ""),
     ('volume_region', "Volume Region Object", "")
 )
-enum_hair_shapes=(
-    ('ribbon','Flat Ribbon', ""),
-    ('cylinder','Thin cylinder', ""),
-)
-
-
 
 
 class TheBountyObjectSettings(bpy.types.PropertyGroup):
@@ -175,94 +169,12 @@ class TheBountyObjectSettings(bpy.types.PropertyGroup):
             default=0.1000
     )
 
-class TheBountyStrandProperties(bpy.types.PropertyGroup):
-    # strand properties
-    
-    strand_shape = EnumProperty(
-            name="Strand type",
-            description="Set the strand type rendering",
-            items= enum_hair_shapes,
-            default='ribbon'
-    )
-    '''
-    export_color = EnumProperty( 
-            name = "Strand Color",
-            description = "Strand color",
-            items = [
-                ( 'uv_texture_map', 'UV Texture Map', 'Use emitter\'s UV position and texture map for strand color, the W goes from 0.0 at the base to 1.0 at the tip'),
-                # ( 'vertex_color', 'Vertex Color', 'Use emitter\'s base vertex color')
-                # ( 'strand', 'Strand', 'Each strand has a constant U of 0 and a V progressing from 0.0 at the base to 1.0 at the tip')
-                ( 'none', 'None', 'Use base color')
-                ],
-            default = 'uv_texture_map')
-    '''
-    root_size = bpy.props.FloatProperty( 
-            name = "Root",
-            description = "Thickness of strand root",
-            default = 0.25,
-            min = 0.25,
-            max = 100
-    )
-    tip_size = bpy.props.FloatProperty( 
-            name = "Tip",
-            description = "Thickness of strand tip",
-            default = 0.25,
-            min = 0.25,
-            max = 100
-    )
-    resolution = bpy.props.IntProperty( 
-            name = "Resolution",
-            description = "Cylindrical resolution. Higher values require longer export times",
-            default = 0,
-            min = 0,
-            max = 2
-    )
-    scaling = bpy.props.FloatProperty( 
-            name = "Scaling",
-            description = "Multiplier of width properties",
-            default = 0.25,
-            min = 0.01,
-            max = 1.0
-    )
-    close_tip = bpy.props.BoolProperty( 
-            name = "Close Tip",
-            description = "Closed hair tip",
-            default = True
-    )
-    shape = bpy.props.FloatProperty( 
-            name = "Shape",
-            description = "-1 the hair thickness is constant from root to tip,"\
-                          " 0 hair thickness is evenly interpolated from root to tip", 
-            default = 0.0,
-            min = -0.99,
-            max = 0.99
-    )
-    thick = bpy.props.BoolProperty( 
-            name = "Use thick",
-            description = "Use bevel curve",
-            default = False
-    )
-    bake_hair = bpy.props.BoolProperty( 
-            name = "Bake",
-            description = "Bake hair to disk",
-            default = False
-    )
-    
-
+###
 def register():
-    #
     bpy.utils.register_class(TheBountyObjectSettings)
     bpy.types.Object.bounty = PointerProperty(type=TheBountyObjectSettings )
     
-    bpy.utils.register_class(TheBountyStrandProperties)
-    bpy.types.ParticleSettings.bounty = bpy.props.PointerProperty(type=TheBountyStrandProperties)
-    
-    
 def unregister():
-    #
     bpy.utils.unregister_class(TheBountyObjectSettings)
     del bpy.types.Object.bounty
-    
-    bpy.utils.unregister_class(TheBountyStrandProperties)
-    del bpy.types.ParticleSettings.bounty
-    
+

@@ -488,7 +488,7 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             default=True
     )    
 
-
+###
 def register():
     bpy.utils.register_class(TheBountySceneSettings)
     bpy.types.Scene.bounty = PointerProperty(type=TheBountySceneSettings )

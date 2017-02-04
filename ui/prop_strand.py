@@ -17,57 +17,51 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
-import bpy
+
 from bpy.types import Panel
 
-class TheBountyStrandPanel( bpy.types.Panel):
+
+class TheBounty_PT_strand_settings(Panel):
     bl_label = "TheBounty Strand Settings"
-    bl_space_type = "PROPERTIES"
-    bl_region_type = "WINDOW"
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
     bl_context = "particle"
     COMPAT_ENGINES = {'THEBOUNTY'}
 
     @classmethod
-    def poll( cls, context):
+    def poll(cls, context):
+
+        psys = context.object.particle_systems
         engine = context.scene.render.engine
-        if engine not in cls.COMPAT_ENGINES:
-            return False
-        psys = context.particle_system
-        return (psys and psys.settings.type == 'HAIR')
+        return (psys and (engine in cls.COMPAT_ENGINES))
 
-    def draw_header( self, context):
-        pass
-
-    def draw( self, context):
+    def draw(self, context):
         layout = self.layout
-        bounty = context.particle_system.settings.bounty
-        
-        layout.prop( bounty, "strand_shape", text="Primitive")
-        split = layout.split()
-        col = split.column()
-        sub = col.column(align=True)
-        sub.label(text="Thickness:")
-        sub.prop( bounty, "root_size")
-        sub.prop( bounty, "tip_size")
-        sh = col.column()
-        sh.enabled = (bounty.root_size != bounty.tip_size)
-        sh.prop( bounty, "shape")
-        #
-        col.prop( bounty, "bake_hair")      
-        
-        col = split.column()        
-        col.label(text="")
-        cc = col.column()
-        cc.enabled = bounty.strand_shape == "cylinder"
-        cc.prop( bounty, "scaling")
-        cc.prop(bounty, "thick")
-        cb = col.column()
-        cb.enabled = (bounty.thick and bounty.strand_shape == "cylinder")
-        cb.prop( bounty, "resolution")
-        
-        col.prop( bounty, "close_tip")  
-        
-        #layout.prop( bounty, "export_color")
+
+        mat = context.object.active_material
+        if mat:
+            tan = mat.strand
+
+            split = layout.split()
+
+            col = split.column()
+            sub = col.column(align=True)
+            sub.label(text="Size:")
+            sub.prop(tan, "root_size", text="Root")
+            sub.prop(tan, "tip_size", text="Tip")
+            sub = col.column()
+            col.prop(tan, "shape")
+            col.prop(tan, "use_blender_units")
+
+            col = split.column()
+            col.label(text="Shading:")
+            col.prop(tan, "width_fade")
+            ob = context.object
+            if ob and ob.type == 'MESH':
+                col.prop_search(tan, "uv_layer", ob.data, "uv_textures", text="")
+            else:
+                col.prop(tan, "uv_layer", text="")
+
 
 if __name__ == "__main__":  # only for live edit.
     import bpy

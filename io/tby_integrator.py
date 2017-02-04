@@ -75,7 +75,7 @@ class exportIntegrator:
 
         yi.paramsClearAll()
         #
-        [transp_BG, transp_Refract_BG] = checkPreview(self.preview, scene)
+        transp_BG, transp_Refract_BG = checkPreview(self.preview, scene)
         yi.paramsSetBool("bg_transp", transp_BG)
         yi.paramsSetBool("bg_transp_refract", transp_Refract_BG)
 
