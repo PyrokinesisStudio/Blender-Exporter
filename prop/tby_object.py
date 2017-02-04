@@ -242,6 +242,11 @@ class TheBountyStrandProperties(bpy.types.PropertyGroup):
             description = "Use bevel curve",
             default = False
     )
+    bake_hair = bpy.props.BoolProperty( 
+            name = "Bake",
+            description = "Bake hair to disk",
+            default = False
+    )
     
 
 def register():

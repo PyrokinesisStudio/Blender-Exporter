@@ -168,7 +168,6 @@ class exportObject(object):
             self.writeBGPortal(obj, matrix)
 
         elif obj.particle_systems:  # Particle Hair system
-            # TODO: add extra options in UI
             bake = self.scene.bounty.gs_type_render == 'xml'
             #
             for pSys in obj.particle_systems:
@@ -185,7 +184,7 @@ class exportObject(object):
                         # Clean up the scene
                         bpy.data.objects.remove(crv_ob)
                         bpy.data.curves.remove(crv)
-                    elif bake:
+                    elif bake and pSys.settings.bounty.bake_hair:
                         self.bakeParticleStrands(obj, matrix, pSys)
                     else:
                         self.writeParticleStrands(obj, matrix, pSys)
@@ -547,8 +546,7 @@ class exportObject(object):
         for mod in obj.modifiers:
             if mod.show_render and (pSys.name == mod.particle_system.name):
 
-                yi.printInfo('Exporting Hair system {0}...'.format(pSys.name))
-                
+                yi.printInfo('Exporting Hair system {0}...'.format(pSys.name))                
                 #                    
                 strandStart = pSys.settings.bounty.root_size * 0.01
                 strandEnd = pSys.settings.bounty.tip_size * 0.01
@@ -632,10 +630,11 @@ class exportObject(object):
         
                 #transform = obj.matrix_world.inverted()
                 total_strand_count = 0
-        
+                #
                 if strandStart == strandEnd:
                     thicknessflag = 0
-                    hair_size *= strandStart
+                    # set default tickness
+                    hair_size = strandStart
                 else:
                     thicknessflag = 1
         
@@ -654,48 +653,21 @@ class exportObject(object):
                     #seg_length = 1.0 
                     
                     for step in range(0, steps):
-                        co = obj.matrix_world.inverted() * pSys.co_hair(obj, pindex, step)
+                        co = pSys.co_hair(obj, pindex, step)
+                        #co = obj.matrix_world.inverted() * pSys.co_hair(obj, pindex, step)
                         #        
                         if not co.length_squared == 0:
                             points.append(co)
-        
+                            #
                             if thicknessflag:
-                                if step > steps * width_offset:
-                                    thick = (strandStart * (steps - step - 1) + strandEnd * 
-                                            (step - steps * width_offset)) /(steps * (1 - width_offset) - 1)
+                                if step == 0:
+                                    thickness.append(strandStart)
+                                elif step == steps -1:
+                                    thickness.append(strandEnd)
                                 else:
-                                    thick = strandStart
-        
-                                thickness.append(thick * hair_size)
-        
+                                    thickness.append(0.0)
+                            # end
                             point_count += + 1
-                            # pov: bounty don't need uv data because is create with flat ribbon in core.
-                            '''
-                            if uvflag:
-                                if not uv_co:
-                                    uv_co = psys.uv_on_emitter(mod, psys.particles[i], pindex, uv_textures.active_index)
-        
-                                uv_coords.append(uv_co)
-                            
-                            if psys.settings.luxrender_hair.export_color == 'uv_texture_map' and not len(image_pixels) == 0:
-                                if not col:
-                                    x_co = round(uv_co[0] * (image_width - 1))
-                                    y_co = round(uv_co[1] * (image_height - 1))
-        
-                                    pixelnumber = (image_width * y_co) + x_co
-        
-                                    r = image_pixels[pixelnumber * 4]
-                                    g = image_pixels[pixelnumber * 4 + 1]
-                                    b = image_pixels[pixelnumber * 4 + 2]
-                                    col = (r, g, b)
-        
-                                colors.append(col)
-                            elif psys.settings.bounty.export_color == 'vertex_color' and has_vertex_colors:
-                                if not col:
-                                    col = psys.mcol_on_emitter(mod, psys.particles[i], pindex, vertex_color.active_index)
-        
-                                colors.append(col)
-                            '''
         
                     if point_count == 1:
                         points.pop()
@@ -727,6 +699,7 @@ class exportObject(object):
         
                     # hair data
                     hair_file.write(struct.pack('<%dH' % (len(segments)), *segments))
+                    #print('segments: ', len(segments))
         
                     for point in points:
                         hair_file.write(struct.pack('<3f', *point))
@@ -734,22 +707,13 @@ class exportObject(object):
                     if thicknessflag:
                         for thickn in thickness:
                             hair_file.write(struct.pack('<1f', thickn))
-                    '''
-                    if colorflag:
-                        for col in colors:
-                            hair_file.write(struct.pack('<3f', *col))
-        
-                    if uvflag:
-                        for uv in uv_coords:
-                            hair_file.write(struct.pack('<2f', *uv))
-                    '''
+                            print("tickness: ", thickn)
+                
                 yi.printInfo('Binary hair file written: {0}'.format(hair_file_path))
                 # write parameters on .xml file
-                used_hairs = -1 # use all
-                used_tickness= 0.01 # use -1 for read values from .hair file
                 HID = yi.getNextFreeID()
                 yi.paramsClearAll()
-                yi.addHair(HID, hair_file_path, self.materialMap[hairMat], used_hairs, used_tickness, 1)
+                yi.addHair(HID, hair_file_path, self.materialMap[hairMat])
                 
                 if pSys.settings.use_render_emitter:
                     matrix = obj.matrix_world.copy()
@@ -759,7 +723,7 @@ class exportObject(object):
         return
     
         
-    def generate_hair_curves( self, obj, psys, crv_ob, crv_data, matrix): #, mat_name='Default'):
+    def generate_hair_curves( self, obj, psys, crv_ob, crv_data, matrix):
         #
         # heavily based on Corona Blender exporter code
         #
