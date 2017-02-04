@@ -49,9 +49,11 @@ class TheBountyStrandPanel( bpy.types.Panel):
         sub.label(text="Thickness:")
         sub.prop( bounty, "root_size")
         sub.prop( bounty, "tip_size")
-        sub.prop( bounty, "shape")
+        sh = col.column()
+        sh.enabled = (bounty.root_size != bounty.tip_size)
+        sh.prop( bounty, "shape")
         #
-        col.prop( bounty, "close_tip")        
+        col.prop( bounty, "bake_hair")      
         
         col = split.column()        
         col.label(text="")
@@ -62,6 +64,8 @@ class TheBountyStrandPanel( bpy.types.Panel):
         cb = col.column()
         cb.enabled = (bounty.thick and bounty.strand_shape == "cylinder")
         cb.prop( bounty, "resolution")
+        
+        col.prop( bounty, "close_tip")  
         
         #layout.prop( bounty, "export_color")
 
