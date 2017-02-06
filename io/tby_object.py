@@ -170,14 +170,29 @@ class exportObject(object):
 
         elif obj.particle_systems:  # Particle Hair system
             # TODO: add bake option in UI
-            bake = self.scene.bounty.gs_type_render == 'xml'
-            #
-            for pSys in obj.particle_systems:
-                if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
-                    if bake:
-                        self.bakeParticleStrands(obj, matrix, pSys)
-                    else:
-                        self.writeParticleStrands(obj, matrix, pSys)
+            if self.is_preview:
+                self.previewhair(obj)
+            else:                
+                bake = False #self.scene.bounty.gs_type_render == 'xml'
+                #
+                for pSys in obj.particle_systems:
+                    if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
+                        if pSys.settings.bounty.strand_shape == 'cylinder':
+                            # this method create a lot of new geometry
+                            # then, its good only for small hair particle system
+                            # or for generate hight resolution closed hairs
+                            crv = bpy.data.curves.new('hair_tmp_curve', 'CURVE')
+                            crv_ob = bpy.data.objects.new("%s_ob" % crv.name, crv)
+                            crv_ob.hide_render = True
+                            # generate..
+                            self.generate_hair_curves(obj, pSys, crv_ob, crv, matrix)
+                            # Clean up the scene
+                            bpy.data.objects.remove(crv_ob)
+                            bpy.data.curves.remove(crv)
+                        if bake:
+                            self.bakeParticleStrands(obj, matrix, pSys)
+                        else:
+                            self.writeParticleStrands(obj, matrix, pSys)
 
         else:  # The rest of the object types
             self.writeMesh(obj, matrix)
@@ -814,6 +829,38 @@ class exportObject(object):
                 return crv_meshes
     
     #
+    def previewhair(self, obj):
+        #
+        yi = self.yi
+        strandStart = .0512
+        strandEnd = .0512
+        strandShape = 0.0
+        y = -3
+        x = -3
+        try:
+            hairMat = obj.material_slots[0].material
+        except:
+            hairMat = "default" 
+         
+        for idx in range(0, 24):
+            CID = yi.getNextFreeID()
+            yi.paramsClearAll()
+            yi.startGeometry()
+            yi.startCurveMesh(CID, 1)
+            #
+            z = -1.0
+            for step in range(0, 3):
+                #
+                yi.addVertex(x, y, z)
+                z += 3
+            #
+            x += .25 
+            y += .125
+            #
+            yi.endCurveMesh(self.materialMap[hairMat], strandStart, strandEnd, strandShape)
+            yi.endGeometry()
+        return True
+    
 def mesh_triangulate(me):
     import bmesh
     bm = bmesh.new()

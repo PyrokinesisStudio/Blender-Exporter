@@ -122,26 +122,61 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
             obj_visible |= layer_visible
         return obj_visible
+    #
+    def exportableObjects(self, obj):
+        # geometry object visibility cases:
+        #    renderables:
+        #        is hidden on viewport (obj.hide), but is renderable because:
+        #            not obj.hide_render is enabled
+        #            object_on_visible_layer is True
+        #    not renderables:
+        #        object is showed on viewport only for scene distribution issues but:
+        #            obj.hide_render is enabled
+        if not obj.hide_render:
+            if obj.is_visible(self.scene) or self.object_on_visible_layer(obj):
+                return True
+        
+        return False
 
     def exportObjects(self):
+        #
+        sceneMeshes = list()   # MESH 
+        sceneSurfaces = list() # SURFACE 
+        sceneCurves = list()   # CURVE
+        sceneFonts = list()    # FONT 
+        sceneEmpties = list()  # EMPTY
+        sceneLamps = list()    # LAMP
+        sceneGeometry = list() # for accumulate different geometry objects
+        
+        for obj in self.scene.objects:
+            if obj.type =='LAMP':       sceneLamps.append(obj)
+            if obj.type =='MESH':       sceneMeshes.append(obj)
+            if obj.type =='CURVE':      sceneCurves.append(obj)
+            if obj.type =='SURFACE':    sceneSurfaces.append(obj)
+        # test
+        sceneMeshes += sceneCurves
+        sceneGeometry += sceneMeshes
         self.yi.printInfo("Exporter: Processing Lamps...")
 
         #---------------------------
         # export only visible lamps
         #---------------------------
-        for obj in [o for o in self.scene.objects if not o.hide_render and o.is_visible(self.scene) and o.type == 'LAMP']:
-            if obj.is_duplicator:
-                obj.create_dupli_list(self.scene)
-                for obj_dupli in obj.dupli_list:
-                    matrix = obj_dupli.matrix.copy()
-                    self.lights.createLight(self.yi, obj_dupli.object, matrix)
+        for obj in sceneLamps:
+            #if obj.type == 'LAMP':
+            if not obj.hide_render and (obj.is_visible(self.scene)or obj.hide):
+                if obj.is_duplicator:
+                    obj.create_dupli_list(self.scene)
+                    for obj_dupli in obj.dupli_list:
+                        matrix = obj_dupli.matrix.copy()
+                        self.lights.createLight(self.yi, obj_dupli.object, matrix)
 
-                if obj.dupli_list:
-                    obj.free_dupli_list()
-            else:
-                if obj.parent and obj.parent.is_duplicator:
-                    continue
-                self.lights.createLight(self.yi, obj, obj.matrix_world)
+                    if obj.dupli_list:
+                        obj.free_dupli_list()
+                        pass
+                else: # not duplicator
+                    if obj.parent and obj.parent.is_duplicator:
+                        continue
+                    self.lights.createLight(self.yi, obj, obj.matrix_world)
 
         self.yi.printInfo("Exporter: Processing Geometry...")
 
@@ -151,8 +186,10 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         baseIds = {}
         dupBaseIds = {}
 
-        for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        #for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        #and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
+        for obj in [o for o in sceneGeometry if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
+        and self.object_on_visible_layer(o)]:
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))
@@ -161,8 +198,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 for obj_dupli in [od for od in obj.dupli_list if not od.object.type == 'EMPTY']:
                     #self.exportTexture(obj_dupli.object)
                     for mat_slot in obj_dupli.object.material_slots:
-                        if mat_slot.material not in self.exportedMaterials: #materials:
-                            self.exportMaterial(mat_slot.material)
+                        if mat_slot.material not in self.exportedMaterials:
+                            self.exportMaterial(obj_dupli, mat_slot.material)
 
                     if not self.scene.render.use_instances:
                         matrix = obj_dupli.matrix.copy()
@@ -185,8 +222,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                             self.geometry.writeMesh(obj, matrix)
 
             # no need to write empty object from here on, so continue with next object in loop
-            elif obj.type == 'EMPTY':
-                continue
+            #elif obj.type == 'EMPTY':
+            #    continue
 
             # Exporting objects with shared mesh data blocks as instances
             elif obj.data.users > 1 and self.scene.render.use_instances:
@@ -238,7 +275,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         cmat = self.yi.createMaterial("clayMat")
         self.materialMap["clay"] = cmat
         
-    #
+
     def createDefaultMats(self):
         #
         if 'blendone' not in bpy.data.materials:
@@ -254,8 +291,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if 'clay' not in bpy.data.materials:
             clay = bpy.data.materials.new('clay')
             clay.diffuse_color =(0.5, 0.5, 0.5)
-            clay.bounty.mat_type = 'shinydiffusemat'
-        
+            clay.bounty.mat_type = 'shinydiffusemat'        
         
         if 'default' not in bpy.data.materials:
             defmat = bpy.data.materials.new('default')
