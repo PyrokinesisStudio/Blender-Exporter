@@ -833,7 +833,7 @@ class exportObject(object):
         #
         yi = self.yi
         strandStart = .0512
-        strandEnd = .0512
+        strandEnd = .0256
         strandShape = 0.0
         y = -3
         x = -3

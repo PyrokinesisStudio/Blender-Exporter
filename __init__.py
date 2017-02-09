@@ -34,14 +34,19 @@ import sys
 import os
 
 
-PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
+
 BIN_PATH = os.environ['BOUNTY_ROOT']
 sys.path.insert(0,BIN_PATH)
+    
+os.environ['PATH'] = BIN_PATH + ';' + os.environ['PATH']
+    
+PLUGIN_PATH = BIN_PATH + '/plugins'
+   
 
 #--------------------------
 # import exporter modules
 #--------------------------
-if "bpy" in locals():
+if "prop" in locals():
     import imp
     imp.reload(prop)
     imp.reload(io)
