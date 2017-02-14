@@ -162,7 +162,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         # export only visible lamps
         #---------------------------
         for obj in sceneLamps:
-            #if obj.type == 'LAMP':
+            #
             if not obj.hide_render and (obj.is_visible(self.scene)or obj.hide):
                 if obj.is_duplicator:
                     obj.create_dupli_list(self.scene)
@@ -246,7 +246,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         mirCol = mat.bounty.mirr_color
         bSpecr = mat.bounty.specular_reflect
         bTransp = mat.bounty.transparency
-        bTransl = mat.translucency
+        bTransl = mat.bounty.translucency
         bEmit = mat.bounty.emittance
             
         #

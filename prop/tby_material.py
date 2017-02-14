@@ -348,6 +348,13 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
             min=-0.99, max=0.99, step=0.01, precision=2,
             default=0.0
     )
+    # test
+    preset_folder = bpy.props.StringProperty(
+            name="Presets folder",
+            description="",
+            subtype='DIR_PATH',
+            default=""
+    )
 
 def register():
     bpy.utils.register_class(TheBountyMaterialProperties)
