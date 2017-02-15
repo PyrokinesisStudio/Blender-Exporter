@@ -25,7 +25,6 @@ import os
 import bpy
 from bpy.types import Menu, Operator
 
-# test
 class TheBountyMaterialPresets(AddPresetBase, Operator):
     # Add material presets
     bl_idname = "bounty.material_preset_add"
@@ -145,26 +144,16 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
             values += self.define_values(mat2, 'mat2')
             
         return values
-        
-    '''      
-    @classmethod
-    def poll(cls, context):
-        material = context.material
-        return material
-    '''
    
     def execute(self, context):
         #
         material = bpy.context.object.active_material
-        #material = context.material # seems that is the same of above
         ext = ".py"
-        #----------------------------------------------------------
         name = self.name.strip()
         if not name:
             return {'FINISHED'}
 
         filename = self.as_filename(name)
-
         target_path = os.path.join("presets", self.preset_subdir)
         target_path = bpy.utils.user_resource('SCRIPTS', target_path, create=True)
 
@@ -173,7 +162,7 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
             return {'CANCELLED'}
 
         filepath = os.path.join(target_path, filename) + ext
-        #----------------------------------------------------------
+        #
         if not self.remove_active:
             #
             val = list()
@@ -189,8 +178,6 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
                 #
                 self.report({'INFO'}, "File preset write sucessful: "+ str(filepath))
         
-        #if hasattr(self, "post_cb"):
-        #    self.post_cb(context)
                  
         return {'FINISHED'}
     
@@ -267,12 +254,12 @@ class TheBountySettingsPresets(AddPresetBase, Operator):
    
    
 def register():
-    #pass
+    #
     bpy.utils.register_class(TheBountySettingsPresets)
     bpy.utils.register_class(TheBountyMaterialPresets)
     
 def unregister():
-    #pass
+    #
     bpy.utils.unregister_class(TheBountySettingsPresets)
     bpy.utils.unregister_class(TheBountyMaterialPresets)
     
