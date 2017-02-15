@@ -134,7 +134,6 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
             row.menu("TheBountyMaterialPresets", text=bpy.types.TheBountyMaterialPresets.bl_label)
             row.operator("bounty.material_preset_add", text="", icon='ZOOMOUT').remove_active = True
             #
-            #layout.prop(mat.bounty, 'preset_folder')
             layout.prop(mat.bounty, "mat_type")
                       
 
