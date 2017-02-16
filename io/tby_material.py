@@ -169,11 +169,13 @@ class TheBountyMaterialWrite:
     # 
     
     textureMappingParams = {
-        "element":"shader_node", "type":"texture_mapper", "name":"", 
-        "texture":"", "texco":"", "proj_x":0, "proj_y":1, "proj_z":2, 
+        "element":"shader_node", "type":"texture_mapper", "name":"map0", 
+        "texture":"", "texco":"orco", "proj_x":0, "proj_y":1, "proj_z":2, 
         "mapping":"plain", "offset":0.0, "scale":1, "bump_strength":0.0         
     }
     def writeMappingNode(self, mapname, mtex):
+        # test
+        textureMappingParams.get('type','texture_mapper')
         yi = self.yi
         yi.paramsPushList()
 
@@ -298,16 +300,25 @@ class TheBountyMaterialWrite:
     
     def glossyParams(self, mat, node):
         #
-        materialParams = {}
+        matParams = {}
         nodemat = self.useMaterialNodes and node is not None
         #
-        materialParams = {
-            "diffuse_color"     : node.inputs['Diffuse'].diff_color      if nodemat else mat.diffuse_color,
-            "color"             : node.inputs['Glossy'].glossy_color     if nodemat else mat.bounty.glossy_color,
-            "glossy_reflect"    : node.inputs['Specular'].glossy_reflect if nodemat else mat.bounty.glossy_reflect,
-            "diffuse_reflect"   : node.inputs['Diffuse'].diffuse_reflect if nodemat else mat.bounty.diffuse_reflect,
+        matParams = {
+            "diffuse_color"     : node.inputs['Diffuse'].diff_color         if nodemat else mat.diffuse_color,
+            "color"             : node.inputs['Glossy'].glossy_color        if nodemat else mat.bounty.glossy_color,
+            "glossy_reflect"    : node.inputs['Specular'].glossy_reflect    if nodemat else mat.bounty.glossy_reflect,
+            "diffuse_reflect"   : node.inputs['Diffuse'].diffuse_reflect    if nodemat else mat.bounty.diffuse_reflect,
+            "anisotropic"       : node.anisotropic      if nodemat else mat.bounty.anisotropic,
+            "exponent"          : node.exponent         if nodemat else mat.bounty.exponent,
+            "exp_u"             : node.exp_u            if nodemat else mat.bounty.exp_u,
+            "exp_v"             : node.exp_v            if nodemat else mat.bounty.exp_v,      
+            "as_diffuse"        : node.as_diffuse       if nodemat else mat.bounty.as_diffuse,
+            "coat_mir_col"      : node.coat_mir_col     if nodemat else mat.bounty.coat_mir_col,
+            "IOR_reflection"    : node.IOR_reflection   if nodemat else mat.bounty.IOR_reflection,
+            "brdf_type"         : node.brdf_type        if nodemat else mat.bounty.brdf_type,
+            "sigma"             : node.sigma            if nodemat else mat.bounty.sigma,
         }
-        return materialParams
+        return matParams
             
     def writeGlossyShader(self, mat, linked_node):
         yi = self.yi
@@ -318,26 +329,26 @@ class TheBountyMaterialWrite:
         # Add IOR and mirror color for coated glossy
         #-------------------------------------------
         if mat.bounty.mat_type == "coated_glossy":
-            yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
-            mir_col = mat.bounty.coat_mir_col
+            yi.paramsSetFloat("IOR", params.get('IOR_reflection',mat.bounty.IOR_reflection))
+            mir_col = params.get('coat_mir_col', mat.bounty.coat_mir_col)
             yi.paramsSetColor("mirror_color", mir_col[0], mir_col[1], mir_col[2])
         
         diffuse_color = params.get('diffuse_color', mat.diffuse_color)
         glossy_color = params.get('color', mat.bounty.glossy_color)
         glossy_reflect = params.get("glossy_reflect", mat.bounty.glossy_reflect)
 
-        yi.paramsSetColor("diffuse_color", diffuse_color[0], diffuse_color[1], diffuse_color[2])
-        yi.paramsSetColor("color", glossy_color[0], glossy_color[1], glossy_color[2])
+        yi.paramsSetColor("diffuse_color",  diffuse_color[0], diffuse_color[1], diffuse_color[2])
+        yi.paramsSetColor("color",          glossy_color[0], glossy_color[1], glossy_color[2])
         yi.paramsSetFloat("glossy_reflect", glossy_reflect)
-        yi.paramsSetFloat("exponent", mat.bounty.exponent)
-        yi.paramsSetFloat("diffuse_reflect", params.get('diffuse_reflect', mat.bounty.diffuse_reflect))
-        yi.paramsSetBool("as_diffuse", mat.bounty.as_diffuse)
-        yi.paramsSetBool("anisotropic", mat.bounty.anisotropic)
-        yi.paramsSetFloat("exp_u", mat.bounty.exp_u)
-        yi.paramsSetFloat("exp_v", mat.bounty.exp_v)
+        yi.paramsSetFloat("exponent",       params.get('exponent', mat.bounty.exponent))
+        yi.paramsSetFloat("diffuse_reflect",params.get('diffuse_reflect', mat.bounty.diffuse_reflect))
+        yi.paramsSetBool("as_diffuse",      params.get('as_diffuse', mat.bounty.as_diffuse))
+        yi.paramsSetBool("anisotropic",     params.get('anisotropic', mat.bounty.anisotropic))
+        yi.paramsSetFloat("exp_u",          params.get('exp_u', mat.bounty.exp_u))
+        yi.paramsSetFloat("exp_v",          params.get('exp_v', mat.bounty.exp_v))
         #
         brdf = 'lambert'
-        if mat.bounty.brdf_type == "oren-nayar":  # oren-nayar fix for glossy
+        if params.get('brdf_type', mat.bounty.brdf_type) == "oren_nayar":  # oren-nayar fix for glossy
             brdf = 'Oren-Nayar'
             yi.paramsSetString("diffuse_brdf", brdf)
             yi.paramsSetFloat("sigma", params.get('sigma', mat.bounty.sigma))
@@ -653,8 +664,8 @@ class TheBountyMaterialWrite:
         nodemat = self.useMaterialNodes and linked_node is not None
         
         materialParams = {
-            'material1'     : linked_node.blendOne      if nodemat else mat.bounty.blendOne,
-            'material2'     : linked_node.blendTwo      if nodemat else mat.bounty.blendTwo,
+            'material1'     : mat.bounty.blendOne, # linked_node.blendOne      if nodemat else mat.bounty.blendOne,
+            'material2'     : mat.bounty.blendTwo, # linked_node.blendTwo      if nodemat else mat.bounty.blendTwo,
             "blend_value"   : linked_node.blend_amount  if nodemat else mat.bounty.blend_value
         }          
         return materialParams

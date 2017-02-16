@@ -196,7 +196,6 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         self.inputs.new('translucency', 'Translucency')
         
         self.inputs.new('mirror', 'Mirror')
-        #self.inputs['Mirror'].enabled=True
         
         self.inputs.new('specular', 'Specular')
         
