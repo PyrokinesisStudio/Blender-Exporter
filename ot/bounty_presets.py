@@ -23,7 +23,7 @@ from bl_operators.presets import AddPresetBase
 import bpy
 import os
 
-class TheBountyMaterialPresets(AddPresetBase, Operator):
+class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
     # Add material presets
     bl_idname = "bounty.material_preset_add"
     bl_label = "Material Presets"
@@ -180,7 +180,7 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
         return {'FINISHED'}
     
 
-class TheBountySettingsPresets(AddPresetBase, Operator):
+class TheBountySettingsPresets(AddPresetBase, bpy.types.Operator):
     # Add render presets
     bl_idname = "bounty.render_preset_add"
     bl_label = "TheBounty Settings Presets"
