@@ -35,8 +35,6 @@ import os
 
 BIN_PATH = os.path.join(__path__[0], 'bin')
 
-
-BIN_PATH = os.path.join(__path__[0], 'bin') # os.environ['BOUNTY_ROOT']
 sys.path.insert(0,BIN_PATH)
     
 os.environ['PATH'] = BIN_PATH + ';' + os.environ['PATH']
