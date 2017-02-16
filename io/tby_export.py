@@ -110,7 +110,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportTextures(self):
         # find all used scene textures
         #textureScene=[]
-        self.createDefaultBlends()
+        self.createDefaultMats()
         for tex in bpy.data.textures:
             # skip 'preview' and 'world environment' textures
             if (self.is_preview and tex.name == "fakeshadow") or not tex.users_material:
@@ -193,11 +193,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-----------------------------
         baseIds = {}
         dupBaseIds = {}
-        
-        #for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        #and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
-        for obj in [o for o in sceneGeometry if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        and self.object_on_visible_layer(o)]:
+        #
+        for obj in [o for o in sceneGeometry if self.exportableObjects(o) or o.hide]:
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))
@@ -246,18 +243,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             elif obj.data.name not in baseIds and obj.name not in dupBaseIds:
                 self.geometry.writeObject(obj)
 
-    #
-    def createDefaultBlends(self):
-        #
-        if 'blendone' not in bpy.data.materials:
-            m1 = bpy.data.materials.new('blendone')
-            m1.bounty.mat_type = 'shinydiffusemat'
-            m1.diffuse_color = (1.0, 0.0, 0.0)
-                        
-        if 'blendtwo' not in bpy.data.materials:
-            m2 = bpy.data.materials.new('blendtwo')
-            m2.bounty.mat_type = 'glossy'
-            m2.diffuse_color = (0.0, 1.0, 0.0)
     
     def handleBlendMat(self, mat):        
         #-------------------------
@@ -302,12 +287,75 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if mat not in self.exportedMaterials:
             self.exportedMaterials.add(mat)
             self.setMaterial.writeMaterial(mat)
+    
+    #
+    def defineClayMaterial(self, mat):
+        # trick: force type to sinydiffuse
+        mat.bounty.mat_type = "shinydiffusemat"
+        #
+        diffColor = mat.diffuse_color
+        mirCol = mat.bounty.mirror_color
+        bSpecr = mat.bounty.specular_reflect
+        bTransp = mat.bounty.transparency
+        bTransl = mat.bounty.translucency
+        bEmit = mat.bounty.emittance
             
-    def createDefaultMat(self):
-        #---------------------------------------------------
-        # create shiny diffuse material for use by default
-        # it will be assigned, if object has no material(s)
-        #---------------------------------------------------
+        #
+        self.yi.paramsClearAll()            
+        self.yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
+        self.yi.paramsSetFloat("transparency", bTransp)
+        self.yi.paramsSetFloat("translucency", bTransl)
+        self.yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
+        self.yi.paramsSetFloat("emit", bEmit)
+        self.yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
+    
+        self.yi.paramsSetFloat("specular_reflect", bSpecr)
+        self.yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
+        self.yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
+        self.yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
+    
+        if mat.bounty.brdf_type == "oren-nayar":
+            self.yi.paramsSetString("diffuse_brdf", "oren_nayar")
+            self.yi.paramsSetFloat("sigma", mat.bounty.sigma)            
+            
+        # force type to sinydiffuse
+        #mat.bounty.mat_type = "shinydiffusemat"      
+                   
+        self.yi.paramsSetString("type", "shinydiffusemat")
+
+        self.yi.printInfo("Exporter: Creating Material \"clayMat\"")
+        cmat = self.yi.createMaterial("clayMat")
+        self.materialMap["clay"] = cmat
+    
+            
+    def createDefaultMats(self):
+        #
+        if 'blendone' not in bpy.data.materials:
+            m1 = bpy.data.materials.new('blendone')
+            m1.diffuse_color = (0.0, 0.0, 1.0)
+            m1.bounty.mat_type = 'shinydiffusemat'
+                        
+        if 'blendtwo' not in bpy.data.materials:
+            m2 = bpy.data.materials.new('blendtwo')
+            m2.diffuse_color =(1.0, 0.0, 0.0)
+            m2.bounty.mat_type = 'glossy'
+        
+        if 'clay' not in bpy.data.materials:
+            clay = bpy.data.materials.new('clay')
+            clay.diffuse_color =(0.5, 0.5, 0.5)
+            clay.bounty.mat_type = 'shinydiffusemat'
+        
+        if 'default' not in bpy.data.materials:
+            defmat = bpy.data.materials.new('default')
+            defmat.diffuse_color =(0.8, 0.8, 0.8)
+            defmat.bounty.mat_type = 'shinydiffusemat'
+        
+            
+    def exportMaterials(self):
+        self.yi.printInfo("Exporter: Processing Materials...")
+        self.exportedMaterials = set()
+        
+        #join defaultMat to materialMap
         self.yi.paramsClearAll()
         self.yi.paramsSetString("type", "shinydiffusemat")
         self.yi.paramsSetColor("color", 0.8, 0.8, 0.8)
@@ -315,32 +363,20 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         ymat = self.yi.createMaterial("defaultMat")
         self.materialMap["default"] = ymat
         
+        #---------------------------------------------------
+        # define material for "Clay Render"
+        #---------------------------------------------------            
+        if self.scene.bounty.gs_clay_render:
+            #TODO:  heavily hardcoded.. need review
+            mat = bpy.data.materials['clay']
+            self.defineClayMaterial(mat) 
             
-    def exportMaterials(self):
-        self.yi.printInfo("Exporter: Processing Materials...")
-        self.exportedMaterials = set()
-        self.createDefaultMat()
-        
-        #---------------------------------------------------
-        # create a shinydiffuse material for "Clay Render"
-        # exception: don't create for material preview mode
-        #---------------------------------------------------
-        if not self.is_preview:
-            self.yi.paramsClearAll()
-            self.yi.paramsSetString("type", "shinydiffusemat")
-            cCol = self.scene.bounty.gs_clay_col
-            self.yi.paramsSetColor("color", cCol[0], cCol[1], cCol[2])
-            self.yi.printInfo("Exporter: Creating Material \"clayMat\"")
-            cmat = self.yi.createMaterial("clayMat")
-            self.materialMap["clay"] = cmat
         #----------------------------------------------
-        # override all materials in 'clay render' mode
-        #----------------------------------------------
-        if not self.scene.bounty.gs_clay_render:
-            for obj in self.scene.objects:
-                for slot in obj.material_slots:
-                    if slot.material not in self.exportedMaterials:
-                        self.exportMaterial(obj, slot.material)
+        for obj in self.scene.objects:
+            for slot in obj.material_slots:
+                if slot.material not in self.exportedMaterials:
+                    self.exportMaterial(obj, slot.material)
+                    
 
     def exportMaterial(self, obj, material):
         if material:
