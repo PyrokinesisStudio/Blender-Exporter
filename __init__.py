@@ -33,10 +33,13 @@ bl_info = {
 import sys
 import os
 
-BIN_PATH = os.environ['BOUNTY_ROOT']
-PLUGIN_PATH = os.environ['BOUNTY_PLUGINS']
+BIN_PATH = os.path.join(__path__[0], 'bin')
 
 sys.path.insert(0, BIN_PATH)
+    
+os.environ['PATH'] = BIN_PATH + ';' + os.environ['PATH']
+    
+PLUGIN_PATH = BIN_PATH + '/plugins'
 
 #--------------------------
 # import exporter modules
