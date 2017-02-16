@@ -288,7 +288,7 @@ class exportObject(object):
         self.yi.paramsSetInt("object", ID)
         self.yi.createLight(object.name)
         # test for hidden meshlight object
-        objType = 0 #256 if obj.ml_hidde_mesh else 0
+        objType = 256 if obj.ml_hidde_mesh else 0
 
         self.writeGeometry(ID, object, matrix, objType, ml_mat)
 

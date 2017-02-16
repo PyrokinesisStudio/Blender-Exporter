@@ -193,9 +193,7 @@ class TheBountySettingsPresets(AddPresetBase, Operator):
         "render = bpy.context.scene.render"
     ]
     
-    preset_subdir = "thebounty/render"
-    
-    
+    preset_subdir = "thebounty/render"    
     
     preset_values = [
             "render.resolution_x",
