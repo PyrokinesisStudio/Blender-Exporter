@@ -18,34 +18,12 @@
 
 # <pep8 compliant>
 
-
-
-#
 from bl_operators.presets import AddPresetBase
 #from bpy.props import StringProperty, EnumProperty, BoolProperty
 import bpy
 import os
 
-#-----------------------------------------------
-def getPresetpath():
-    """Support user defined scripts directory
-       Find the first ocurrence and return it as preset path"""
-    presetpath = ""
-    for p in bpy.utils.script_paths():
-        presetpath = os.path.join(p, 'addons', 'thebounty', 'presets')
-        if os.path.exists(presetpath):
-            break
-    #return presetpath
-    
-    # why not just do this
-    script_file = os.path.realpath(__file__)
-    directory = os.path.dirname(script_file)
-    directory = os.path.join(directory, "presets")
-    return directory
-
-#----------------------------------------------------------------
-
-class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
+class TheBountyMaterialPresets(AddPresetBase, Operator):
     # Add material presets
     bl_idname = "bounty.material_preset_add"
     bl_label = "Material Presets"
@@ -164,26 +142,16 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
             values += self.define_values(mat2, 'mat2')
             
         return values
-        
-    '''      
-    @classmethod
-    def poll(cls, context):
-        material = context.material
-        return material
-    '''
    
     def execute(self, context):
         #
         material = bpy.context.object.active_material
-        #material = context.material # seems that is the same of above
         ext = ".py"
-        #----------------------------------------------------------
         name = self.name.strip()
         if not name:
             return {'FINISHED'}
 
         filename = self.as_filename(name)
-
         target_path = os.path.join("presets", self.preset_subdir)
         target_path = bpy.utils.user_resource('SCRIPTS', target_path, create=True)
 
@@ -192,7 +160,7 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
             return {'CANCELLED'}
 
         filepath = os.path.join(target_path, filename) + ext
-        #----------------------------------------------------------
+        #
         if not self.remove_active:
             #
             val = list()
@@ -208,13 +176,11 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
                 #
                 self.report({'INFO'}, "File preset write sucessful: "+ str(filepath))
         
-        #if hasattr(self, "post_cb"):
-        #    self.post_cb(context)
                  
         return {'FINISHED'}
     
 
-class TheBountySettingsPresets(AddPresetBase, bpy.types.Operator):
+class TheBountySettingsPresets(AddPresetBase, Operator):
     # Add render presets
     bl_idname = "bounty.render_preset_add"
     bl_label = "TheBounty Settings Presets"
@@ -224,63 +190,6 @@ class TheBountySettingsPresets(AddPresetBase, bpy.types.Operator):
         "scene = bpy.context.scene.bounty",
         "render = bpy.context.scene.render"
     ]
-    preset_values = [
-        "render.resolution_x",
-        "render.resolution_y",
-        "scene.gs_ray_depth",
-        "scene.gs_shadow_depth",
-        "scene.gs_threads",
-        "scene.gs_gamma",
-        "scene.gs_gamma_input",
-        "scene.gs_tile_size",
-        "scene.gs_tile_order",
-        "scene.gs_auto_threads",
-        "scene.gs_clay_render",
-        "scene.gs_draw_params",
-        "scene.gs_custom_string",
-        "scene.gs_premult",
-        "scene.gs_transp_shad",
-        "scene.gs_clamp_rgb",
-        "scene.gs_show_sam_pix",
-        "scene.gs_z_channel",
-        "scene.gs_type_render",
-        "scene.intg_light_method",
-        "scene.intg_use_caustics",
-        "scene.intg_photons",
-        "scene.intg_caustic_mix",
-        "scene.intg_caustic_depth",
-        "scene.intg_caustic_radius",
-        "scene.intg_use_AO",
-        "scene.intg_AO_samples",
-        "scene.intg_AO_distance",
-        "scene.intg_AO_color",
-        "scene.intg_bounces",
-        "scene.intg_diffuse_radius",
-        "scene.intg_cPhotons",
-        "scene.intg_search",
-        "scene.intg_final_gather",
-        "scene.intg_fg_bounces",
-        "scene.intg_fg_samples",
-        "scene.intg_show_map",
-        "scene.intg_caustic_method",
-        "scene.intg_path_samples",
-        "scene.intg_no_recursion",
-        "scene.intg_debug_type",
-        "scene.intg_show_perturbed_normals",
-        "scene.intg_pm_ire",
-        "scene.intg_pass_num",
-        "scene.intg_times",
-        "scene.intg_photon_radius",
-        "scene.AA_min_samples",
-        "scene.AA_inc_samples",
-        "scene.AA_passes",
-        "scene.AA_threshold",
-        "scene.AA_pixelwidth",
-        "scene.AA_filter_type"
-    ]
-
-    preset_subdir = "thebounty/render"
-
     
 def register():
     bpy.utils.register_class(TheBountySettingsPresets)
