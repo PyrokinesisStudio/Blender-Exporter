@@ -177,7 +177,7 @@ class exportObject(object):
                 #
                 for pSys in obj.particle_systems:
                     if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
-                        if pSys.settings.bounty.strand_shape == 'cylinder':
+                        if 0: #pSys.settings.bounty.strand_shape == 'cylinder':
                             # this method create a lot of new geometry
                             # then, its good only for small hair particle system
                             # or for generate hight resolution closed hairs
@@ -189,7 +189,7 @@ class exportObject(object):
                             # Clean up the scene
                             bpy.data.objects.remove(crv_ob)
                             bpy.data.curves.remove(crv)
-                        if bake:
+                        elif bake:
                             self.bakeParticleStrands(obj, matrix, pSys)
                         else:
                             self.writeParticleStrands(obj, matrix, pSys)
@@ -537,7 +537,8 @@ class exportObject(object):
                     yi.startCurveMesh(CID, 1)
                     #
                     for step in range(0, steps):
-                        point = obj.matrix_world.inverted()*(pSys.co_hair(obj, particleIdx, step))
+                        #point = obj.matrix_world.inverted()*(pSys.co_hair(obj, particleIdx, step))
+                        point = pSys.co_hair(obj, particleIdx, step)
                         if point.length_squared != 0:
                             yi.addVertex(point[0], point[1], point[2])                            
                     #
