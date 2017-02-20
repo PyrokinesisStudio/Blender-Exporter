@@ -498,7 +498,7 @@ class exportObject(object):
     def writeParticleStrands(self, obj, matrix, pSys):
 
         yi = self.yi
-        totalNumberOfHairs = 0
+        totalHairs = 0
         
         # Check for modifiers..
         for mod in [m for m in obj.modifiers if (m is not None) and (m.type == 'PARTICLE_SYSTEM')]:

@@ -54,9 +54,9 @@ class TheBountyLampNodeTree(bpy.types.NodeTree):
         #
         if ob and ob.type == 'LAMP':
             la = ob.data
-            nt_name = la.bounty.nodetree
-            if nt_name != '':
-                return bpy.data.node_groups[la.bounty.nodetree], la, la
+            lt_name = la.bounty.lightree
+            if lt_name != '':
+                return bpy.data.node_groups[lt_name], la, la
                 
         return (None, None, None)
         
@@ -114,6 +114,7 @@ class TheBountyLightNode:
             if socket.is_linked:
                 linked_node = socket.links[0].from_node
                 linked_node.traverse_node_tree( light_node)
+                break
         light_node.listedNodes.append(self)    
 #
 bounty_light_node_class.append(TheBountyLightNode)

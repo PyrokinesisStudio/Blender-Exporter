@@ -43,8 +43,8 @@ class TheBountyAddLightNodetree(bpy.types.Operator):
     @classmethod
     def poll(cls, context):
         #
-        renderer = context.scene.render.engine
-        return (context.lamp and renderer in cls.COMPAT_ENGINES)
+        engine = context.scene.render.engine
+        return context.lamp and (engine in cls.COMPAT_ENGINES)
 
     def execute(self, context):
         # create node
@@ -53,7 +53,7 @@ class TheBountyAddLightNodetree(bpy.types.Operator):
         nodetree.use_fake_user = True
         nodeOut = nodetree.nodes.new("LightOutputNode")
         nodeOut.location = [100, 100]
-        lamp.bounty.nodetree = nodetree.name
+        lamp.bounty.lightree = nodetree.name
         lamp.bounty.node_output = nodeOut.name 
         #
         lightnode = nodetree.nodes.new(light_node_types.get(lamp.type))
@@ -117,6 +117,18 @@ def setNodes(node, mat):
         node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
         node.inputs['Glossy Color'].glossy_color = mat.bounty.glossy_color
         node.inputs[2].mirror_color = mat.bounty.sssSpecularColor
+        
+    elif mat.bounty.mat_type in {'glass', 'rough_glass'}:
+        #
+        node.IOR_refraction = mat.bounty.IOR_refraction
+        node.filter_color = mat.bounty.filter_color
+        node.inputs['Mirror'].glass_mir_col = mat.bounty.glass_mir_col
+        node.glass_transmit = mat.bounty.glass_transmit
+        node.absorption = mat.bounty.absorption
+        node.absorption_dist = mat.bounty.absorption_dist
+        node.dispersion_power = mat.bounty.dispersion_power
+        node.fake_shadows = mat.bounty.fake_shadows
+        node.refr_roughness = mat.bounty.refr_roughness
     
     return        
 

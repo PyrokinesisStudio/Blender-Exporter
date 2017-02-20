@@ -53,19 +53,20 @@ enum_sss_presets = (
     ('skinpink',    "Skin Pink",    ""),
     ('skinyellow',  "Skin Yellow",  ""),
     ('custom',      "Custom",       ""),
-)
+)    
+
 #-----------------------------------------
 # syncronize some colors with Blender
 # for better visualization on viewport
 #-----------------------------------------
 def getNodeOutName(self, mat):
     nodeOutName = 'None'
-    if mat.bounty.nodetree != "":
-        for out in bpy.data.node_groups[mat.bounty.nodetree].nodes:
-            if out.bl_idname == 'MaterialOutputNode' and out.inputs[0].is_linked:
-                nodeOutName = out.name
-                #print('out: ', nodeOutName)
-                break
+    #if mat.bounty.nodetree != "":
+    for out in bpy.data.node_groups[mat.bounty.nodetree].nodes:
+        if out.bl_idname == 'MaterialOutputNode' and out.inputs[0].is_linked:
+            nodeOutName = out.name
+            #print('out: ', nodeOutName)
+            break
     return nodeOutName
 
 def syncBlenderColors(self, context):
@@ -76,16 +77,17 @@ def syncBlenderColors(self, context):
         tree_name = bpy.context.object.active_material.bounty.nodetree
         #print('node output ', bpy.context.object.active_material.bounty.node_output) 
         nodeOutName = getNodeOutName(self, bpy.context.object.active_material)
-        #        
-        for socket in bpy.data.node_groups[tree_name].nodes[nodeOutName].inputs:
-            if socket.is_linked:
-                linked_node = socket.links[0].from_node
-                # Use 'bl_label' for node type
-                if linked_node.bl_label in {'shinydiffusemat', 'glossy', 'coated_glossy', 'translucent'}:
-                    diffuse = bpy.data.node_groups[tree_name].nodes[linked_node.get_name()].inputs[0].diff_color
-                    
-                elif linked_node.bl_label == 'glass':
-                    pass
+        #
+        if nodeOutName is not 'None':        
+            for socket in bpy.data.node_groups[tree_name].nodes[nodeOutName].inputs:
+                if socket.is_linked:
+                    linked_node = socket.links[0].from_node
+                    # Use 'bl_label' for node type
+                    if linked_node.bl_label in {'shinydiffusemat', 'glossy', 'coated_glossy', 'translucent'}:
+                        diffuse = bpy.data.node_groups[tree_name].nodes[linked_node.get_name()].inputs[0].diff_color
+                        
+                    elif linked_node.bl_label == 'glass':
+                        pass
     #
     context.object.active_material.diffuse_color = diffuse
 
@@ -93,7 +95,7 @@ def syncBlenderColors(self, context):
 class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     #---------------------------
     # list of material properies
-    #---------------------------
+    #---------------------------    
     blendOne = StringProperty(
             name="Material One",
             description="Name of the material one in blend material",
@@ -260,7 +262,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     IOR_refraction = FloatProperty(
             name="IOR",
             description="Index of refraction",
-            min=0.0, max=30.0, step=1, precision=3,
+            min=0.0, max=30.0, step=.5, precision=3,
             soft_min=0.0, soft_max=30.0, default=1.520
     )    
     IOR_reflection = FloatProperty(

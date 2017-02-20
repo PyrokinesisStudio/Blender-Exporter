@@ -28,8 +28,8 @@ from bpy.path import abspath
 def getNodeOut(lamp):
         # escoger el primer nodo del tipo Output Light
         nodeOutName = 'None'
-        if lamp.bounty.nodetree != "":
-            for out in bpy.data.node_groups[lamp.bounty.nodetree].nodes:
+        if lamp.bounty.lightree != "":
+            for out in bpy.data.node_groups[lamp.bounty.lightree].nodes:
                 if out.bl_label == 'Output Light':
                     nodeOutName = out.bl_label
                     break
@@ -115,9 +115,9 @@ class exportLight:
         #-----------------------------------------------------------------------------
         outNodeName = getNodeOut(lamp)
         linked_node = None
-        if lamp.bounty.nodetree is not "" and outNodeName is not 'None':
+        if lamp.bounty.lightree is not "" and outNodeName is not 'None':
             #print(mat.bounty.node_output)
-            light_node = bpy.data.node_groups[lamp.bounty.nodetree].nodes[outNodeName]
+            light_node = bpy.data.node_groups[lamp.bounty.lightree].nodes[outNodeName]
             # para nodos con un solo input, no hace falta usar un loop.
             inputNodeOut = light_node.inputs[0]
             # comprobamos si el socket tiene nodos conectados

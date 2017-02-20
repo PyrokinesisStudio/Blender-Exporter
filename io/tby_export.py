@@ -74,7 +74,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             # at least, allow warning messages with material preview
             self.yi.setVerbosityWarning()
         else:
-            #
             self.verbositylevel(self.scene.bounty.gs_verbosity_level)
         
         # export go.. load plugins
@@ -117,13 +116,13 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 continue
             self.textures.writeTexture(self.scene, tex)
     
-   
+    #    
     def object_on_visible_layer(self, obj):
         obj_visible = False
         # test
         for i in range(len(self.scene.layers)):
             if obj.layers[i] and self.scene.layers[i]:
-                #if self.scene.render.layers[i]:
+                print('render layers: ', self.scene.render.layers)
                 obj_visible = True
                 break
         #for layer_visible in [object_layers and scene_layers for object_layers, scene_layers in zip(obj.layers, self.scene.layers)]:
@@ -146,7 +145,8 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         return False
 
     def exportObjects(self):
-        #
+        # check and classify all objects in one pass
+        # like old XSI exporter
         sceneMeshes = list()   # MESH 
         sceneSurfaces = list() # SURFACE 
         sceneCurves = list()   # CURVE
@@ -155,11 +155,18 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         sceneLamps = list()    # LAMP
         sceneGeometry = list() # for accumulate different geometry objects
         
+        # make here all exportable options and 'cases'
         for obj in self.scene.objects:
-            if obj.type =='LAMP':       sceneLamps.append(obj)
-            if obj.type =='MESH':       sceneMeshes.append(obj)
-            if obj.type =='CURVE':      sceneCurves.append(obj)
-            if obj.type =='SURFACE':    sceneSurfaces.append(obj)
+            if obj.type =='LAMP':       sceneLamps.append(obj) # need special case for o.hide
+            elif obj.type =='MESH':
+                if self.exportableObjects(obj): sceneMeshes.append(obj)
+            elif obj.type =='CURVE':
+                if self.exportableObjects(obj): sceneCurves.append(obj)
+            elif obj.type =='SURFACE':    sceneSurfaces.append(obj)
+            elif obj.type =='FONT':       sceneFonts.append(obj)
+            elif obj.type =='EMPTY':      sceneEmpties.append(obj)
+            else:
+                continue
         # test
         sceneMeshes += sceneCurves
         sceneGeometry += sceneMeshes
@@ -192,12 +199,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         #-----------------------------
         baseIds = {}
         dupBaseIds = {}
-
-        #for obj in [o for o in self.scene.objects if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        #and self.object_on_visible_layer(o) and (o.type in {'MESH', 'SURFACE', 'CURVE', 'FONT', 'EMPTY'})]:
-        #for obj in [o for o in sceneGeometry if not o.hide_render and (o.is_visible(self.scene) or o.hide) \
-        #and self.object_on_visible_layer(o)]:
-        for obj in [o for o in sceneGeometry if self.exportableObjects(o) or o.hide]:
+        for obj in sceneGeometry:
             # Exporting dupliObjects as instances, also check for dupliObject type 'EMPTY' and don't export them as geometry
             if obj.is_duplicator:
                 self.yi.printInfo("Processing duplis for: {0}".format(obj.name))
@@ -297,32 +299,24 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         mat.bounty.mat_type = "shinydiffusemat"
         #
         diffColor = mat.diffuse_color
-        mirCol = mat.bounty.mirror_color
-        bSpecr = mat.bounty.specular_reflect
-        bTransp = mat.bounty.transparency
-        bTransl = mat.bounty.translucency
-        bEmit = mat.bounty.emittance
-            
+        mirCol = mat.bounty.mirror_color            
         #
         self.yi.paramsClearAll()            
         self.yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
-        self.yi.paramsSetFloat("transparency", bTransp)
-        self.yi.paramsSetFloat("translucency", bTransl)
+        self.yi.paramsSetFloat("transparency", mat.bounty.transparency)
+        self.yi.paramsSetFloat("translucency", mat.bounty.translucency)
         self.yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
-        self.yi.paramsSetFloat("emit", bEmit)
+        self.yi.paramsSetFloat("emit", mat.bounty.emittance)
         self.yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
     
-        self.yi.paramsSetFloat("specular_reflect", bSpecr)
+        self.yi.paramsSetFloat("specular_reflect", mat.bounty.specular_reflect)
         self.yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
         self.yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
         self.yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
     
         if mat.bounty.brdf_type == "oren-nayar":
             self.yi.paramsSetString("diffuse_brdf", "oren_nayar")
-            self.yi.paramsSetFloat("sigma", mat.bounty.sigma)            
-            
-        # force type to sinydiffuse
-        #mat.bounty.mat_type = "shinydiffusemat"      
+            self.yi.paramsSetFloat("sigma", mat.bounty.sigma)    
                    
         self.yi.paramsSetString("type", "shinydiffusemat")
 
@@ -373,12 +367,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             #TODO:  heavily hardcoded.. need review
             mat = bpy.data.materials['clay']
             self.defineClayMaterial(mat) 
-            
-        #----------------------------------------------
-        for obj in self.scene.objects:
-            for slot in obj.material_slots:
-                if slot.material not in self.exportedMaterials:
-                    self.exportMaterial(obj, slot.material)
+        else:
+            for obj in self.scene.objects:
+                for slot in obj.material_slots:
+                    if slot.material not in self.exportedMaterials:
+                        self.exportMaterial(obj, slot.material)
                     
 
     def exportMaterial(self, obj, material):
@@ -409,7 +402,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         outputFile = output + "." + filetype
 
         return outputFile, output, filetype
-
     
     def update(self, data, scene):
         # callback to export the scene

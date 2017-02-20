@@ -22,6 +22,7 @@ import bpy
 from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
+#
 
 #
 def find_node_input(node, name):
@@ -43,10 +44,11 @@ def panel_node_draw(layout, material, output_type, input_name):
     return True
 
 def find_node(material, nodetype):
-    if material and material.bounty and material.bounty.nodetree:    
+    if material and material.bounty.nodetree:   
         ntree = bpy.data.node_groups[material.bounty.nodetree]    
         for node in ntree.nodes:
             if getattr(node, "bl_idname", None) == nodetype:
+            
                 return node
     return None
 
@@ -64,6 +66,7 @@ def node_tree_selector_draw(layout, mat, nodetype):
             layout.operator('bounty.add_nodetree', icon='NODETREE')
             return False
     return True
+
 
 def blend_one_draw(layout, mat):
     #
@@ -106,14 +109,14 @@ class TheBountyMaterialTypePanel(TheBountyMaterialButtonsPanel):
     COMPAT_ENGINES = {'THEBOUNTY'}
 
     @classmethod
-    def poll(cls, context):
+    def poll(self, context):
         mat = context.material
         
-        if context.scene.render.engine not in cls.COMPAT_ENGINES:
+        if context.scene.render.engine not in self.COMPAT_ENGINES:
             return False
         #
         return (check_material(mat) 
-                and (mat.bounty.mat_type in cls.material_type) 
+                and (mat.bounty.mat_type in self.material_type) 
                 and (context.material.bounty.nodetree == ""))
 
 
@@ -135,8 +138,14 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         ob = context.object
         slot = context.material_slot
         space = context.space_data
+        is_sortable = (len(ob.material_slots) > 1)
 
         if ob:
+            #
+            ows = 1
+            if is_sortable:
+                rows = 3
+            #
             row = layout.row()
             row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=2)
 
@@ -146,7 +155,12 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
 
             # TODO: code own operators to copy yaf material settings...
             col.menu("MATERIAL_MT_specials", icon='DOWNARROW_HLT', text="")
-
+            #
+            if is_sortable:
+                col.separator()
+                col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
+                #col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+            #
             if ob.mode == 'EDIT':
                 row = layout.row(align=True)
                 row.operator("object.material_slot_assign", text="Assign")
@@ -161,7 +175,9 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
             #---------------------------------------------------------
             # for disable nodes are used from other render engines
             #---------------------------------------------------------
-            if mat and mat.use_nodes: 
+            if mat and mat.use_nodes:
+                mat.use_nodes = False
+                #bpy.context.scene.render.engine 
                 row.prop(mat, "use_nodes", icon='NODETREE', text="")
             #
             if slot:
@@ -240,19 +256,22 @@ class TheBounty_presets_ior_list(Menu):
 class TheBountyBlend(TheBountyMaterialTypePanel, Panel):
     bl_label = "Blend material settings"
     material_type = 'blend'
+    enum_items = []
 
     def draw(self, context):
         layout = self.layout
         mat = active_node_mat(context.material)
         
         layout.separator()
-        blend_one_draw(layout, mat)
+        layout.prop_search(mat.bounty, "blendOne", bpy.data, "materials")
+        #blend_one_draw(layout, mat)
         
         layout.separator()
         layout.prop(mat.bounty, "blend_value", slider=True)
         
         layout.separator()
-        blend_two_draw(layout, mat)
+        #blend_two_draw(layout, mat)
+        layout.prop_search(mat.bounty, "blendTwo", bpy.data, "materials")
         layout.operator('material.sync_blend')
                     
 class TheBountyShinyDiffuse(TheBountyMaterialTypePanel, Panel):
@@ -455,7 +474,7 @@ class TheBountyTranslucent(TheBountyMaterialTypePanel, Panel):
         col.prop(mat.bounty, "sss_transmit", text="Translucency")
         col.prop(mat.bounty, "sssIOR")
     
-            
+       
 if __name__ == "__main__":  # only for live edit.
     #import bpy
     bpy.utils.register_module(__name__)

@@ -56,7 +56,7 @@ def sync_with_distance(self, context):
        
 class TheBountyLightProperties(bpy.types.PropertyGroup):
     #
-    nodetree = StringProperty(
+    lightree = StringProperty(
             name="Node Tree",
             description="Name of the node tree for this light",
             default=""

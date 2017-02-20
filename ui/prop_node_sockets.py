@@ -104,6 +104,7 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
     bl_idname = 'diffuse_color'
     bl_label = 'Color Socket'
     matParams = {}
+    params = list()
     texParams = {}
     validNodes = ['Image', 'Clouds']
     
@@ -134,6 +135,7 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
         col.prop(self, "diffuse_reflect", text="Diffuse Reflection", slider=True)
     
     def getParams(self):
+        self.params.append(('color',[c for c in self.diff_color]))
         self.matParams['color']= [c for c in self.diff_color]
         self.matParams['diffuse_reflect']= self.diffuse_reflect
         # test
@@ -147,6 +149,7 @@ class diffuse_color_socket(NodeSocket, TheBountyNodeSocket):
                 self.matParams['DiffuseLayer']= linked_node.getParams()
             else:
                 print('Not valid node: ', linked_node.bl_label)
+                self.remove(NodeOut.links[0])
         
         return self.matParams
     #

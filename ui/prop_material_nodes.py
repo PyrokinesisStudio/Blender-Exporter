@@ -52,14 +52,14 @@ class TheBountyMaterialNodeTree(bpy.types.NodeTree):
     # code orignally from Matt Ebb's 3Delight exporter   
     @classmethod
     def get_from_context(cls, context):
-        
+        #        
         ob = context.active_object
         if ob and ob.type not in {'LAMP', 'CAMERA'}:
-            active_mat = ob.active_material
-            if active_mat != None: 
-                nt_name = active_mat.bounty.nodetree
+            mat = ob.active_material
+            if mat != None: 
+                nt_name = mat.bounty.nodetree
                 if nt_name != '':
-                    return bpy.data.node_groups[active_mat.bounty.nodetree], active_mat, active_mat
+                    return bpy.data.node_groups[nt_name], ob, mat #mat.bounty.nodetree], ob, mat
                 
         return (None, None, None)
         
@@ -111,11 +111,9 @@ class TheBountyMaterialNode:
         #
         return self.name
     
-    # test from sort
-    def draw_props(self, context, layout, indented_label):
-        pass
-    
     # base
+    def getParams(self):
+        pass
     #
     def traverse_node_tree(self, material_node):
         #
@@ -154,7 +152,7 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
             if node not in nodeList:
                 nodeList.append( node)
         return nodeList
-    #
+        
     def getParams(self):
         #
         self.params.set()
@@ -165,7 +163,9 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
                 self.params = input.getParams()
             else:
                 bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
-
+        # test
+        return self.params
+    
 bounty_node_class.append(TheBountyMaterialOutputNode)
         
 #------------------------------------------------
@@ -203,13 +203,17 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     
     def draw_buttons(self, context, layout):
         # Additional buttons displayed on the node.
+        
         mat = context.active_object.active_material
         
         col = layout.column()
         col.prop(self, "transmit", slider=True)
         col.prop(self, "emittance", slider=True)
         col.prop(self, "brdf_type")
-        col.prop(self, "sigma", text='Sigma', slider=True)
+        sig = layout.column()
+        sig.enabled = self.brdf_type != 'lambert'
+        sig.prop(self, "sigma", text='Sigma', slider=True)
+        col = layout.column()
         col.prop(self, "fresnel_effect", toggle=True)
         col.prop(self, "IOR_reflection")
         
@@ -217,8 +221,8 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     
     def getParams(self):
         #
-        self.shinyparams['Diffuse']= self.inputs['Diffuse'].getParams()
-        self.shinyparams['Transparency'] = self.inputs['Transparency'].getParams()
+        self.shinyparams['diffuse_color']= self.inputs['Diffuse'].getParams()
+        self.shinyparams['transparency'] = self.inputs['Transparency'].getParams()
         
         return self.shinyparams   
 #
