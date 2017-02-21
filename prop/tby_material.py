@@ -84,7 +84,7 @@ def syncBlenderColors(self, context):
                     linked_node = socket.links[0].from_node
                     # Use 'bl_label' for node type
                     if linked_node.bl_label in {'shinydiffusemat', 'glossy', 'coated_glossy', 'translucent'}:
-                        diffuse = bpy.data.node_groups[tree_name].nodes[linked_node.get_name()].inputs[0].diff_color
+                        diffuse = bpy.data.node_groups[tree_name].nodes[linked_node.get_name()].inputs['Diffuse'].diff_color
                         
                     elif linked_node.bl_label == 'glass':
                         pass
