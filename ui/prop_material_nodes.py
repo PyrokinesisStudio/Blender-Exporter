@@ -112,8 +112,8 @@ class TheBountyMaterialNode:
         return self.name
     
     # base
-    def getParams(self):
-        pass
+    #def getParams(self):
+    #    pass
     #
     def traverse_node_tree(self, material_node):
         #
@@ -163,7 +163,7 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
                 self.params = input.getParams()
             else:
                 bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
-        # test
+        #
         return self.params
     
 bounty_node_class.append(TheBountyMaterialOutputNode)
@@ -177,7 +177,7 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'
     shinyparams = {}
     #
-    brdf_type = MatProperty.brdf_type
+    diffuse_brdf = MatProperty.brdf_type
     sigma = MatProperty.sigma  
     emittance = MatProperty.emittance
     transmit = MatProperty.transmit_filter
@@ -202,27 +202,35 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
-        # Additional buttons displayed on the node.
-        
-        mat = context.active_object.active_material
+        # Additional buttons displayed on the node.        
+        #mat = context.active_object.active_material
         
         col = layout.column()
         col.prop(self, "transmit", slider=True)
         col.prop(self, "emittance", slider=True)
-        col.prop(self, "brdf_type")
+        col.prop(self, "diffuse_brdf")
         sig = layout.column()
-        sig.enabled = self.brdf_type != 'lambert'
+        sig.enabled = self.diffuse_brdf != 'lambert'
         sig.prop(self, "sigma", text='Sigma', slider=True)
         col = layout.column()
         col.prop(self, "fresnel_effect", toggle=True)
-        col.prop(self, "IOR_reflection")
-        
-        
+        col.prop(self, "IOR_reflection")        
     
     def getParams(self):
         #
         self.shinyparams['diffuse_color']= self.inputs['Diffuse'].getParams()
         self.shinyparams['transparency'] = self.inputs['Transparency'].getParams()
+        self.shinyparams['translucency'] = self.inputs['Translucency'].getParams()
+        self.shinyparams['mirror_color'] = self.inputs['Mirror'].getParams()
+        self.shinyparams['specular_reflect'] = self.inputs['Specular'].getParams()
+        self.shinyparams['Bumplayer'] = self.inputs['Bumpmap'].getParams()
+        #
+        self.shinyparams['transmit_filter'] = self.transmit
+        self.shinyparams['emit'] = self.emittance
+        self.shinyparams['diffuse_brdf'] = self.diffuse_brdf
+        self.shinyparams['sigma'] = self.sigma
+        self.shinyparams['fresnel_effect'] = self.fresnel_effect
+        self.shinyparams['IOR'] = self.IOR_reflection
         
         return self.shinyparams   
 #
@@ -236,41 +244,60 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'TranslucentShaderNode'
     bl_label = 'translucent'
     bl_icon = 'MATERIAL'
+    sssparams = {}
+    #
+    exponent = MatProperty.exponent
+    sssPresets = MatProperty.sss_presets
+    sssSigmaS = MatProperty.sssSigmaS
+    sssSigmaS_factor = MatProperty.sssSigmaS_factor
+    phaseFuction = MatProperty.phaseFuction
+    sssSigmaA = MatProperty.sssSigmaA
+    sss_transmit = MatProperty.sss_transmit
+    sssIOR = MatProperty.sssIOR
     
     #
     def init(self, context):
         # slots shaders
         self.outputs.new('NodeSocketShader', "Shader")
         
+        self.inputs.new('absorption_color', 'Absorption') # absorption
+        
+        self.inputs.new('scatter_color', 'Scattering')  # scattering         
+        
         self.inputs.new('diffuse_color',"Diffuse")
         
-        self.inputs.new('glossy_color',"Glossy Color")
+        self.inputs.new('glossy_color',"Glossy")
         
-        self.inputs.new('mirror', 'SSSpecular')
+        self.inputs.new('glossy_reflect', 'Specular')
         
         self.inputs.new('bumpmap', 'Bumpmap')
-    
+        
+        
     def draw_buttons(self, context, layout):
         #
-        mat = context.active_object.active_material
+        #mat = context.active_object.active_material
                 
         col = layout.column()
-        #col.prop(mat.bounty, "sssSpecularColor")
-        col.prop(mat.bounty, "exponent", text="Specular Exponent")
+        col.prop(self, "sssPresets", text="Presets")     
+        col.prop(self, "exponent", text="Spec. Exponent")
+        #col.prop(self, "sssSigmaS", text="Scatter (SigmaS)")
+        col.prop(self, "sssSigmaS_factor")
+        col.prop(self, "phaseFuction")       
+        #col.prop(self, "sssSigmaA", text="Absorption (SigmaA)")
+        col.prop(self, "sss_transmit", text="Translucency")
+        col.prop(self, "sssIOR")
         
-        #row = layout.row()
-        #row.label("SSS Presets")
-        #row.menu("TheBountyScatteringPresets", text=bpy.types.TheBountyScatteringPresets.bl_label)
+    def getParams(self):
+        #
+        self.sssparams['diffuse_color']= self.inputs['Diffuse'].getParams()
+        self.sssparams['glossy_color'] = self.inputs['Glossy'].getParams()
+        self.sssparams['glossy_reflect'] = self.inputs['Specular'].getParams()
+        self.sssparams['absorption_color'] = self.inputs['Absorption'].getParams()
+        self.sssparams['scatter_color'] = self.inputs['Scattering'].getParams()
         
-        col = layout.column()        
+        self.sssparams['Bumplayer'] = self.inputs['Bumpmap'].getParams()
         
-        col.prop(mat.bounty, "sssSigmaS", text="Scatter color")
-        col.prop(mat.bounty, "sssSigmaS_factor")
-        col.prop(mat.bounty, "phaseFuction")
-                
-        col.prop(mat.bounty, "sssSigmaA", text="Absorption color")
-        col.prop(mat.bounty, "sss_transmit", text="Transmit")
-        col.prop(mat.bounty, "sssIOR")
+        return self.sssparams
 #
 bounty_node_class.append(TheBountyTranslucentShaderNode)
 
@@ -358,11 +385,8 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
 
     def draw_buttons(self, context, layout):
         """ Same design to a UI panels ( column, split, row..) """
-        mat = context.active_object.active_material
-        
+        mat = context.active_object.active_material        
         col = layout.column()
-        # TODO: need review..
-        #col.menu("YAF_MT_presets_ior_list", text=bpy.types.YAF_MT_presets_ior_list.bl_label)
         
         col.prop(self, "absorption")
         col.prop(self, "absorption_dist", text='Distance')
@@ -395,10 +419,12 @@ class TheBountyBlendShaderNode(Node, TheBountyMaterialNode):
     blendTwo = MatProperty.blendTwo
     
     def init(self, context):
-        self.inputs.new('NodeSocketShader', "Material One")
-        self.inputs.new('NodeSocketShader', "Material Two")
         # outputs
         self.outputs.new('NodeSocketShader', "Shader")
+        
+        self.inputs.new('NodeSocketShader', "BlendOne")
+        self.inputs.new('NodeSocketShader', "BlendTwo")
+        
 
     def draw_buttons(self, context, layout):
         #

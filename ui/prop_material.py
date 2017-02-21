@@ -207,7 +207,6 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
 
 class TheBountyMaterialPreview(TheBountyMaterialButtonsPanel, Panel):
     bl_label = "Preview" 
-    bl_options = {"DEFAULT_CLOSED"} 
     
     @classmethod
     def poll(cls, context):
