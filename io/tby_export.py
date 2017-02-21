@@ -297,31 +297,32 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def defineClayMaterial(self, mat):
         # trick: force type to sinydiffuse
         mat.bounty.mat_type = "shinydiffusemat"
+        yi = self.yi
         #
         diffColor = mat.diffuse_color
         mirCol = mat.bounty.mirror_color            
         #
-        self.yi.paramsClearAll()            
-        self.yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
-        self.yi.paramsSetFloat("transparency", mat.bounty.transparency)
-        self.yi.paramsSetFloat("translucency", mat.bounty.translucency)
-        self.yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
-        self.yi.paramsSetFloat("emit", mat.bounty.emittance)
-        self.yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
+        yi.paramsClearAll()            
+        yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
+        yi.paramsSetFloat("transparency", mat.bounty.transparency)
+        yi.paramsSetFloat("translucency", mat.bounty.translucency)
+        yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
+        yi.paramsSetFloat("emit", mat.bounty.emittance)
+        yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
     
-        self.yi.paramsSetFloat("specular_reflect", mat.bounty.specular_reflect)
-        self.yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
-        self.yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
-        self.yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
+        yi.paramsSetFloat("specular_reflect", mat.bounty.specular_reflect)
+        yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
+        yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
+        yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
     
         if mat.bounty.brdf_type == "oren-nayar":
-            self.yi.paramsSetString("diffuse_brdf", "oren_nayar")
-            self.yi.paramsSetFloat("sigma", mat.bounty.sigma)    
+            yi.paramsSetString("diffuse_brdf", "oren_nayar")
+            yi.paramsSetFloat("sigma", mat.bounty.sigma)    
                    
-        self.yi.paramsSetString("type", "shinydiffusemat")
+        yi.paramsSetString("type", "shinydiffusemat")
 
-        self.yi.printInfo("Exporter: Creating Material \"clayMat\"")
-        cmat = self.yi.createMaterial("clayMat")
+        yi.printInfo("Exporter: Creating Material \"clayMat\"")
+        cmat = yi.createMaterial("clayMat")
         self.materialMap["clay"] = cmat
         
 
