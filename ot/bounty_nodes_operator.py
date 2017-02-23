@@ -85,6 +85,15 @@ def setNodes(node, mat):
         node.inputs['Glossy'].glossy_color  = mat.bounty.glossy_color
         node.inputs['Specular'].glossy_reflect = mat.bounty.glossy_reflect
         node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
+        node.IOR_reflection = mat.bounty.IOR_reflection
+        node.coat_mir_col = mat.bounty.coat_mir_col
+        node.anisotropic = mat.bounty.anisotropic
+        node.as_diffuse = mat.bounty.as_diffuse
+        node.brdf_type = mat.bounty.brdf_type
+        node.exponent = mat.bounty.exponent
+        node.exp_u = mat.bounty.exp_u
+        node.exp_v = mat.bounty.exp_v
+        node.sigma = mat.bounty.sigma
     #
     elif mat.bounty.mat_type == 'shinydiffusemat':
         #
@@ -103,6 +112,8 @@ def setNodes(node, mat):
                                           
     elif mat.bounty.mat_type == 'blend':
         node.blend_amount = mat.bounty.blend_value
+        node.blendOne = mat.bounty.blendOne
+        node.blendTwo = mat.bounty.blendTwo
         
     elif mat.bounty.mat_type == 'translucent':
         #
@@ -114,9 +125,9 @@ def setNodes(node, mat):
         node.sss_transmit = mat.bounty.sss_transmit
         node.sssIOR = mat.bounty.sssIOR
         node.inputs['Diffuse'].diff_color = mat.diffuse_color 
-        node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
-        node.inputs['Glossy Color'].glossy_color = mat.bounty.glossy_color
-        node.inputs[2].mirror_color = mat.bounty.sssSpecularColor
+        #node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
+        node.inputs['Glossy'].glossy_color = mat.bounty.glossy_color
+        node.inputs['Specular'].glossy_reflect = mat.bounty.glossy_reflect
         
     elif mat.bounty.mat_type in {'glass', 'rough_glass'}:
         #
@@ -147,40 +158,37 @@ class TheBountyAddMaterialNodetree(bpy.types.Operator):
         renderer = context.scene.render.engine
         return (context.material and renderer in cls.COMPAT_ENGINES)
     
-    def addNode(self, material):
-        pass
-    
     
     def execute(self, context):
         # create node tree
         material = context.object.active_material
-        nodetree = bpy.data.node_groups.new( material.name, 'TheBountyMaterialNodeTree')
-        nodetree.use_fake_user = True
-        nodeOut = nodetree.nodes.new("MaterialOutputNode")
+        ntree = bpy.data.node_groups.new( material.name, type='TheBountyMaterialNodeTree')
+        ntree.use_fake_user = True
+        nodeOut = ntree.nodes.new("MaterialOutputNode")
         nodeOut.location = [100, 100]
-        material.bounty.nodetree = nodetree.name
+        material.bounty.nodetree = ntree.name
         material.bounty.node_output = nodeOut.name 
         #
-        shadernode = nodetree.nodes.new(mat_node_types.get(material.bounty.mat_type))
+        shadernode = ntree.nodes.new(mat_node_types.get(material.bounty.mat_type))
         shadernode.location = [-200, 0]
-        nodetree.links.new(nodeOut.inputs[0], shadernode.outputs[0])
+        ntree.links.new(nodeOut.inputs[0], shadernode.outputs[0])
         #
-        mat = bpy.data.materials[material.name]
-        setNodes(shadernode, mat)
+        #mat = bpy.data.materials[material.name]
+        setNodes(shadernode, material)
         
         if material.bounty.mat_type == 'blend':
             #
             mat1 = bpy.data.materials[ material.bounty.blendOne if material.bounty.blendOne !="" else 'blendone']            
-            shaderOne = nodetree.nodes.new(mat_node_types.get(mat1.bounty.mat_type))
+            shaderOne = ntree.nodes.new(mat_node_types.get(mat1.bounty.mat_type))
             shaderOne.location = [-500, 200]
-            nodetree.links.new(shadernode.inputs[0], shaderOne.outputs[0])
+            ntree.links.new(shadernode.inputs[0], shaderOne.outputs[0])
             setNodes(shaderOne, mat1)
             
             #
             mat2 = bpy.data.materials[ material.bounty.blendTwo if material.bounty.blendTwo !="" else 'blendtwo']
-            shaderTwo = nodetree.nodes.new(mat_node_types.get(mat2.bounty.mat_type))
+            shaderTwo = ntree.nodes.new(mat_node_types.get(mat2.bounty.mat_type))
             shaderTwo.location = [-500, -200]
-            nodetree.links.new(shadernode.inputs[1], shaderTwo.outputs[0])
+            ntree.links.new(shadernode.inputs[1], shaderTwo.outputs[0])
             setNodes(shaderTwo, mat2)
         
         return {'FINISHED'}
