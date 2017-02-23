@@ -44,9 +44,6 @@ glossy_layers = ["diffuse_shader", "glossy_shader", "glossy_reflect_shader", "bu
 glass_layers = ["mirror_color_shader", "bump_shader"]
 shiny_layers = ["diffuse_shader", "mirror_color_shader", "transparency_shader", "translucency_shader", "mirror_shader", "bump_shader"]
 translucent_layers = ["diffuse_shader", "glossy_shader", "glossy_reflect_shader", "bump_shader", "sigmaA_shader", "sigmaS_shader"]
-              
-#
-bounty_socket_class.append(TheBountyNodeSocket)
 
 class light_color_socket(NodeSocket):
     #-----------------------
@@ -464,7 +461,7 @@ class scatter_color_socket(NodeSocket):
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Scatter Color'
+        label = 'Scatter (SigmaS)'
         if self.is_linked: # and not self.is_output:
             label = 'Scatter color layer'
         #                     
@@ -512,7 +509,7 @@ class absorption_color_socket(NodeSocket):
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Absorption Color'
+        label = 'Absorption (SigmaA)'
         if self.is_linked: # and not self.is_output:
             label = 'Absorption color layer'
         #                     
@@ -550,6 +547,11 @@ class bumpmap_socket(NodeSocket):
             description="Apply bumpmap effect to material",
             default=False
     )  
+    bump = FloatProperty(
+            name="Bumpmap layer",
+            description="Bumpmap effect amount to material",
+            default=0.0
+    )  
     
     # default values for socket
     def default_value_get(self):
@@ -562,14 +564,15 @@ class bumpmap_socket(NodeSocket):
             
     # draw socket
     def draw(self, context, layout, node, text):
-        row = layout.row()
+        col = layout.column()
         label="BumpMap texture Layer" if self.is_linked else "BumpMap"
         #
         if self.is_linked:
             #
-            row.prop(self, "bumpmap", text=label)
+            col.prop(self, "bumpmap", text=label)
+            col.prop(self, "bump")
         else:
-            row.label(text=label)
+            col.label(label)
             
     #
     def getParams(self):
