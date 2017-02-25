@@ -535,13 +535,6 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
         return self.textParams
     
 bounty_node_class.append(TheBountyImageMapNode)
-
-''' 
-class SORTPatternNodeCategory(NodeCategory):
-    @classmethod
-    def poll(cls, context):
-        return context.space_data.tree_type == 'SORTPatternGraph'
-''' 
     
 class TheBountyNodeCategory(NodeCategory):
     @classmethod

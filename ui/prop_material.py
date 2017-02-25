@@ -22,12 +22,6 @@ import bpy
 from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
-#
-'''
-def find_node(material, nodetype):
-    # from Cycles
-    if material and material.node_tree:
-        ntree = material.node_tree
 
 #
 def find_node_input(node, name):
