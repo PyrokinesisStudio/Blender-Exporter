@@ -100,7 +100,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     def exportScene(self):
         #
         self.exportTextures()
-        self.exportMaterials()
+        self.exportSceneMaterials()
         self.geometry.setScene(self.scene)
         self.exportObjects()
         self.geometry.createCamera()
@@ -157,7 +157,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         
         # make here all exportable options and 'cases'
         for obj in self.scene.objects:
-            if obj.type =='LAMP':       sceneLamps.append(obj) # need special case for o.hide
+            if obj.type =='LAMP':       sceneLamps.append(obj) # need special case for o.hide?
             elif obj.type =='MESH':
                 if self.exportableObjects(obj): sceneMeshes.append(obj)
             elif obj.type =='CURVE':
@@ -349,7 +349,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             defmat.bounty.mat_type = 'shinydiffusemat'
         
             
-    def exportMaterials(self):
+    def exportSceneMaterials(self):
         self.yi.printInfo("Exporter: Processing Materials...")
         self.exportedMaterials = set()
         
@@ -367,15 +367,22 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         if self.scene.bounty.gs_clay_render:
             #TODO:  heavily hardcoded.. need review
             mat = bpy.data.materials['clay']
-            self.defineClayMaterial(mat) 
-        else:
+            self.defineClayMaterial(mat)
+            
+        elif self.is_preview:
+            # preview scene special case
             for obj in self.scene.objects:
                 for slot in obj.material_slots:
                     if slot.material not in self.exportedMaterials:
-                        self.exportMaterial(obj, slot.material)
-                    
+                        self.exportMaterial(slot.material)
+        else:            
+            for mat in bpy.data.materials:
+                if mat not in self.exportedMaterials:
+                    self.exportMaterial(mat)
+            
+                  
 
-    def exportMaterial(self, obj, material):
+    def exportMaterial(self, material):
         if material:
             # must make sure all materials used by a blend mat
             # are written before the blend mat itself                
