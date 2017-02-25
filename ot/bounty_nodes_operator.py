@@ -84,7 +84,7 @@ def setNodes(node, mat):
         node.inputs['Diffuse'].diff_color = mat.diffuse_color
         node.inputs['Glossy'].glossy_color  = mat.bounty.glossy_color
         node.inputs['Specular'].glossy_reflect = mat.bounty.glossy_reflect
-        node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
+        node.diffuse_reflect = mat.bounty.diffuse_reflect
         node.IOR_reflection = mat.bounty.IOR_reflection
         node.coat_mir_col = mat.bounty.coat_mir_col
         node.anisotropic = mat.bounty.anisotropic
@@ -101,8 +101,8 @@ def setNodes(node, mat):
         node.inputs['Mirror'].mirror_color = mat.bounty.mirror_color
         node.inputs['Translucency'].translucency = mat.bounty.translucency
         node.inputs['Transparency'].transparency = mat.bounty.transparency
-        node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
         node.inputs['Specular'].specular_reflect = mat.bounty.specular_reflect
+        node.diffuse_reflect = mat.bounty.diffuse_reflect
         node.fresnel_effect = mat.bounty.fresnel_effect
         node.IOR_reflection = mat.bounty.IOR_reflection
         node.transmit = mat.bounty.transmit_filter
@@ -112,35 +112,37 @@ def setNodes(node, mat):
                                           
     elif mat.bounty.mat_type == 'blend':
         node.blend_amount = mat.bounty.blend_value
-        node.blendOne = mat.bounty.blendOne
-        node.blendTwo = mat.bounty.blendTwo
+        node.BlendOne = mat.bounty.blendOne
+        node.BlendTwo = mat.bounty.blendTwo
         
     elif mat.bounty.mat_type == 'translucent':
         #
-        node.exponent = mat.bounty.exponent
-        node.sssSigmaS = mat.bounty.sssSigmaS
-        node.sssSigmaS_factor = mat.bounty.sssSigmaS_factor
-        node.phaseFuction = mat.bounty.phaseFuction
-        node.sssSigmaA = mat.bounty.sssSigmaA
-        node.sss_transmit = mat.bounty.sss_transmit
-        node.sssIOR = mat.bounty.sssIOR
-        node.inputs['Diffuse'].diff_color = mat.diffuse_color 
-        #node.inputs['Diffuse'].diffuse_reflect = mat.bounty.diffuse_reflect
-        node.inputs['Glossy'].glossy_color = mat.bounty.glossy_color
         node.inputs['Specular'].glossy_reflect = mat.bounty.glossy_reflect
+        node.inputs['Glossy'].glossy_color = mat.bounty.glossy_color
+        node.inputs['Diffuse'].diff_color = mat.diffuse_color
+        node.sssSigmaS_factor = mat.bounty.sssSigmaS_factor
+        node.diffuse_reflect = mat.bounty.diffuse_reflect
+        node.phaseFuction = mat.bounty.phaseFuction
+        node.sss_transmit = mat.bounty.sss_transmit
+        node.sssSigmaS = mat.bounty.sssSigmaS
+        node.sssSigmaA = mat.bounty.sssSigmaA
+        node.exponent = mat.bounty.exponent
+        node.sssIOR = mat.bounty.sssIOR
+        
+        
         
     elif mat.bounty.mat_type in {'glass', 'rough_glass'}:
         #
-        node.IOR_refraction = mat.bounty.IOR_refraction
-        node.filter_color = mat.bounty.filter_color
         node.inputs['Mirror'].glass_mir_col = mat.bounty.glass_mir_col
-        node.glass_transmit = mat.bounty.glass_transmit
-        node.absorption = mat.bounty.absorption
-        node.absorption_dist = mat.bounty.absorption_dist
         node.dispersion_power = mat.bounty.dispersion_power
-        node.fake_shadows = mat.bounty.fake_shadows
+        node.absorption_dist = mat.bounty.absorption_dist
+        node.IOR_refraction = mat.bounty.IOR_refraction
+        node.glass_transmit = mat.bounty.glass_transmit
         node.refr_roughness = mat.bounty.refr_roughness
-    
+        node.filter_color = mat.bounty.filter_color
+        node.fake_shadows = mat.bounty.fake_shadows
+        node.absorption = mat.bounty.absorption
+        
     return        
 
 
