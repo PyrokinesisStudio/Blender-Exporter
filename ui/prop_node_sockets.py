@@ -18,18 +18,8 @@
 
 # <pep8 compliant>
 
-#-------------------------------------------------
-# This file is part of TheBounty Blender exporter
-# Created by povmaniac at 20/01/15
-#-------------------------------------------------
 import bpy
 from bpy.types import Node, NodeSocket
-from bpy.props import (FloatProperty, 
-                       FloatVectorProperty, 
-                       StringProperty, 
-                       BoolProperty,
-                       EnumProperty)
-
 from ..prop.tby_material import TheBountyMaterialProperties as MatProperty
 from ..prop.tby_light import TheBountyLightProperties as LightProperty
 
@@ -53,7 +43,7 @@ class light_color_socket(NodeSocket):
     bl_idname = 'color'
     bl_label = 'Color Socket'
     params = {}
-    color = FloatVectorProperty(
+    color = bpy.props.FloatVectorProperty(
             name="Light color",
             description="Diffuse albedo light color",
             subtype='COLOR',
@@ -97,10 +87,6 @@ class diffuse_color_socket(NodeSocket):
     
     #properties..
     diff_color = MatProperty.diff_color
-    diffuse_reflect = MatProperty.diffuse_reflect
-    
-    def validLink(self, node):
-        pass
     
     # useful helper functions
     def default_value_get(self):
@@ -119,14 +105,10 @@ class diffuse_color_socket(NodeSocket):
             label = 'Diffuse color layer'
         #                     
         col.prop(self, "diff_color", text= label )
-        col.prop(self, "diffuse_reflect", text="Diffuse Reflection", slider=True)
     
     def getParams(self):
         self.matParams['color']= [c for c in self.diff_color]
-        self.matParams['diffuse_reflect']= self.diffuse_reflect
-        # test
-        #self.matParams['DiffuseLayer']= None
-        #self.matParams['diffuse_shader']= None
+        #
         if self.is_linked:
             print('linked to: ', self.links[0].from_node.bl_label)
             linked_node = self.links[0].from_node
@@ -135,7 +117,7 @@ class diffuse_color_socket(NodeSocket):
                 self.matParams['DiffuseLayer']= linked_node.getParams()
             else:
                 print('Not valid node: ', linked_node.bl_label)
-                #self.remove(NodeOut.links[0])
+                
         return self.matParams
     #
     def draw_color(self, context, node):
@@ -381,7 +363,7 @@ class glossy_reflect_socket(NodeSocket):
     def default_value_set(self, value):
         self.glossy_reflect  = value
         
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
+    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set, default=0.0 , min=0.0, max=1.0)
     #    
     def draw(self, context, layout, node, text):
         #
@@ -412,7 +394,7 @@ class glass_mirror_color_socket(NodeSocket):
     bl_label = 'Mirror Socket'
     params = {}
     
-    glass_mir_col = FloatVectorProperty(
+    glass_mir_col = bpy.props.FloatVectorProperty(
         name="Mirror", description="Mirror color reflection",
         subtype='COLOR', min=0.0, max=1.0, default=(0.8, 0.80, 0.80)
     )
@@ -542,12 +524,12 @@ class bumpmap_socket(NodeSocket):
     bl_label = 'Bumpmap Socket'
     matParams = {} 
     
-    bumpmap = BoolProperty(
+    bumpmap = bpy.props.BoolProperty(
             name="Bumpmap layer",
             description="Apply bumpmap effect to material",
             default=False
     )  
-    bump = FloatProperty(
+    bump = bpy.props.FloatProperty(
             name="Bumpmap layer",
             description="Bumpmap effect amount to material",
             default=0.0
@@ -620,13 +602,13 @@ class mapping_socket(NodeSocket):
     def default_value_set(self, value):
         self.mapping_type = 'UV'
         
-    mapping_type = EnumProperty(
+    mapping_type = bpy.props.EnumProperty(
             name="Mapping",
             description="Texture coordinates mapping mode",
             items=enum_texture_mapping_mode,
             default='UV',
     )
-    default_value =  EnumProperty(items=enum_default_texture_mapping_mode, set=default_value_set)
+    default_value =  bpy.props.EnumProperty(items=enum_default_texture_mapping_mode, set=default_value_set)
     #
     def draw(self, context, layout, node, text):
         if self.is_linked:
@@ -675,13 +657,13 @@ class projection_socket(NodeSocket):
     def default_value_set(self, value):
         self.projection_type = 'FLAT'
         
-    projection_type = EnumProperty(
+    projection_type = bpy.props.EnumProperty(
             name="Projection",
             description="Texture projection mode",
             items=enum_texture_projection_mode,
             default='FLAT',
     )    
-    default_value =  EnumProperty(items=enum_default_texture_projection_mode, set=default_value_set)
+    default_value =  bpy.props.EnumProperty(items=enum_default_texture_projection_mode, set=default_value_set)
     #
     def draw(self, context, layout, node, text):
         col = layout.column()

@@ -111,10 +111,7 @@ class TheBountyMaterialNode:
         #
         return self.name
     
-    # base
-    #def getParams(self):
-    #    pass
-    #
+    '''
     def traverse_node_tree(self, material_node):
         #
         for socket in self.inputs:
@@ -122,7 +119,8 @@ class TheBountyMaterialNode:
                 linked_node = socket.links[0].from_node
                 linked_node.traverse_node_tree( material_node)
         #material_node.listedNodes.append(self)
-
+    '''
+   
 bounty_node_class.append(TheBountyMaterialNode)
 
 #------------------------------------------------
@@ -177,12 +175,13 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'
     shinyparams = {}
     #
-    diffuse_brdf = MatProperty.brdf_type
-    sigma = MatProperty.sigma  
-    emittance = MatProperty.emittance
-    transmit = MatProperty.transmit_filter
+    diffuse_reflect = MatProperty.diffuse_reflect
     fresnel_effect = MatProperty.fresnel_effect
     IOR_reflection = MatProperty.IOR_reflection
+    transmit = MatProperty.transmit_filter
+    diffuse_brdf = MatProperty.brdf_type
+    emittance = MatProperty.emittance
+    sigma = MatProperty.sigma
          
     #
     def init(self, context):
@@ -214,23 +213,24 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         sig.prop(self, "sigma", text='Sigma', slider=True)
         col = layout.column()
         col.prop(self, "fresnel_effect", toggle=True)
-        col.prop(self, "IOR_reflection")        
+        col.prop(self, "IOR_reflection")
+        col.prop(self, "diffuse_reflect", text="Diffuse reflect")        
     
     def getParams(self):
         #
-        self.shinyparams['diffuse_color']= self.inputs['Diffuse'].getParams()
         self.shinyparams['transparency'] = self.inputs['Transparency'].getParams()
         self.shinyparams['translucency'] = self.inputs['Translucency'].getParams()
-        self.shinyparams['mirror_color'] = self.inputs['Mirror'].getParams()
         self.shinyparams['specular_reflect'] = self.inputs['Specular'].getParams()
+        self.shinyparams['diffuse_color']= self.inputs['Diffuse'].getParams()
+        self.shinyparams['mirror_color'] = self.inputs['Mirror'].getParams()
         self.shinyparams['Bumplayer'] = self.inputs['Bumpmap'].getParams()
         #
-        self.shinyparams['transmit_filter'] = self.transmit
-        self.shinyparams['emit'] = self.emittance
-        self.shinyparams['diffuse_brdf'] = self.diffuse_brdf
-        self.shinyparams['sigma'] = self.sigma
         self.shinyparams['fresnel_effect'] = self.fresnel_effect
+        self.shinyparams['diffuse_brdf'] = self.diffuse_brdf
+        self.shinyparams['transmit_filter'] = self.transmit
         self.shinyparams['IOR'] = self.IOR_reflection
+        self.shinyparams['emit'] = self.emittance
+        self.shinyparams['sigma'] = self.sigma        
         
         return self.shinyparams   
 #
@@ -246,13 +246,14 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'
     sssparams = {}
     #
-    exponent = MatProperty.exponent
-    sssPresets = MatProperty.sss_presets
-    sssSigmaS = MatProperty.sssSigmaS
     sssSigmaS_factor = MatProperty.sssSigmaS_factor
-    phaseFuction = MatProperty.phaseFuction
-    sssSigmaA = MatProperty.sssSigmaA
+    diffuse_reflect = MatProperty.diffuse_reflect
     sss_transmit = MatProperty.sss_transmit
+    phaseFuction = MatProperty.phaseFuction
+    sssPresets = MatProperty.sss_presets
+    sssSigmaA = MatProperty.sssSigmaA
+    sssSigmaS = MatProperty.sssSigmaS
+    exponent = MatProperty.exponent
     sssIOR = MatProperty.sssIOR
     
     #
@@ -264,9 +265,9 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
         
         self.inputs.new('scatter_color', 'Scattering')  # scattering         
         
-        self.inputs.new('diffuse_color',"Diffuse")
+        self.inputs.new('diffuse_color', "Diffuse")
         
-        self.inputs.new('glossy_color',"Glossy")
+        self.inputs.new('glossy_color', "Glossy")
         
         self.inputs.new('glossy_reflect', 'Specular')
         
@@ -286,15 +287,15 @@ class TheBountyTranslucentShaderNode(Node, TheBountyMaterialNode):
         #col.prop(self, "sssSigmaA", text="Absorption (SigmaA)")
         col.prop(self, "sss_transmit", text="Translucency")
         col.prop(self, "sssIOR")
+        col.prop(self, "diffuse_reflect", text="Diffuse reflect")   
         
     def getParams(self):
         #
-        self.sssparams['diffuse_color']= self.inputs['Diffuse'].getParams()
-        self.sssparams['glossy_color'] = self.inputs['Glossy'].getParams()
-        self.sssparams['glossy_reflect'] = self.inputs['Specular'].getParams()
         self.sssparams['absorption_color'] = self.inputs['Absorption'].getParams()
         self.sssparams['scatter_color'] = self.inputs['Scattering'].getParams()
-        
+        self.sssparams['glossy_reflect'] = self.inputs['Specular'].getParams()
+        self.sssparams['diffuse_color']= self.inputs['Diffuse'].getParams()
+        self.sssparams['glossy_color'] = self.inputs['Glossy'].getParams()        
         self.sssparams['Bumplayer'] = self.inputs['Bumpmap'].getParams()
         
         return self.sssparams
@@ -310,24 +311,16 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'    
     
     # properties
+    diffuse_reflect = MatProperty.diffuse_reflect   
+    IOR_reflection = MatProperty.IOR_reflection
+    coat_mir_col = MatProperty.coat_mir_col
     anisotropic = MatProperty.anisotropic
+    as_diffuse = MatProperty.as_diffuse
+    brdf_type = MatProperty.brdf_type
     exponent = MatProperty.exponent
     exp_u = MatProperty.exp_u
     exp_v = MatProperty.exp_v
-    as_diffuse = MatProperty.as_diffuse
-    coat_mir_col = MatProperty.coat_mir_col
-    IOR_reflection = MatProperty.IOR_reflection
-    brdf_type = MatProperty.brdf_type
     sigma = MatProperty.sigma
-    
-    def init(self, context):
-        #
-        self.outputs.new('NodeSocketShader', "Shader")
-        
-        self.inputs.new('diffuse_color',"Diffuse")        
-        self.inputs.new('glossy_color',"Glossy")
-        self.inputs.new('glossy_reflect',"Specular")
-        self.inputs.new('bumpmap', 'Bumpmap')
     
     def draw_buttons(self, context, layout):
         #
@@ -335,7 +328,9 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
         
         col = layout.column()
         col.prop(self, "brdf_type")
-        col.prop(self, "sigma", text='Sigma', slider=True)
+        sig = col.column()
+        sig.enabled = self.brdf_type != 'lambert'
+        sig.prop(self, "sigma", text='Sigma', slider=True)
         exp = col.column()
         exp.enabled = not self.anisotropic
         exp.prop(self, "exponent")
@@ -354,6 +349,20 @@ class TheBountyGlossyShaderNode(Node, TheBountyMaterialNode):
             col = layout.column()
             col.prop(self, "coat_mir_col")
             col.prop(self, "IOR_reflection")
+        
+        col = layout.column()    
+        col.prop(self, "diffuse_reflect", text="Diffuse reflect")  
+        
+    def init(self, context):
+        #
+        self.outputs.new('NodeSocketShader', "Shader")
+        
+        self.inputs.new('diffuse_color',"Diffuse")        
+        self.inputs.new('glossy_color',"Glossy")
+        self.inputs.new('glossy_reflect',"Specular")
+        self.inputs.new('bumpmap', 'Bumpmap')
+    
+     
 #
 bounty_node_class.append(TheBountyGlossyShaderNode)
 
@@ -367,14 +376,16 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     glassparams = {}
     
     # properties..
-    absorption =        MatProperty.absorption
-    absorption_dist =   MatProperty.absorption_dist
-    dispersion_power =  MatProperty.dispersion_power
-    refr_roughness =    MatProperty.refr_roughness
-    filter_color =      MatProperty.filter_color
-    glass_transmit =    MatProperty.glass_transmit
-    fake_shadows =      MatProperty.fake_shadows
-    IOR_refraction =    MatProperty.IOR_refraction
+    dispersion_power = MatProperty.dispersion_power
+    absorption_dist = MatProperty.absorption_dist
+    refr_roughness = MatProperty.refr_roughness
+    IOR_refraction = MatProperty.IOR_refraction
+    glass_transmit = MatProperty.glass_transmit
+    filter_color = MatProperty.filter_color
+    fake_shadows = MatProperty.fake_shadows
+    absorption = MatProperty.absorption
+    
+    
 
     def init(self, context):
         #
@@ -400,9 +411,10 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
         col.prop(self, "IOR_refraction")
     #
     def getParams(self):
-        #for input in self.inputs:
+        #
         self.glassparams['Mirror']= self.inputs['Mirror'].getParams()
         #self.glassparams['Bumpmap'] = self.inputs['Bumpmap'].getParams()
+        return self.glassparams
 #
 bounty_node_class.append(TheBountyGlassShaderNode)
 
@@ -415,20 +427,21 @@ class TheBountyBlendShaderNode(Node, TheBountyMaterialNode):
     bl_icon = 'MATERIAL'
     
     blend_amount = MatProperty.blend_value
-    blendOne = MatProperty.blendOne
-    blendTwo = MatProperty.blendTwo
+    BlendOne = MatProperty.blendOne
+    BlendTwo = MatProperty.blendTwo
     
     def init(self, context):
         # outputs
         self.outputs.new('NodeSocketShader', "Shader")
         
-        self.inputs.new('NodeSocketShader', "BlendOne")
-        self.inputs.new('NodeSocketShader', "BlendTwo")
+        self.inputs.new('NodeSocketShader', "blendOne")
+        self.inputs.new('NodeSocketShader', "blendTwo")
         
 
     def draw_buttons(self, context, layout):
         #
         mat = context.active_object.active_material
+        
         layout.prop_search(mat.bounty, 'blendOne', bpy.data, 'materials', text='')
         
         layout.prop(self, "blend_amount", text="", slider=True)
@@ -439,29 +452,6 @@ class TheBountyBlendShaderNode(Node, TheBountyMaterialNode):
 #
 bounty_node_class.append(TheBountyBlendShaderNode)
 
-'''
-#-------------------------------------------
-# BDRF model
-#-------------------------------------------
-class TheBountyBrdfNode(Node, TheBountyMaterialNode):
-    #    
-    bl_idname = 'TheBountyBrdfNode'
-    bl_label = 'BRDF Node'
-    bl_width_min = 160  
-    
-    brdf_type = MatProperty.brdf_type
-    sigma = MatProperty.sigma
-   
-    #
-    def init(self, context):
-        self.outputs.new('NodeSocketColor', 'Color')
-        
-    def draw_buttons(self, context, layout):
-        layout.prop(self, 'brdf_type', text='')
-        layout.prop(self,'sigma', text='', slider=True)       
-#
-bounty_node_class.append(TheBountyBrdfNode)   
-'''
        
 #------------------------------------------------
 # Imagemap node
@@ -476,10 +466,10 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     textParams={}
     
     # reuse properties
+    projection_type = TexProperty.projection_type
+    texture_coord = TexProperty.texture_coord
     image_map = TexProperty.image_map
     influence = TexProperty.influence
-    texture_coord = TexProperty.texture_coord
-    projection_type = TexProperty.projection_type
     mapping_x = TexProperty.mapping_x
     mapping_y = TexProperty.mapping_y
     mapping_z = TexProperty.mapping_z
@@ -529,45 +519,30 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     
     def getParams(self):
         #
-        self.textParams['texture_coord'] = self.texture_coord
         self.textParams['projection_type'] = self.projection_type
+        self.textParams['texture_coord'] = self.texture_coord
+        self.textParams['offset'] = [ o for o in self.offset]
+        self.textParams['scale'] = [s for s in self.scale]
         self.textParams['mapping_x'] = self.mapping_x
         self.textParams['mapping_y'] = self.mapping_y
         self.textParams['mapping_z'] = self.mapping_z
-        self.textParams['offset'] = [ o for o in self.offset]
-        self.textParams['scale'] = [s for s in self.scale]
         #
-        self.textParams['blend'] = self.blend
         self.textParams['negative'] = self.negative
-        self.textParams['no_rgb'] = self.no_rgb
         self.textParams['stencil'] = self.stencil
+        self.textParams['no_rgb'] = self.no_rgb
+        self.textParams['blend'] = self.blend
         #
         return self.textParams
     
 bounty_node_class.append(TheBountyImageMapNode)
 
-'''
-#------------------------------------------------
-# Mirror node
-#------------------------------------------------      
-class TheBountyMirrorNode(Node, TheBountyMaterialNode):
-    bl_idname = 'TheBountyMirrorNode'
-    bl_label = 'Mirror Node'    
+''' 
+class SORTPatternNodeCategory(NodeCategory):
+    @classmethod
+    def poll(cls, context):
+        return context.space_data.tree_type == 'SORTPatternGraph'
+''' 
     
-    mirror_color = MatProperty.mirror_color
-    specular_reflect = MatProperty.specular_reflect
-    
-    def init(self, context):
-        self.outputs.new('NodeSocketColor', "Color")
-        
-    def draw_buttons(self, context, layout):
-        col = layout.column()
-        col.prop(self, 'mirror_color')
-        col.prop(self, 'specular_reflect', slider=True)
-#
-bounty_node_class.append(TheBountyMirrorNode)    
-'''
-  
 class TheBountyNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):

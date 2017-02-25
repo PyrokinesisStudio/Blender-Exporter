@@ -133,8 +133,7 @@ class TheBountyLightOutputNode(Node, TheBountyLightNode):
     listedNodes = []
 
     def init(self, context):
-        self.inputs.new('NodeSocketShader', "Surface")
-        
+        self.inputs.new('NodeSocketShader', "Surface")        
     
     def draw_buttons(self, context, layout):
         #try:

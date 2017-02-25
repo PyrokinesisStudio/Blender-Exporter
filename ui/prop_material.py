@@ -23,6 +23,11 @@ from ..ui.ior_values import ior_list
 from bpy.types import Panel, Menu
 from bl_ui.properties_material import (active_node_mat, check_material)
 #
+'''
+def find_node(material, nodetype):
+    # from Cycles
+    if material and material.node_tree:
+        ntree = material.node_tree
 
 #
 def find_node_input(node, name):
@@ -32,6 +37,10 @@ def find_node_input(node, name):
     return None
 
 def panel_node_draw(layout, material, output_type, input_name):
+    #
+    if material.bounty.nodetree == "":
+        layout.operator('bounty.add_nodetree', icon='NODETREE')
+        return False
     node = find_node(material, output_type)
     if node:
         if material.bounty.nodetree:
@@ -39,11 +48,12 @@ def panel_node_draw(layout, material, output_type, input_name):
             input = find_node_input(node, input_name)
             layout.template_node_view(ntree, node, input)
     else:
-        return False
+        layout.label(text="No output node")
 
     return True
 
 def find_node(material, nodetype):
+    # mio
     if material and material.bounty.nodetree:   
         ntree = bpy.data.node_groups[material.bounty.nodetree]    
         for node in ntree.nodes:
@@ -63,25 +73,8 @@ def node_tree_selector_draw(layout, mat, nodetype):
     node = find_node(mat, nodetype)
     if not node:
         if not mat.bounty.nodetree:
-            layout.operator('bounty.add_nodetree', icon='NODETREE')
+            #layout.operator('bounty.add_nodetree', icon='NODETREE')
             return False
-    return True
-
-
-def blend_one_draw(layout, mat):
-    #
-    try:
-        layout.prop_search(mat.bounty, "blendOne", bpy.data, "materials")
-    except:
-        return False    
-    return True
-
-def blend_two_draw(layout, mat):
-    #
-    try:
-        layout.prop_search(mat.bounty, "blendTwo", bpy.data, "materials")
-    except:
-        return False
     return True
 
 
@@ -159,7 +152,7 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
             if is_sortable:
                 col.separator()
                 col.operator("object.material_slot_move", icon='TRIA_UP', text="").direction = 'UP'
-                #col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
+                col.operator("object.material_slot_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
             #
             if ob.mode == 'EDIT':
                 row = layout.row(align=True)
@@ -198,6 +191,7 @@ class TheBountyContextMaterial(TheBountyMaterialButtonsPanel, Panel):
         #----------------------------------------------------
         # show nodetree button
         #----------------------------------------------------
+        #layout.operator('bounty.add_nodetree', icon='NODETREE')
         #if not 
         node_tree_selector_draw(layout, mat, 'MaterialOutputNode')#:
         if not panel_node_draw(layout, mat, 'MaterialOutputNode', 'Surface'): 
