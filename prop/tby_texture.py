@@ -79,6 +79,17 @@ enum_blending_modes=(
     ('add', 'Add',''),
     ('mix', 'Mix','')
 )
+enum_blend_modes=(
+    ('MIX',         'Mix',      ''),
+    ('ADD',         'Add',      ''),
+    ('MULTIPLY',    'Multiply', ''),
+    ('SUBTRACT',    'Subtract', ''),
+    ('SCREEN',      'Screen',   ''),
+    ('DIVIDE',      'Divide',   ''),
+    ('DIFFERENCE',  'Difference',''),
+    ('DARKEN',      'Darken',   ''),
+    ('LIGHTEN',     'Lighten',  ''),
+)
 
 class TheBountyTextureProperties(bpy.types.PropertyGroup):
     #--------------------------
@@ -159,8 +170,8 @@ class TheBountyTextureProperties(bpy.types.PropertyGroup):
     )
     blend = bpy.props.EnumProperty(
             name='', description='',
-            items =enum_blending_modes,
-            default='mix'
+            items=enum_blend_modes,
+            default='MIX'
     )
     negative = bpy.props.BoolProperty(
             name='Negative', description='',

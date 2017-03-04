@@ -674,7 +674,7 @@ class TheBounty_PT_influence(TextureSlotPanel, Panel):
             split = layout.split()
 
             col = split.column()
-            col.prop(tex, "blend_type", text="Blend")
+            col.prop(texture.bounty, "blend", text="Blend")
             col.prop(tex, "use_rgb_to_intensity", text="No RGB")
             col.prop(tex, "color", text="")
 
@@ -683,8 +683,9 @@ class TheBounty_PT_influence(TextureSlotPanel, Panel):
             col.prop(tex, "use_stencil")
 
         if isinstance(idblock, Material) or isinstance(idblock, World):
-            layout.separator()
-            layout.row().prop(tex, "default_value", text="Default Value", slider=True)
+            #layout.separator()
+            #layout.row()
+            col.prop(tex, "default_value", text="Def. Value", slider=True)
 
 
 if __name__ == "__main__":  # only for live edit.

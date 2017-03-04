@@ -90,16 +90,41 @@ class TheBountyMaterialWrite:
 
         return used_textures
     #
-    textureLayerParams = {
-        "element": "shader_node", "type":"layer", "name":'', "input":'mapname', "mode":'MIX',
-        "stencil":False, "negative" :False, "noRGB": False, "def_col":(1,1,1), "def_val":1.0, 
-        "color_input": False, "use_alpha": False, "upper_color":(1,1,1), "upper_value":0.0, 
-        "upper_layer":'', "colfac": 1.0, "valfac":1.0, "do_color":False, "do_scalar": True}
+    def layerParams(self, layernode, mtex):
+        #
+        node = layernode is not None
+        tex = mtex.texture
+        # 'negative': False,           'texture_coord': 'UV',    'mapping_x': 'X', 'blend': 'mix', 
+        # 'offset'  : [0.0, 0.0, 0.0], 'scale': [1.0, 1.0, 1.0], 'no_rgb': False,  'stencil': True, 
+        # 'projection_type': 'FLAT',   'mapping_z': 'Z',         'mapping_y': 'Y'}
+        textureLayerParams = {
+            "name":'', 
+            "input":'mapname', 
+            "mode"          : switchBlendMode.get(layernode.get('blend')    if node else tex.bounty.blend, 0),
+            "stencil"       : layernode.get('stencil')  if node else mtex.use_stencil, 
+            "negative"      : layernode.get('negative') if node else mtex.invert, 
+            "noRGB"         : layernode.get('no_rgb')   if node else mtex.use_rgb_to_intensity, 
+            "def_col"       : (1,1,1), 
+            "def_val"       : 1.0, 
+            "color_input"   : False, 
+            "use_alpha"     : False, 
+            "upper_color"   : (1,1,1), 
+            "upper_value"   : 0.0, 
+            "upper_layer"   :'', 
+            "colfac"        : 1.0, 
+            "valfac"        : 1.0, 
+            "do_color"      : False, 
+            "do_scalar"     : True
+        }
+        return textureLayerParams
     
-    def writeTexLayer(self, name, mapName, ulayer, mtex, dcol, factor):
+    def writeTexLayer(self, name, mapName, ulayer, mtex, dcol, factor, layer_node=None):
         #
         if mtex.name not in self.textureMap:
             return False
+        # test
+        tex = mtex.texture
+        params = self.layerParams(layer_node, mtex)
 
         yi = self.yi
         yi.paramsPushList()
@@ -110,9 +135,11 @@ class TheBountyMaterialWrite:
         yi.paramsSetString("input", mapName)
 
         # set texture blend mode, if not a supported mode then set it to 'MIX'
-        mode = switchBlendMode.get(mtex.blend_type, 0)
+        #mode = switchBlendMode.get(tex.bounty.blend, 0)
+        mode = params.get('mode')
+        print('mode: ', mode)
         yi.paramsSetInt("mode", mode)
-        yi.paramsSetBool("stencil", mtex.use_stencil)
+        yi.paramsSetBool("stencil", params.get('stencil')) #, mtex.use_stencil))
 
         negative = mtex.invert        
         if factor < 0:  # force 'negative' to True
@@ -533,8 +560,7 @@ class TheBountyMaterialWrite:
             "IOR"               : node.IOR_reflection   if nodemat else mat.IOR_reflection,
             "emit"              : node.emittance        if nodemat else mat.emittance,
             "diffuse_brdf"      : node.diffuse_brdf     if nodemat else mat.brdf_type,
-            "sigma"             : node.sigma            if nodemat else mat.sigma,
-                                        
+            "sigma"             : node.sigma            if nodemat else mat.sigma,                                        
         }
         return params
        
@@ -571,11 +597,12 @@ class TheBountyMaterialWrite:
         if brdf_model == "oren_nayar":
             yi.paramsSetFloat("sigma", params.get('sigma'))
         #
-        if node is not None:
-            diff_layer = node.inputs['Diffuse']
-            if diff_layer.is_linked:
-                lparams = diff_layer.getParams()['DiffuseLayer']
-                print('params', lparams)
+        diff_layer_node = None
+        if node is not None and node.inputs['Diffuse'].is_linked:
+            #
+            lparams = node.inputs['Diffuse'].getParams()['DiffuseLayer']
+            print('params', lparams)
+            diff_layer_node = lparams
         
         
         i = 0
@@ -592,9 +619,11 @@ class TheBountyMaterialWrite:
             mappername = "map%x" % i
 
             #
-            if mtex.use_map_color_diffuse:
+            if mtex.use_map_color_diffuse or diff_layer_node is not None:
                 lname = "diff_layer%x" % i
-                if self.writeTexLayer(lname, mappername, diffRoot, mtex, diffColor, mtex.diffuse_color_factor):
+                factor = mtex.diffuse_color_factor
+                #                     name,  mapName,    ulayer,   mtex, dcol,      factor, layer_node=None
+                if self.writeTexLayer(lname, mappername, diffRoot, mtex, diffColor, factor, diff_layer_node):
                     used = True
                     diffRoot = lname
             #
@@ -649,7 +678,7 @@ class TheBountyMaterialWrite:
         materialParams = {
             'material1'   : node.BlendOne if nodemat else mat.bounty.blendOne,
             'material2'   : node.BlendTwo if nodemat else mat.bounty.blendTwo,
-            "blend_value" : node.blend_amount if nodemat else mat.bounty.blend_value
+            'blend_value' : node.blend_amount if nodemat else mat.bounty.blend_value
         }          
         return materialParams
     

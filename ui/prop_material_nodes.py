@@ -446,7 +446,6 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     bl_idname = 'TheBountyImageMapNode'
     bl_label = 'Image'
     bl_width_min = 225
-    textParams={}
 
     # reuse properties
     projection_type = TexProperty.projection_type
@@ -501,20 +500,21 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
 
     def getParams(self):
         #
-        self.textParams['projection_type'] = self.projection_type
-        self.textParams['texture_coord'] = self.texture_coord
-        self.textParams['offset'] = [o for o in self.offset]
-        self.textParams['scale'] = [s for s in self.scale]
-        self.textParams['mapping_x'] = self.mapping_x
-        self.textParams['mapping_y'] = self.mapping_y
-        self.textParams['mapping_z'] = self.mapping_z
+        params=dict()
+        params['projection_type'] = self.projection_type
+        params['texture_coord'] = self.texture_coord
+        params['offset'] = [o for o in self.offset]
+        params['scale'] = [s for s in self.scale]
+        params['mapping_x'] = self.mapping_x
+        params['mapping_y'] = self.mapping_y
+        params['mapping_z'] = self.mapping_z
         #
-        self.textParams['negative'] = self.negative
-        self.textParams['stencil'] = self.stencil
-        self.textParams['no_rgb'] = self.no_rgb
-        self.textParams['blend'] = self.blend
+        params['negative'] = self.negative
+        params['stencil'] = self.stencil
+        params['no_rgb'] = self.no_rgb
+        params['blend'] = self.blend
         #
-        return self.textParams
+        return params
 
 bounty_node_class.append(TheBountyImageMapNode)
 
@@ -540,14 +540,11 @@ TheBountyMaterialNodeCategories = [
         NodeItem(TheBountyBlendShaderNode.bl_idname),
         NodeItem(TheBountyGlassShaderNode.bl_idname),
         NodeItem(TheBountyTranslucentShaderNode.bl_idname),
-        #NodeItem(TheBountyBrdfNode.bl_idname),
-        #NodeItem(TheBountyMirrorNode.bl_idname),
         ]),
     TheBountyNodeCategory("TheBountyTextures", "Textures", items=[
         # texture nodes
         NodeItem(TheBountyImageMapNode.bl_idname),
-        #NodeItem(TheBountyTextureShaderNode.bl_idname),
-        #NodeItem(TheBountyBrdfNode.bl_idname)
+        #NodeItem(TheBountyTextureLayerNode.bl_idname),
         ]),
     ]
 #
