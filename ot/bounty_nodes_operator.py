@@ -1,7 +1,7 @@
 # ---------- BEGIN GPL LICENSE BLOCK -----------------------------------------#
 #
 #  This file is part of TheBounty exporter for Blender 2.5 and newer
-#  Copyright (C) 2010 - 2015 by some Author's
+#  Copyright (C) 2010 - 2017 by some Author's
 # -----------------------------------------------------------------------------
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -75,9 +75,10 @@ mat_node_types = {
     'blend'           : "BlendShaderNode",
     'translucent'     : "TranslucentShaderNode",
 }
-def setNodes(node, mat):
+
+def syncMatNodes(node, mat):
     #
-    print('setup node.. ', mat.name)
+    print('Sync node values from material.. ', mat.name)
     #print(node.inputs['Diffuse'].diff_color)
     
     if mat.bounty.mat_type in {'glossy', 'coated_glossy'}:
@@ -127,9 +128,7 @@ def setNodes(node, mat):
         node.sssSigmaS = mat.bounty.sssSigmaS
         node.sssSigmaA = mat.bounty.sssSigmaA
         node.exponent = mat.bounty.exponent
-        node.sssIOR = mat.bounty.sssIOR
-        
-        
+        node.sssIOR = mat.bounty.sssIOR      
         
     elif mat.bounty.mat_type in {'glass', 'rough_glass'}:
         #
@@ -164,7 +163,7 @@ class TheBountyAddMaterialNodetree(bpy.types.Operator):
     def execute(self, context):
         # create node tree
         material = context.object.active_material
-        ntree = bpy.data.node_groups.new( material.name, type='TheBountyMaterialNodeTree')
+        ntree = bpy.data.node_groups.new(material.name, type='TheBountyMaterialNodeTree')
         ntree.use_fake_user = True
         nodeOut = ntree.nodes.new("MaterialOutputNode")
         nodeOut.location = [100, 100]
@@ -176,25 +175,25 @@ class TheBountyAddMaterialNodetree(bpy.types.Operator):
         ntree.links.new(nodeOut.inputs[0], shadernode.outputs[0])
         #
         #mat = bpy.data.materials[material.name]
-        setNodes(shadernode, material)
+        syncMatNodes(shadernode, material)
         
         if material.bounty.mat_type == 'blend':
             #
-            mat1 = bpy.data.materials[ material.bounty.blendOne if material.bounty.blendOne !="" else 'blendone']            
+            mat1 = bpy.data.materials[material.bounty.blendOne if material.bounty.blendOne !="" else 'blendone']            
             shaderOne = ntree.nodes.new(mat_node_types.get(mat1.bounty.mat_type))
             shaderOne.location = [-500, 200]
             ntree.links.new(shadernode.inputs[0], shaderOne.outputs[0])
-            setNodes(shaderOne, mat1)
+            syncMatNodes(shaderOne, mat1)
             
             #
-            mat2 = bpy.data.materials[ material.bounty.blendTwo if material.bounty.blendTwo !="" else 'blendtwo']
+            mat2 = bpy.data.materials[material.bounty.blendTwo if material.bounty.blendTwo !="" else 'blendtwo']
             shaderTwo = ntree.nodes.new(mat_node_types.get(mat2.bounty.mat_type))
             shaderTwo.location = [-500, -200]
             ntree.links.new(shadernode.inputs[1], shaderTwo.outputs[0])
-            setNodes(shaderTwo, mat2)
+            syncMatNodes(shaderTwo, mat2)
         
         return {'FINISHED'}
-#
+
 #
 op_classes.append(TheBountyAddMaterialNodetree)
 #
@@ -209,4 +208,4 @@ def unregister():
 
 
 if __name__ == '__main__':
-    pass
+    register()

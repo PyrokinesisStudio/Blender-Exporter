@@ -137,7 +137,7 @@ class TheBounty_OT_presets_ior_list(Operator):
         return {'FINISHED'}
 #
 opClasses.append(TheBounty_OT_presets_ior_list)
-#
+
 class Thebounty_OT_SyncBlendMaterial(Operator):
     bl_idname = "material.sync_blend"
     bl_label = "Sync Blendmat slots or Fix empty selection"

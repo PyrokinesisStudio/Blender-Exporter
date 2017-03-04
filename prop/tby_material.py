@@ -65,7 +65,6 @@ def getNodeOutName(self, mat):
     for out in bpy.data.node_groups[mat.bounty.nodetree].nodes:
         if out.bl_idname == 'MaterialOutputNode' and out.inputs[0].is_linked:
             nodeOutName = out.name
-            #print('out: ', nodeOutName)
             break
     return nodeOutName
 
@@ -90,8 +89,8 @@ def syncBlenderColors(self, context):
                         pass
     #
     context.object.active_material.diffuse_color = diffuse
-
-
+                        
+    
 class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     #---------------------------
     # list of material properies
@@ -99,7 +98,7 @@ class TheBountyMaterialProperties(bpy.types.PropertyGroup):
     blendOne = StringProperty(
             name="Material One",
             description="Name of the material one in blend material",
-            default= "blendone"
+            default= "blendone",
     )
     blendTwo = StringProperty(
             name="Material Two",
