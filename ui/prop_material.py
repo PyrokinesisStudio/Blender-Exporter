@@ -32,17 +32,14 @@ def find_node_input(node, name):
 
 def panel_node_draw(layout, material, output_type, input_name):
     #
-    if material.bounty.nodetree == "":
+    if material and material.bounty.nodetree == "":
         layout.operator('bounty.add_nodetree', icon='NODETREE')
         return False
     node = find_node(material, output_type)
-    if node:
-        if material.bounty.nodetree:
+    if node and material.bounty.nodetree:
             ntree = bpy.data.node_groups[material.bounty.nodetree]
             input = find_node_input(node, input_name)
             layout.template_node_view(ntree, node, input)
-    else:
-        layout.label(text="No output node")
 
     return True
 
@@ -51,8 +48,7 @@ def find_node(material, nodetype):
     if material and material.bounty.nodetree:   
         ntree = bpy.data.node_groups[material.bounty.nodetree]    
         for node in ntree.nodes:
-            if getattr(node, "bl_idname", None) == nodetype:
-            
+            if getattr(node, "bl_idname", None) == nodetype:            
                 return node
     return None
 
@@ -65,6 +61,7 @@ def node_tree_selector_draw(layout, mat, nodetype):
         return False
     #
     node = find_node(mat, nodetype)
+    
     if not node:
         if not mat.bounty.nodetree:
             #layout.operator('bounty.add_nodetree', icon='NODETREE')
@@ -251,13 +248,11 @@ class TheBountyBlend(TheBountyMaterialTypePanel, Panel):
         
         layout.separator()
         layout.prop_search(mat.bounty, "blendOne", bpy.data, "materials")
-        #blend_one_draw(layout, mat)
         
         layout.separator()
         layout.prop(mat.bounty, "blend_value", slider=True)
         
         layout.separator()
-        #blend_two_draw(layout, mat)
         layout.prop_search(mat.bounty, "blendTwo", bpy.data, "materials")
         layout.operator('material.sync_blend')
                     
