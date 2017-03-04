@@ -95,9 +95,11 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.textures = exportTexture(self.yi)
              
         # and materials
-        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.textures.loadedTextures)
+        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.textures.loadedTextures, self.exportedMaterials)
 
     def exportScene(self):
+        # test
+        self.createDefaultMats()
         #
         self.exportTextures()
         self.exportSceneMaterials()
@@ -105,11 +107,15 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.exportObjects()
         self.geometry.createCamera()
         self.environment.setEnvironment(self.scene)
+        # test
+        self.lightIntegrator.exportIntegrator(self.scene.bounty)
+        self.lightIntegrator.exportVolumeIntegrator(self.scene)
+        # must be called last as the params from here will be used by render()
+        tby_scene.exportRenderSettings(self.yi, self.scene)
     
     def exportTextures(self):
         # find all used scene textures
-        #textureScene=[]
-        self.createDefaultMats()
+        #self.createDefaultMats()
         for tex in bpy.data.textures:
             # skip 'preview' and 'world environment' textures
             if (self.is_preview and tex.name == "fakeshadow") or not tex.users_material:
@@ -157,14 +163,14 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         
         # make here all exportable options and 'cases'
         for obj in self.scene.objects:
-            if obj.type =='LAMP':       sceneLamps.append(obj) # need special case for o.hide?
+            if obj.type =='LAMP':           sceneLamps.append(obj) # need special case for o.hide?
             elif obj.type =='MESH':
                 if self.exportableObjects(obj): sceneMeshes.append(obj)
             elif obj.type =='CURVE':
                 if self.exportableObjects(obj): sceneCurves.append(obj)
-            elif obj.type =='SURFACE':    sceneSurfaces.append(obj)
-            elif obj.type =='FONT':       sceneFonts.append(obj)
-            elif obj.type =='EMPTY':      sceneEmpties.append(obj)
+            elif obj.type =='SURFACE':      sceneSurfaces.append(obj)
+            elif obj.type =='FONT':         sceneFonts.append(obj)
+            elif obj.type =='EMPTY':        sceneEmpties.append(obj)
             else:
                 continue
         # test
@@ -294,30 +300,31 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             self.setMaterial.writeMaterial(mat)
     
     #
-    def defineClayMaterial(self, mat):
+    def defineClayMaterial(self, material):
+        mat = material.bounty
         # trick: force type to sinydiffuse
-        mat.bounty.mat_type = "shinydiffusemat"
+        mat.mat_type = "shinydiffusemat"
         yi = self.yi
         #
-        diffColor = mat.diffuse_color
-        mirCol = mat.bounty.mirror_color            
+        diffColor = material.diffuse_color
+        mirCol = mat.mirror_color            
         #
         yi.paramsClearAll()            
         yi.paramsSetColor("color", diffColor[0], diffColor[1], diffColor[2])
-        yi.paramsSetFloat("transparency", mat.bounty.transparency)
-        yi.paramsSetFloat("translucency", mat.bounty.translucency)
-        yi.paramsSetFloat("diffuse_reflect", mat.bounty.diffuse_reflect)
-        yi.paramsSetFloat("emit", mat.bounty.emittance)
-        yi.paramsSetFloat("transmit_filter", mat.bounty.transmit_filter)
+        yi.paramsSetFloat("transparency", mat.transparency)
+        yi.paramsSetFloat("translucency", mat.translucency)
+        yi.paramsSetFloat("diffuse_reflect", mat.diffuse_reflect)
+        yi.paramsSetFloat("emit", mat.emittance)
+        yi.paramsSetFloat("transmit_filter", mat.transmit_filter)
     
-        yi.paramsSetFloat("specular_reflect", mat.bounty.specular_reflect)
+        yi.paramsSetFloat("specular_reflect", mat.specular_reflect)
         yi.paramsSetColor("mirror_color", mirCol[0], mirCol[1], mirCol[2])
-        yi.paramsSetBool("fresnel_effect", mat.bounty.fresnel_effect)
-        yi.paramsSetFloat("IOR", mat.bounty.IOR_reflection)
+        yi.paramsSetBool("fresnel_effect", mat.fresnel_effect)
+        yi.paramsSetFloat("IOR", mat.IOR_reflection)
     
         if mat.bounty.brdf_type == "oren-nayar":
             yi.paramsSetString("diffuse_brdf", "oren_nayar")
-            yi.paramsSetFloat("sigma", mat.bounty.sigma)    
+            yi.paramsSetFloat("sigma", mat.sigma)    
                    
         yi.paramsSetString("type", "shinydiffusemat")
 
@@ -327,7 +334,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         
 
     def createDefaultMats(self):
-        #
+        
         if 'blendone' not in bpy.data.materials:
             m1 = bpy.data.materials.new('blendone')
             m1.diffuse_color = (0.0, 0.0, 1.0)
@@ -342,12 +349,12 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             clay = bpy.data.materials.new('clay')
             clay.diffuse_color =(0.5, 0.5, 0.5)
             clay.bounty.mat_type = 'shinydiffusemat'        
-        
+        '''
         if 'default' not in bpy.data.materials:
             defmat = bpy.data.materials.new('default')
             defmat.diffuse_color =(0.8, 0.8, 0.8)
             defmat.bounty.mat_type = 'shinydiffusemat'
-        
+        '''
             
     def exportSceneMaterials(self):
         self.yi.printInfo("Exporter: Processing Materials...")
@@ -374,24 +381,23 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             for obj in self.scene.objects:
                 for slot in obj.material_slots:
                     if slot.material not in self.exportedMaterials:
-                        self.exportMaterial(slot.material)
+                        self.exportMaterial(slot.material)                  
         else:            
             for mat in bpy.data.materials:
-                if mat not in self.exportedMaterials:
+                if mat not in self.exportedMaterials and mat not in self.materialMap:
                     self.exportMaterial(mat)
-            
-                  
+                    
 
     def exportMaterial(self, material):
         if material:
-            # must make sure all materials used by a blend mat
-            # are written before the blend mat itself                
+            # must make sure all materials used by a blend mat are written before the blend mat itself                
             if material.bounty.mat_type == 'blend':                    
                 self.handleBlendMat(material)
             else:
                 self.exportedMaterials.add(material)
                 self.setMaterial.writeMaterial(material, self.is_preview)
-
+                
+                
     def decideOutputFileName(self, output_path, filetype):
                 
         filetype = switchFileType.get(filetype, 'png')
@@ -462,11 +468,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         
         self.yi.startScene()
         self.exportScene()
-        self.lightIntegrator.exportIntegrator(self.scene.bounty)
-        self.lightIntegrator.exportVolumeIntegrator(self.scene)
-
-        # must be called last as the params from here will be used by render()
-        tby_scene.exportRenderSettings(self.yi, self.scene)
 
     def render(self, scene):
         #--------------------------------------------
