@@ -59,7 +59,10 @@ class light_color_socket(NodeSocket):
     def default_value_set(self, value):
         self.color = value
         
-    default_value =  bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatVectorProperty(
+                    subtype='COLOR',
+                    get=default_value_get,
+                    set=default_value_set)
     
     #         
     def draw(self, context, layout, node, text):
@@ -93,7 +96,10 @@ class diffuse_color_socket(NodeSocket):
     def default_value_set(self, value):
         self.diff_color = value
         
-    default_value =  bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatVectorProperty(
+                    subtype='COLOR', 
+                    get=default_value_get, 
+                    set=default_value_set)
     
     #         
     def draw(self, context, layout, node, text):
@@ -142,7 +148,10 @@ class translucency_socket(NodeSocket):
     def default_value_set(self, value):
         self.translucency = value
         
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatProperty(
+                    get=default_value_get,
+                    set=default_value_set,
+                    default=0.0 , min=0.0, max=1.0)
     #    
     def draw(self, context, layout, node, text):
         #
@@ -184,7 +193,10 @@ class transparency_socket(NodeSocket):
     def default_value_set(self, value):
         self.transparency = value
     
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatProperty(
+                    get=default_value_get, 
+                    set=default_value_set,
+                    default=0.0 , min=0.0, max=1.0)
             
     # draw socket
     def draw(self, context, layout, node, text):
@@ -228,7 +240,10 @@ class specular_reflect_socket(NodeSocket):
     def default_value_set(self, value):
         self.specular_reflect = value
     
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatProperty(
+                    get=default_value_get,
+                    set=default_value_set,
+                    default=0.0 , min=0.0, max=1.0)
     
     def draw(self, context, layout, node, text):
         col = layout.column()
@@ -360,7 +375,10 @@ class glossy_reflect_socket(NodeSocket):
     def default_value_set(self, value):
         self.glossy_reflect  = value
         
-    default_value =  bpy.props.FloatProperty( get=default_value_get, set=default_value_set, default=0.0 , min=0.0, max=1.0)
+    default_value = bpy.props.FloatProperty(
+                    get=default_value_get, 
+                    set=default_value_set, 
+                    default=0.0 , min=0.0, max=1.0)
     #    
     def draw(self, context, layout, node, text):
         #
