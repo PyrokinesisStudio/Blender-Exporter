@@ -118,6 +118,11 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             description="Angle of the cone in degrees (shadow softness)",
             min=0.0, max=80.0,
             default=0.5
+    )
+    use_IES = BoolProperty(
+            name="Use IES",
+            description="Use IES fotometric definition",
+            default=False
     )    
     ies_soft_shadows = BoolProperty(
             name="IES Soft shadows",

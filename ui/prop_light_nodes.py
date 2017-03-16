@@ -21,13 +21,13 @@
 
 import bpy
 from bpy.types import Node, NodeSocket
-from bpy.props import (FloatProperty, FloatVectorProperty, StringProperty, BoolProperty, EnumProperty)
+#from bpy.props import (FloatProperty, FloatVectorProperty, StringProperty, BoolProperty, EnumProperty)
 
 from . import prop_node_sockets
 #
 from nodeitems_utils import NodeCategory, NodeItem, NodeItemCustom
 
-#from ..prop.tby_material import TheBountyMaterialProperties as MatProperty
+from ..prop.tby_light import TheBountyLightProperties as LightProperty
 #------------------------------------------------------
 
 def fixNodeSize(nmin, nmax):
@@ -53,10 +53,10 @@ class TheBountyLampNodeTree(bpy.types.NodeTree):
         ob = context.active_object
         #
         if ob and ob.type == 'LAMP':
-            la = ob.data
-            lt_name = la.bounty.lightree
-            if lt_name != '':
-                return bpy.data.node_groups[lt_name], la, la
+            lamp = ob.data
+            #lightree_name = lamp.bounty.lightree
+            if lamp.bounty.lightree != '':
+                return bpy.data.node_groups[lamp.bounty.lightree], lamp, lamp
                 
         return (None, None, None)
         
@@ -69,7 +69,7 @@ class TheBountyLampNodeTree(bpy.types.NodeTree):
             self.refresh = False
             break
     
-    refresh = BoolProperty(
+    refresh = bpy.props.BoolProperty(
                 name='Links Changed', 
                 default=False, 
                 update=acknowledge_connection)
@@ -81,12 +81,13 @@ bounty_light_node_class.append(TheBountyLampNodeTree)
 '''  
 class TheBountyLightNode:
     # test for lock node sizes
-    bl_width_min = bl_width_max = 180
+    #bl_width_min = bl_width_max = 180
       
     @classmethod
     def poll( cls, context):
-        # 
-        return (context.bl_idname == "TheBountyLightNodeTree" and context.scene.render.engine == 'THEBOUNTY')
+        #
+        engine = context.scene.render.engine 
+        return (context.bl_idname == "TheBountyLightNodeTree" and engine == 'THEBOUNTY')
 
     def draw_buttons( self, context, layout):
         pass
@@ -106,8 +107,8 @@ class TheBountyLightNode:
     def get_name( self):
         #
         return self.name
+    
     # base
-    #
     def traverse_node_tree(self, light_node):
         #
         for socket in self.inputs:
@@ -127,19 +128,21 @@ class TheBountyLightOutputNode(Node, TheBountyLightNode):
     bl_idname = 'LightOutputNode'
     bl_label = 'Output Light'
     bl_icon = 'NODETREE'
-    bl_width_min = 120
-    bl_width_max = 130
+    #bl_width_min = 120
+    #bl_width_max = 130
     #
     listedNodes = []
+    preview = bpy.props.BoolProperty(name='Preview', default=False)
 
     def init(self, context):
-        self.inputs.new('NodeSocketShader', "Surface")        
+        self.inputs.new('NodeSocketShader', "Light")        
     
     def draw_buttons(self, context, layout):
-        #try:
+        #
         layout.label(context.object.data.name)
-        #except:
-        #    layout.label(context.object.data.name)
+        layout.prop(self, 'preview')
+        if self.preview:
+            layout.template_preview(context.object.data, show_buttons=True)
     #
     def filterNodeList(self, nodes):
         nodeList = []
@@ -160,10 +163,36 @@ class TheBountyLightOutputNode(Node, TheBountyLightNode):
 #
 bounty_light_node_class.append(TheBountyLightOutputNode)
 
+class TheBountyLightPreviewNode(Node, TheBountyLightNode):
+    bl_idname = 'LightPreviewNode'
+    bl_label = 'Preview Light'
+    bl_icon = 'NODETREE'
+    #bl_width_min = 120
+    #bl_width_max = 130
+    #
+    listedNodes = []
+
+    def init(self, context):
+        self.inputs.new('NodeSocketShader', "Light")        
+    
+    def draw_buttons(self, context, layout):
+        #try:
+        layout.label(context.object.data.name)
+        layout.template_preview(context.object.data)
+        
+bounty_light_node_class.append(TheBountyLightPreviewNode)
+
+
 class TheBountyLightPointNode(Node, TheBountyLightNode):
     bl_idname = 'LightPointNode'
     bl_label = 'POINT'
     bl_icon = 'NODETREE'
+    
+    energy = LightProperty.energy
+    samples = LightProperty.samples
+    use_sphere = LightProperty.use_sphere
+    sphere_radius = LightProperty.sphere_radius
+    create_geometry = LightProperty.create_geometry
        
     #
     def init(self, context):
@@ -174,13 +203,13 @@ class TheBountyLightPointNode(Node, TheBountyLightNode):
         # Additional buttons displayed on the node.
         lamp = context.object.data
         layout.prop(lamp, "color")
-        layout.prop(lamp.bounty, "energy", text="Power")
+        layout.prop(self, "energy", text="Power")
         col = layout.column(align=True)
-        col.prop(lamp.bounty, "use_sphere", toggle=True)
+        col.prop(self, "use_sphere", toggle=True)
         if lamp.use_sphere:
-            col.prop(lamp.bounty, "sphere_radius")
-            col.prop(lamp.bounty, "samples")
-            col.prop(lamp.bounty, "create_geometry", toggle=True)
+            col.prop(self, "sphere_radius")
+            col.prop(self, "samples")
+            col.prop(self, "create_geometry", toggle=True)
 #
 bounty_light_node_class.append(TheBountyLightPointNode)
             
@@ -189,7 +218,15 @@ class TheBountySpotLightNode(Node, TheBountyLightNode):
     bl_idname = 'LightSpotNode'
     bl_label = 'SPOT'
     bl_icon = 'NODETREE'
-       
+    
+    #
+    samples = LightProperty.samples
+    ies_file = LightProperty.ies_file
+    photon_only = LightProperty.photon_only
+    show_dist_clip = LightProperty.show_dist_clip
+    shadow_fuzzyness = LightProperty.shadow_fuzzyness
+    spot_soft_shadows = LightProperty.spot_soft_shadows
+    
     #
     def init(self, context):
         # slots shaders
@@ -200,16 +237,16 @@ class TheBountySpotLightNode(Node, TheBountyLightNode):
         # Additional buttons displayed on the node.
         lamp = context.object.data
         
-        layout.prop(lamp.bounty, "ies_file")
-        if lamp.bounty.ies_file =="":
-            layout.prop(lamp.bounty, "photon_only", toggle=True)
+        layout.prop(self, "ies_file")
+        if self.ies_file =="":
+            layout.prop(self, "photon_only", toggle=True)
         col = layout.column(align=True)
         if not lamp.bounty.photon_only:
-            col.prop(lamp.bounty, "spot_soft_shadows", text= 'Soft Shadows', toggle=True)
-            if lamp.bounty.spot_soft_shadows:
-                col.prop(lamp.bounty, "samples")
-                if lamp.bounty.ies_file =="":
-                    col.prop(lamp.bounty, "shadow_fuzzyness")
+            col.prop(self, "spot_soft_shadows", text= 'Soft Shadows', toggle=True)
+            if self.spot_soft_shadows:
+                col.prop(self, "samples")
+                if self.ies_file =="":
+                    col.prop(self, "shadow_fuzzyness")
         #
         if lamp.bounty.ies_file =="":
                 self.draw_spot_shape(layout, lamp)

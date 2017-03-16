@@ -20,6 +20,16 @@
 import bpy
 from bpy.types import Panel
 
+class DataButtonsPanel:
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+
+    @classmethod
+    def poll(cls, context):
+        engine = context.scene.render.engine
+        return context.lamp and (engine in cls.COMPAT_ENGINES)
+    
 class TheBountyDataButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -31,24 +41,48 @@ class TheBountyDataButtonsPanel():
         engine = context.scene.render.engine
         return context.lamp and (engine in cls.COMPAT_ENGINES)
 
+class DATA_PT_context_lamp(TheBountyDataButtonsPanel, Panel):
+    bl_label = ""
+    bl_options = {'HIDE_HEADER'}
+    #COMPAT_ENGINES = {'THEBOUNTY'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        ob = context.object
+        lamp = context.lamp
+        space = context.space_data
+
+        split = layout.split(percentage=0.65)
+
+        texture_count = len(lamp.texture_slots.keys())
+
+        if ob:
+            split.template_ID(ob, "data")
+        elif lamp:
+            split.template_ID(space, "pin_id")
+
+        if texture_count != 0:
+            split.label(text=str(texture_count), icon='TEXTURE')
+            
 # Inherit Lamp data block
-from bl_ui import properties_data_lamp
-properties_data_lamp.DATA_PT_context_lamp.COMPAT_ENGINES.add('THEBOUNTY')
-del properties_data_lamp
+#from bl_ui import properties_data_lamp
+#properties_data_lamp.DATA_PT_context_lamp.COMPAT_ENGINES.add('THEBOUNTY')
+#del properties_data_lamp
 
 # povman:  try to use same method than material panels
 class TheBountyLightTypePanel(TheBountyDataButtonsPanel):
-    COMPAT_ENGINES = {'THEBOUNTY'}
+    #COMPAT_ENGINES = {'THEBOUNTY'}
 
     @classmethod
     def poll(cls, context):
         lamp = context.lamp
         
-        if context.scene.render.engine not in cls.COMPAT_ENGINES:
+        if context.scene.render.engine != 'THEBOUNTY':
             return False
         #
         #return (check_material(mat) and (mat.bounty.mat_type in cls.material_type) and (context.lamp.bounty.nodetree == ""))
-        return (lamp and lamp.type in cls.lamp_type) # and (context.lamp.bounty.nodetree == "")
+        return (lamp and lamp.type in cls.lamp_type and lamp.bounty.lightree == "")
 
 #----------------------------------------------------------
 #
@@ -65,15 +99,13 @@ def panel_node_draw(layout, lamp, output_type): #, input_name):
     return True
 
 def find_node(lamp, nodetypes):
-    if not (lamp and lamp.bounty and lamp.bounty.lightree):
+    if not (lamp and lamp.bounty and lamp.bounty.lightree !=""):
         return None
-        
-    light_tree =  lamp.bounty.lightree
     
-    if light_tree == '':
+    if lamp.bounty.lightree == '':
         return None
     #
-    ltree = bpy.data.node_groups[light_tree]
+    ltree = bpy.data.node_groups[lamp.bounty.lightree]
     
     for node in ltree.nodes:
         nt = getattr(node, "bl_idname", None)
@@ -104,11 +136,13 @@ class THEBOUNTY_PT_preview(Panel):
     bl_label = "Preview"
     COMPAT_ENGINES = {'THEBOUNTY'}
 
+    
     @classmethod
     def poll(self, context):
+        lightree = context.lamp.bounty.lightree
         engine = context.scene.render.engine
-        return context.lamp and (engine in self.COMPAT_ENGINES)
-
+        return context.lamp and (engine == 'THEBOUNTY' and lightree =='')
+    
     def draw(self, context):
         self.layout.template_preview(context.lamp)
 
@@ -120,8 +154,8 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
     @classmethod
     def poll(cls, context):
         engine = context.scene.render.engine
-        return context.lamp and (engine in cls.COMPAT_ENGINES)
-    
+        return context.lamp and (engine == 'THEBOUNTY')
+    '''
     def draw_spot_shape(self, context):
         layout = self.layout
         lamp = context.lamp.bounty
@@ -159,7 +193,7 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
             sub.prop(lamp, "size_y", text="Size Y")
         col = layout.row()
         col.prop(lamp, "distance")
-        
+    '''    
     def draw(self, context):
         #
         layout = self.layout
@@ -168,16 +202,21 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
         # show nodetree button
         #----------------------------------------------------
         #if not 
-        panel_node_draw(layout, lamp, 'LightOutputNode')
-        layout.prop(lamp, "type", expand=True)
+        
+        #node_tree_selector_draw(layout, mat, 'MaterialOutputNode')#:
         node_tree_selector_draw(layout, lamp, 'LightOutputNode')
+        if not panel_node_draw(layout, lamp, 'LightOutputNode'):
+            layout.prop(lamp, "type", expand=True) 
+            #row = self.layout.row(align=True)    
+        
+        #panel_node_draw(layout, lamp, 'LightOutputNode') 
             
-        layout.prop(lamp, "color")
-        layout.prop(lamp.bounty, "energy", text="Power")  
-        self.draw_panels(context, layout, lamp)
+        #layout.prop(lamp, "color")
+        #layout.prop(lamp.bounty, "energy", text="Power")  
+        #self.draw_panels(context, layout, lamp)
                  
             
-        
+    '''    
     def draw_panels(self, context, layout, lamp):    
         # commons values
         #layout.prop(lamp, "type", expand=True)
@@ -225,7 +264,7 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
                 col.prop(lamp.bounty, "sphere_radius")
                 col.prop(lamp.bounty, "samples")
                 col.prop(lamp.bounty, "create_geometry", toggle=True)
-'''
+    '''
 
 #
 class THEBOUNTY_PT_Directional_lamp(TheBountyLightTypePanel, Panel):
@@ -324,18 +363,20 @@ class THEBOUNTY_PT_Spot_lamp(TheBountyLightTypePanel, Panel):
         # commons values
         layout.prop(lamp, "color")
         layout.prop(lamp.bounty, "energy", text="Power")
-        layout.prop(lamp.bounty, "ies_file")
-        if lamp.bounty.ies_file =="":
+        row = layout.row()
+        row.prop(lamp.bounty, "use_IES")
+        row.prop(lamp.bounty, "ies_file", text='')
+        if not lamp.bounty.use_IES: # =="":
             layout.prop(lamp.bounty, "photon_only", toggle=True)
         col = layout.column(align=True)
         if not lamp.bounty.photon_only:
             col.prop(lamp.bounty, "spot_soft_shadows", toggle=True)
             if lamp.bounty.spot_soft_shadows:
                 col.prop(lamp.bounty, "samples")
-                if lamp.bounty.ies_file =="":
+                if not lamp.bounty.use_IES or lamp.bounty.ies_file =="":
                     col.prop(lamp.bounty, "shadow_fuzzyness")
              
-        if lamp.bounty.ies_file =="":
+        if not lamp.bounty.use_IES: #.ies_file =="":
             self.draw_spot_shape(context)
     #
     def draw_spot_shape(self, context):
@@ -361,7 +402,7 @@ class THEBOUNTY_PT_Spot_lamp(TheBountyLightTypePanel, Panel):
 
 # end type panel test -----------------------------------------------------------------
 
-'''      
+      
 
 
 if __name__ == "__main__":  # only for live edit.
