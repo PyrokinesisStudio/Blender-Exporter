@@ -50,9 +50,11 @@ class THEBOUNTY_PT_pass_settings(RenderButtonsPanel, Panel):
         sub = col.column()
         sub.enabled = scene.gs_transp_shad
         sub.prop(scene, "gs_shadow_depth")
+        #
         sub = col.column()
         sub.enabled = scene.gs_clay_render
-        sub.prop(scene, "gs_clay_col", text="")
+        sub.prop_search(scene, 'gs_clay_mat', bpy.data, 'materials')
+        
 
 class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
     bl_label = "General Settings"
@@ -71,8 +73,6 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         split = layout.split()
         col = split.column()
         col.prop(scene, "gs_type_render", text="")
-        #sub = col.column()
-        #sub.enabled = scene.gs_type_render == "into_blender"
         col.prop(scene, "gs_tile_order", text="")
 
         col = split.column()
@@ -82,8 +82,6 @@ class THEBOUNTY_PT_general_settings(RenderButtonsPanel, Panel):
         #
         threadMode ="Threads (Auto)" if scene.gs_threads == 0 else "Threads used"
         col.prop(scene, "gs_threads", text= threadMode)
-        #sub = col.column()
-        #sub.enabled = scene.gs_type_render == "into_blender"
         col.prop(scene, "gs_tile_size")
 
         split = layout.split()
