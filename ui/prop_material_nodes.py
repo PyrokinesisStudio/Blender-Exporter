@@ -117,7 +117,7 @@ bounty_node_class.append(TheBountyMaterialNode)
 #------------------------------------------------
 class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
     bl_idname = 'MaterialOutputNode'
-    bl_label = 'Output Material'
+    bl_label = 'output'
     bl_icon = 'NODETREE'
     bl_width_min = 120
     bl_width_max = 130
@@ -134,17 +134,20 @@ class TheBountyMaterialOutputNode(Node, TheBountyMaterialNode):
             layout.label(context.material.name)
 
     def getParams(self):
-        #
+        pass
+    '''
         self.params.set()
         if self.inputs['Surface'].is_linked:
             input = self.inputs['Surface'].links[0].from_node
+            print('input: ', input)
             linked_node = socket.links[0].from_node
             if input in validShaderTypes:
                 self.params = input.getParams()
             else:
-                bpy.data.node_groups[mat.bounty.nodetree].links.remove(inputNodeOut.links[0])
+                bpy.data.node_groups[mat.bounty.nodetree].links.remove(self.links[0])#(inputNodeOut.links[0])
         #
         return self.params
+    '''
 
 bounty_node_class.append(TheBountyMaterialOutputNode)
 
@@ -182,8 +185,6 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         self.inputs.new('bumpmap', 'Bumpmap')
 
     def draw_buttons(self, context, layout):
-        # Additional buttons displayed on the node.
-        #mat = context.active_object.active_material
 
         col = layout.column()
         col.prop(self, "transmit", slider=True)
@@ -196,30 +197,23 @@ class TheBountyShinyDiffuseShaderNode(Node, TheBountyMaterialNode):
         col.prop(self, "fresnel_effect", toggle=True)
         col.prop(self, "IOR_reflection")
         col.prop(self, "diffuse_reflect", text="Diffuse reflect")
-
+    
+    '''
     def getParams(self):
         #
         params = dict()
         #print(self.inputs['Diffuse'].is_linked)
-        if self.inputs['Transparency'].is_linked:
-            params['transparency'] = self.inputs['Transparency'].getParams()
+        params['transparency'] = self.inputs['Transparency'].getParams()
         params['translucency'] = self.inputs['Translucency'].getParams()
         params['specular_reflect'] = self.inputs['Specular'].getParams()
         params['diffuse_color'] = self.inputs['Diffuse'].getParams()
         params['mirror_color'] = self.inputs['Mirror'].getParams()
         params['Bumplayer'] = self.inputs['Bumpmap'].getParams()
         #
-        '''
-        self.shinyparams['fresnel_effect'] = self.fresnel_effect
-        self.shinyparams['diffuse_brdf'] = self.diffuse_brdf
-        self.shinyparams['transmit_filter'] = self.transmit
-        self.shinyparams['IOR'] = self.IOR_reflection
-        self.shinyparams['emit'] = self.emittance
-        self.shinyparams['sigma'] = self.sigma
-        '''
         print('shiny: ', self.params)
 
         return params
+    '''
 #
 bounty_node_class.append(TheBountyShinyDiffuseShaderNode)
 
@@ -360,7 +354,6 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     bl_idname = 'GlassShaderNode'
     bl_label = 'glass'
     bl_icon = 'MATERIAL'
-    glassparams = {}
 
     # properties..
     dispersion_power = MatProperty.dispersion_power
@@ -397,9 +390,11 @@ class TheBountyGlassShaderNode(Node, TheBountyMaterialNode):
     #
     def getParams(self):
         #
-        self.glassparams['Mirror']= self.inputs['Mirror'].getParams()
-        self.glassparams['Bumpmap'] = self.inputs['Bumpmap'].getParams()
-        return self.glassparams
+        params = dict()
+        params['Mirror']= self.inputs['Mirror'].getParams()
+        params['Bumpmap'] = self.inputs['Bumpmap'].getParams()
+        
+        return params
 #
 bounty_node_class.append(TheBountyGlassShaderNode)
 
@@ -465,6 +460,9 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     # test
     default_value = TexProperty.zero_to_one
     from_dupli = TexProperty.bool_option
+    #
+    use_alpha = TexProperty.use_alpha
+    interpolation_type = TexProperty.interpolation_type
 
     def init(self, context):
         self.outputs.new('NodeSocketColor', 'Color')
@@ -472,7 +470,10 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
     def draw_buttons(self, context, layout):
         #
         layout.prop_search(self, 'image_map', bpy.data, "images")
-        layout.prop(self, 'influence', text='Texture Influence', slider=True)
+        layout.prop(self, 'influence', text='Texture Amount', slider=True)
+        layout.prop(self, "use_alpha", text="Use Alpha")
+        layout.prop(self,"interpolation_type")
+        layout.separator()
         # blending
         row = layout.row()
         row.prop(self, 'blend')
@@ -497,7 +498,7 @@ class TheBountyImageMapNode(Node, TheBountyMaterialNode):
         col = row.column(align=True)
         col.label('Scale')
         col.prop(self, 'scale', text='')
-
+        
     def getParams(self):
         #
         params=dict()

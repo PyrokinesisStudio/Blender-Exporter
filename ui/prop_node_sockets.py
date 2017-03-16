@@ -30,10 +30,12 @@ enum_sockect = (0.0, 0.0, 1.0, 1.0)
 #
 bounty_socket_class=[]
 
+'''
 glossy_layers = ["diffuse_shader", "glossy_shader", "glossy_reflect_shader", "bump_shader"]
 glass_layers = ["mirror_color_shader", "bump_shader"]
 shiny_layers = ["diffuse_shader", "mirror_color_shader", "transparency_shader", "translucency_shader", "mirror_shader", "bump_shader"]
 translucent_layers = ["diffuse_shader", "glossy_shader", "glossy_reflect_shader", "bump_shader", "sigmaA_shader", "sigmaS_shader"]
+'''
 
 class light_color_socket(NodeSocket):
     #-----------------------
@@ -104,8 +106,7 @@ class diffuse_color_socket(NodeSocket):
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Diffuse Color' if self.is_linked else 'Diffuse color layer'
-        #                     
+        label = 'Diffuse color layer' if self.is_linked else 'Diffuse Color'                   
         col.prop(self, "diff_color", text= label )
     
     def getParams(self):
@@ -113,7 +114,6 @@ class diffuse_color_socket(NodeSocket):
         params['color']= [c for c in self.diff_color]
         #
         if self.is_linked:
-            #print('linked to: ', self.links[0].from_node.bl_label)
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
                 params['diffuse_shader']='diff_layer'
@@ -136,8 +136,7 @@ bounty_socket_class.append(diffuse_color_socket)
 class translucency_socket(NodeSocket):
     bl_idname = 'translucency'
     bl_label = 'Translucency Socket'
-    matParams={}
-    validNodes = ['Image', 'Clouds']  
+    validNodes = ['Image']  
     
     translucency = MatProperty.translucency    
     
@@ -161,14 +160,15 @@ class translucency_socket(NodeSocket):
         col.prop(self, "translucency", slider=True)
     #
     def getParams(self):
-        #                
-        self.matParams['translucency']= self.translucency
+        #
+        params = dict()                
+        params['translucency']= self.translucency
         #
         if self.is_linked:
             linked_node = self.links[0].from_node
-            self.matParams['translucency_shader'] = 'translu_layer'
-            self.matParams['TranslucencyLayer'] = linked_node.getParams()
-        return self.matParams
+            params['translucency_shader'] = 'translu_layer'
+            params['TranslucencyLayer'] = linked_node.getParams()
+        return params
     # 
     def draw_color(self, context, node):
         return (float_socket)
@@ -181,8 +181,7 @@ bounty_socket_class.append(translucency_socket)
 class transparency_socket(NodeSocket):
     bl_idname = 'transparency'
     bl_label = 'Transparency Socket'
-    matParams = {}
-    validNodes = ['Image', 'Clouds'] # for review
+    validNodes = ['Image']
     
     transparency = MatProperty.transparency
     
@@ -206,15 +205,16 @@ class transparency_socket(NodeSocket):
         col.prop(self, "transparency", slider=True)    
     #
     def getParams(self):
+        params = dict()
         #self.matParams['transparency']= self.transparency
         #
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
-                self.matParams['transparency_shader']='transp_layer'
-                self.matParams['TransparencyLayer']= linked_node.getParams()
+                params['transparency_shader']='transp_layer'
+                params['TransparencyLayer']= linked_node.getParams()
         
-        return self.matParams
+        return params
                 
     #
     def draw_color(self, context, node):
@@ -228,8 +228,7 @@ bounty_socket_class.append(transparency_socket)
 class specular_reflect_socket(NodeSocket):
     bl_idname = 'specular'
     bl_label = 'Specular Socket'
-    matParams = {}
-    validNodes = ['Image', 'Clouds'] # for review
+    validNodes = ['Image', 'Clouds']
     
     specular_reflect = MatProperty.specular_reflect
     
@@ -252,15 +251,16 @@ class specular_reflect_socket(NodeSocket):
         col.prop(self, "specular_reflect", slider=True)     
     #
     def getParams(self):
-        self.matParams['specular_reflect']= self.specular_reflect
+        params = dict()
+        params['specular_reflect']= self.specular_reflect
         #
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
-                self.matParams['mirror_shader']='mirr_layer'
-                self.matParams['MirrorLayer']= linked_node.getParams()
+                params['mirror_shader']='mirr_layer'
+                params['MirrorLayer']= linked_node.getParams()
                 
-        return self.matParams
+        return params
     
     def draw_color(self, context, node):
         return (float_socket)
@@ -274,7 +274,6 @@ bounty_socket_class.append(specular_reflect_socket)
 class specular_color_socket(NodeSocket):
     bl_idname = 'mirror'
     bl_label = 'Mirror Color Socket'
-    matParams = {}
     validNodes = ['Image']
     
     mirror_color = MatProperty.mirror_color
@@ -290,24 +289,22 @@ class specular_color_socket(NodeSocket):
     #        
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label="Specular color"
-        if self.is_linked:
-            label="Specular Color layer"
+        label="Specular Color layer" if self.is_linked else "Specular color"
         col.prop(self, "mirror_color", text=label)
     #
     def getParams(self):
-        #
-        self.matParams['mirror_color']= [c for c in self.mirror_color]
+        params = {}
+        params['mirror_color']= [c for c in self.mirror_color]
         
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
-                self.matParams['mirror_color_shader']='mircol_layer'
-                self.matParams['MirrorColorLayer']= linked_node.getParams()
+                params['mirror_color_shader']='mircol_layer'
+                params['MirrorColorLayer']= linked_node.getParams()
             else:
                 print('Not valid node: ', linked_node.bl_label)
         #
-        return self.matParams
+        return params
     #
     def draw_color(self, context, node):
         return (color_socket)
@@ -323,7 +320,6 @@ class glossy_color_socket(NodeSocket):
     #-----------------------
     bl_idname = 'glossy_color'
     bl_label = 'Color Socket'
-    params = {}
     
     glossy_color = MatProperty.glossy_color
     
@@ -334,17 +330,18 @@ class glossy_color_socket(NodeSocket):
     def default_value_set(self, value):
         self.glossy_color = value
         
-    default_value =  bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
+    default_value =  bpy.props.FloatVectorProperty(subtype='COLOR', get=default_value_get, set=default_value_set)
     
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
         label = 'Glossy Color Layer' if self.is_linked else 'Glossy Color'            
         #                     
-        col.prop(self, "glossy_color", text= label )
+        col.prop(self, "glossy_color", text = label )
     #
     def getParams(self):
-        self.params['glossy_color']= [c for c in self.glossy_color]
+        params = dict()
+        params['glossy_color']= [c for c in self.glossy_color]
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
@@ -352,7 +349,7 @@ class glossy_color_socket(NodeSocket):
             except:
                 print('Not export values on node')
         #
-        return self.params
+        return params
     #
     def draw_color(self, context, node):
         return (color_socket)
@@ -373,7 +370,7 @@ class glossy_reflect_socket(NodeSocket):
         return self.glossy_reflect
     
     def default_value_set(self, value):
-        self.glossy_reflect  = value
+        self.glossy_reflect = value
         
     default_value = bpy.props.FloatProperty(
                     get=default_value_get, 
@@ -386,7 +383,8 @@ class glossy_reflect_socket(NodeSocket):
     
     #
     def getParams(self):
-        self.params['glossy_reflect']= self.glossy_reflect
+        params = dict()
+        params['glossy_reflect']= self.glossy_reflect
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
@@ -394,7 +392,7 @@ class glossy_reflect_socket(NodeSocket):
             except:
                 print('Not export values on node')
         #
-        return self.params
+        return params
     #
     def draw_color(self, context, node):
         return (float_socket)
@@ -407,7 +405,6 @@ bounty_socket_class.append(glossy_reflect_socket)
 class glass_mirror_color_socket(NodeSocket):
     bl_idname = 'glass_mir_col'
     bl_label = 'Mirror Socket'
-    params = {}
     
     glass_mir_col = MatProperty.glass_mir_col
     
@@ -423,8 +420,7 @@ class glass_mirror_color_socket(NodeSocket):
     def draw(self, context, layout, node, text):
         #
         col = layout.column()
-        label = "Reflect layer" if self.is_linked else "Mirror color"
-        
+        label = "Reflect layer" if self.is_linked else "Mirror color"        
         col.prop(self, "glass_mir_col", text="")
     #
     def draw_color(self, context, node):
@@ -436,7 +432,6 @@ bounty_socket_class.append(glass_mirror_color_socket)
 class scatter_color_socket(NodeSocket): 
     bl_idname = 'scatter_color'
     bl_label = 'Color Socket'
-    matParams = {}
     validNodes = ['Image', 'Clouds']
     
     #properties..
@@ -449,29 +444,27 @@ class scatter_color_socket(NodeSocket):
     def default_value_set(self, value):
         self.scatter_color = value
         
-    default_value =  bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
+    default_value = bpy.props.FloatVectorProperty( subtype='COLOR', get=default_value_get, set=default_value_set)
     
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Scatter (SigmaS)'
-        if self.is_linked: # and not self.is_output:
-            label = 'Scatter color layer'
-        #                     
+        label = 'Scatter color layer' if self.is_linked else 'Scatter (SigmaS)'
         col.prop(self, "scatter_color", text= label )
     
     def getParams(self):
-        self.matParams['scatter_color']= [c for c in self.scatter_color]
+        params = dict()
+        params['scatter_color']= [c for c in self.scatter_color]
         #
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
-                self.matParams['scatter_shader']='scatter_layer'
-                self.matParams['ScatterLayer']= linked_node.getParams()
+                params['scatter_shader']= 'scatter_layer'
+                params['ScatterLayer']= linked_node.getParams()
             else:
                 print('Not valid node: ', linked_node.bl_label)
                 
-        return self.matParams
+        return params
     #
     def draw_color(self, context, node):
         return (color_socket)
@@ -501,24 +494,22 @@ class absorption_color_socket(NodeSocket):
     #         
     def draw(self, context, layout, node, text):
         col = layout.column()
-        label = 'Absorption (SigmaA)'
-        if self.is_linked: # and not self.is_output:
-            label = 'Absorption color layer'
-        #                     
+        label = 'Absorption color layer' if self.is_linked else 'Absorption (SigmaA)'                               
         col.prop(self, "absorption_color", text= label )
     
     def getParams(self):
-        self.matParams['absorption_color']= [c for c in self.absorption_color]
+        params = dict()
+        params['absorption_color']= [c for c in self.absorption_color]
         #
         if self.is_linked:
             linked_node = self.links[0].from_node
             if linked_node.bl_label in self.validNodes:
-                self.matParams['absorption_shader']='absorption_layer'
-                self.matParams['AbsorptionLayer']= linked_node.getParams()
+                params['absorption_shader']='absorption_layer'
+                params['AbsorptionLayer']= linked_node.getParams()
             else:
                 print('Not valid node: ', linked_node.bl_label)
                 
-        return self.matParams
+        return params
     #
     def draw_color(self, context, node):
         return (color_socket)
@@ -551,7 +542,7 @@ class bumpmap_socket(NodeSocket):
     def default_value_set(self, value):
         self.bumpmap = value
     
-    default_value =  bpy.props.BoolProperty( get=default_value_get, set=default_value_set)
+    default_value = bpy.props.BoolProperty( get=default_value_get, set=default_value_set)
             
     # draw socket
     def draw(self, context, layout, node, text):
@@ -559,26 +550,19 @@ class bumpmap_socket(NodeSocket):
         label="BumpMap texture Layer" if self.is_linked else "BumpMap"
         #
         if self.is_linked:
-            #
             col.prop(self, "bumpmap", text=label)
             col.prop(self, "bump")
         else:
             col.label(label)
             
-    #
     def getParams(self):
         params = dict()
         params['bumpmap']= self.bumpmap
         if self.is_linked:
             linked_node = self.links[0].from_node
-            try:
-                params=linked_node.getParams(self)
-            except:
-                print('Not export values on node')
-        #
+            params=linked_node.getParams(self)
         return params
-                
-    #
+    
     def draw_color(self, context, node):
         return (float_socket)
 #
@@ -587,7 +571,6 @@ bounty_socket_class.append(bumpmap_socket)
 class mapping_socket(NodeSocket):
     bl_idname = 'mapping'
     bl_label = 'Texture Mapping Socket'
-    params = {}
     
     enum_texture_mapping_mode = [
         ('ORCO','Generated',""),
@@ -618,26 +601,25 @@ class mapping_socket(NodeSocket):
             items=enum_texture_mapping_mode,
             default='UV',
     )
-    default_value =  bpy.props.EnumProperty(items=enum_default_texture_mapping_mode, set=default_value_set)
-    #
+    default_value = bpy.props.EnumProperty(items=enum_default_texture_mapping_mode, set=default_value_set)
+    
     def draw(self, context, layout, node, text):
         if self.is_linked:
             layout.label('Mapping Coord.')
         else:
             layout.prop(self, "mapping_type")   
-    #
-    def exportValues(self):
-        self.params['mapping_type']= self.mapping_type
+
+    def getParams(self):
+        params = dict()
+        params['mapping_type']= self.mapping_type
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
-                linked_node.exportValues(self)
+                linked_node.getParams(self)
             except:
                 print('Not export values on node')
-        #
-        return self.params
+        return params
                 
-    #
     def draw_color(self, context, node):
         return (float_socket)
 #
@@ -649,7 +631,6 @@ bounty_socket_class.append(mapping_socket)
 class projection_socket(NodeSocket):
     bl_idname = 'projection'
     bl_label = 'Texture Projection Socket'
-    params = {}
 
     enum_texture_projection_mode = [
         ('FLAT',   'Flat',  "Flat texture projection"),
@@ -673,7 +654,7 @@ class projection_socket(NodeSocket):
             items=enum_texture_projection_mode,
             default='FLAT',
     )    
-    default_value =  bpy.props.EnumProperty(items=enum_default_texture_projection_mode, set=default_value_set)
+    default_value = bpy.props.EnumProperty(items=enum_default_texture_projection_mode, set=default_value_set)
     #
     def draw(self, context, layout, node, text):
         col = layout.column()
@@ -683,15 +664,16 @@ class projection_socket(NodeSocket):
             col.prop(self, "projection_type")  
     #
     def getParams(self):
+        params = dict()
         #self.params['projection_type']= self.projection_type
         if self.is_linked:
             linked_node = self.links[0].from_node
             try:
-                self.params=linked_node.exportValues(self)
+                params=linked_node.getParams(self)
             except:
                 print('Not export values on node')
         #
-        return self.params
+        return params
         
     #
     def draw_color(self, context, node):
