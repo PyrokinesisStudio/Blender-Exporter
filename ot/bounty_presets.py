@@ -19,7 +19,6 @@
 # <pep8 compliant>
 
 from bl_operators.presets import AddPresetBase
-#from bpy.props import StringProperty, EnumProperty, BoolProperty
 import bpy
 import os
 
@@ -53,54 +52,54 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
         if mat.mat_type in {"glossy", "coated_glossy"}:
             cmir = mat.coat_mir_col
             values = [
-                (m +".mat_type", self.to_str(mat.mat_type)),
                 (ms +".diffuse_color",(diff[0], diff[1], diff[2])),
-                (m +".brdf_type", brdf),
-                (m +".sigma", mat.sigma),
-                (m +".diffuse_reflect", mat.diffuse_reflect),
                 (m +".glossy_color", (glos[0], glos[1], glos[2])),
-                (m +".exponent", mat.exponent),
+                (m +".coat_mir_col", (cmir[0], cmir[1], cmir[2])),
+                (m +".diffuse_reflect", mat.diffuse_reflect),
+                (m +".mat_type", self.to_str(mat.mat_type)),
+                (m +".glossy_reflect", mat.glossy_reflect),
+                (m +".IOR_reflection", mat.IOR_reflection),
                 (m +".anisotropic", mat.anisotropic),
+                (m +".as_diffuse", mat.as_diffuse),
+                (m +".exponent", mat.exponent),
                 (m +".exp_u", mat.exp_u),
                 (m +".exp_v", mat.exp_v),
-                (m +".glossy_reflect", mat.glossy_reflect),
-                (m +".as_diffuse", mat.as_diffuse),
-                (m +".coat_mir_col", (cmir[0], cmir[1], cmir[2])),
-                (m +".IOR_reflection", mat.IOR_reflection),
+                (m +".sigma", mat.sigma),
+                (m +".brdf_type", brdf),
             ]
         elif mat.mat_type in {'glass', 'rough_glass'}:
             filt = mat.filter_color
             absp = mat.absorption
             mirc = mat.glass_mir_col
             values = [
+                (m +".glass_mir_col", (mirc[0], mirc[1], mirc[2])),
+                (m +".filter_color", (filt[0], filt[1], filt[2])),
+                (m +".absorption", (absp[0], absp[1], absp[2])),
+                (m +".dispersion_power", mat.dispersion_power),
+                (m +".absorption_dist", mat.absorption_dist),
                 (m +".mat_type", self.to_str(mat.mat_type)),
                 (m +".IOR_refraction", mat.IOR_refraction),
-                (m +".absorption", (absp[0], absp[1], absp[2])),
-                (m +".absorption_dist", mat.absorption_dist),
-                (m +".dispersion_power", mat.dispersion_power),
                 (m +".refr_roughness", mat.refr_roughness),
-                (m +".filter_color", (filt[0], filt[1], filt[2])),
-                (m +".glass_mir_col", (mirc[0], mirc[1], mirc[2])),
                 (m +".glass_transmit", mat.glass_transmit),
                 (m +".fake_shadows", mat.fake_shadows),                
             ]
         elif mat.mat_type == 'shinydiffusemat':
-            mirr = mat.mirr_color
+            mircol = mat.mirror_color
             values = [
-                (m +".mat_type", self.to_str(mat.mat_type)),
+                (m +".mirr_color", (mircol[0], mircol[1], mircol[2])),
                 (ms +".diffuse_color", (diff[0], diff[1], diff[2])),
-                (m +".mirr_color", (mirr[0], mirr[1], mirr[2])),
                 (m +".specular_reflect", mat.specular_reflect),
+                (m +".specular_reflect", mat.specular_reflect),
+                (m +".diffuse_reflect", mat.diffuse_reflect),
+                (m +".transmit_filter", mat.transmit_filter),
+                (m +".mat_type", self.to_str(mat.mat_type)),
+                (m +".fresnel_effect", mat.fresnel_effect),
+                (m +".IOR_reflection", mat.IOR_reflection),
                 (m +".transparency", mat.transparency),
                 (m +".translucency", mat.translucency),
                 (m +".emittance", mat.emittance),
-                (m +".diffuse_reflect", mat.diffuse_reflect),
-                (m +".transmit_filter", mat.transmit_filter),
-                (m +".specular_reflect", mat.specular_reflect),
-                (m +".fresnel_effect", mat.fresnel_effect),
-                (m +".IOR_reflection", mat.IOR_reflection),
+                (m +".sigma", mat.sigma),
                 (m +".brdf_type", brdf),
-                (m +".sigma = ", mat.sigma),
             ]
                     
         elif mat.mat_type == 'translucent':
@@ -108,18 +107,18 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
             sigmA = mat.sssSigmaA
             sigmS = mat.sssSigmaS
             values = [
-                (m +".mat_type", self.to_str(mat.mat_type)),
-                (ms +".diffuse_color", (diff[0], diff[1], diff[2])),
-                (m +".diffuse_reflect", mat.diffuse_reflect),
-                (m +".glossy_color", (glos[0], glos[1], glos[2])),
-                (m +".glossy_reflect", mat.glossy_reflect),
                 (m +".sssSpecularColor", (sSpec[0], sSpec[1], sSpec[2])),
-                (m +".exponent", mat.exponent),
+                (ms +".diffuse_color", (diff[0], diff[1], diff[2])),
+                (m +".glossy_color", (glos[0], glos[1], glos[2])),
                 (m +".sssSigmaS", (sigmS[0], sigmS[1], sigmS[2])),
-                (m +".sssSigmaS_factor", mat.sssSigmaS_factor),
-                (m +".phaseFuction", mat.phaseFuction),
                 (m +".sssSigmaA", (sigmA[0], sigmA[1], sigmA[2])),
+                (m +".sssSigmaS_factor", mat.sssSigmaS_factor),
+                (m +".diffuse_reflect", mat.diffuse_reflect),
+                (m +".mat_type", self.to_str(mat.mat_type)),
+                (m +".glossy_reflect", mat.glossy_reflect),
+                (m +".phaseFuction", mat.phaseFuction),
                 (m +".sss_transmit", mat.sss_transmit),
+                (m +".exponent", mat.exponent),
                 (m +".sssIOR", mat.sssIOR),
             ]
         
@@ -128,8 +127,8 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
             values = [
                 ("mat.mat_type", self.to_str(mat.mat_type)),
                 ("mat.blendOne", self.to_str(mat.blendOne)),
-                ("mat.blend_value", mat.blend_value),
                 ("mat.blendTwo", self.to_str(mat.blendTwo)),
+                ("mat.blend_value", mat.blend_value),
             ]
             # blend one
             mat1 = bpy.data.materials[mat.blendOne]            
@@ -142,7 +141,12 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
             values += self.define_values(mat2, 'mat2')
             
         return values
-   
+    # test
+    remove_active = bpy.props.BoolProperty(
+            default=False,
+            options={'HIDDEN', 'SKIP_SAVE'},
+    )
+       
     def execute(self, context):
         #
         material = bpy.context.object.active_material
@@ -175,6 +179,9 @@ class TheBountyMaterialPresets(AddPresetBase, bpy.types.Operator):
                     pfile.write('\n')
                 #
                 self.report({'INFO'}, "File preset write sucessful: "+ str(filepath))
+                
+        else:
+            print('Remove presets')
         
                  
         return {'FINISHED'}
