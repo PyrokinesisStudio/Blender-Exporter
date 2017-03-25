@@ -95,14 +95,6 @@ class TheBounty_PT_post_processing(RenderButtonsPanel, Panel):
         col = split.column()
         col.prop(rd, "dither_intensity", text="Dither", slider=True)
 
-'''
-class YAF_PT_convert(RenderButtonsPanel, Panel):
-    bl_label = "Convert old YafaRay Settings"
-
-    def draw(self, context):
-        layout = self.layout
-        layout.column().operator("data.convert_yafaray_properties", text="Convert data from 2.4x")
-'''
 
 if __name__ == "__main__":  # only for live edit.
     #import bpy
