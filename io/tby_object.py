@@ -41,7 +41,6 @@ class exportObject(object):
         self.is_preview = preview
 
     def setScene(self, scene):
-
         self.scene = scene
 
     def createCamera(self):
@@ -195,8 +194,7 @@ class exportObject(object):
                             self.writeParticleStrands(obj, matrix, pSys)
 
         else:  # The rest of the object types
-            self.writeMesh(obj, matrix)
-    
+            self.writeMesh(obj, matrix)    
     
     def writeInstanceBase(self, object):
 
@@ -480,8 +478,7 @@ class exportObject(object):
             for mat_slots in [ms for ms in matSlots if ms.material in self.materialMap]:
                 ymaterial = self.materialMap[mat_slots.material]
 
-        return ymaterial
-    
+        return ymaterial    
     
     def writeParticleStrands(self, obj, matrix, pSys):
 
@@ -538,8 +535,7 @@ class exportObject(object):
             
         # We only need to render emitter object once
         if pSys.settings.use_render_emitter:
-            self.writeMesh(obj, matrix)
-                        
+            self.writeMesh(obj, matrix)                        
             
     def bakeParticleStrands(self, obj, matrix, pSys):
         #------------------------------------------
@@ -724,8 +720,7 @@ class exportObject(object):
                     self.writeMesh(obj, matrix)
                     yi.printInfo('Writing Hair emitter')
         
-        return
-    
+        return    
         
     def generate_hair_curves( self, obj, psys, crv_ob, crv_data, matrix):
         #

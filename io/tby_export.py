@@ -27,11 +27,11 @@ from .. import PLUGIN_PATH
 from .tby_object import exportObject
 from .tby_light  import exportLight
 from .tby_world  import exportWorld
-from .tby_integrator import exportIntegrator
+from .tby_integrator import exportSceneIntegrators
 from . import tby_scene
 from .tby_texture import exportTexture
 from .tby_material import TheBountyMaterialWrite
-from bpy import context
+#from bpy import context
 
 switchFileType = {
     'PNG': 'png',
@@ -49,7 +49,6 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
     bl_label = "TheBounty Render"
     prog = 0.0
     tag = ""
-    sceneMat = []
     
     #--------------------------------
     # set console  verbosity levels
@@ -80,41 +79,47 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         self.yi.loadPlugins(PLUGIN_PATH)
                 
         # process geometry
-        self.geometry = exportObject(self.yi, self.materialMap, self.is_preview)
+        self.sceneGeometry = exportObject(self.yi, self.materialMap, self.is_preview)
              
         # process lights
-        self.lights = exportLight(self.yi, self.is_preview)
+        self.sceneLights = exportLight(self.yi, self.is_preview)
               
         # process environment world
-        self.environment = exportWorld(self.yi)
+        self.sceneEnvironment = exportWorld(self.yi)
               
         # process lighting integrators..
-        self.lightIntegrator = exportIntegrator(self.yi, self.is_preview)
+        self.sceneIntegrators = exportSceneIntegrators(self.yi, self.is_preview)
               
         # textures before materials
-        self.textures = exportTexture(self.yi)
+        self.sceneTextures = exportTexture(self.yi)
              
         # and materials
-        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.textures.loadedTextures)
+        self.setMaterial = TheBountyMaterialWrite(self.yi, self.materialMap, self.sceneTextures.loadedTextures)
 
     def exportScene(self):
         #
-        self.exportTextures()
-        self.exportMaterials()
-        self.geometry.setScene(self.scene)
-        self.exportObjects()
-        self.geometry.createCamera()
-        self.environment.setEnvironment(self.scene)
+        self.createDefaultMats()
+        self.exportSceneTextures()
+        self.exportSceneMaterials()
+        self.sceneGeometry.setScene(self.scene)
+        self.exportSceneObjects()
+        self.sceneGeometry.createCamera()
+        self.sceneEnvironment.setEnvironment(self.scene)
+        #
+        self.sceneIntegrators.exportSurfaceIntegrator(self.scene.bounty)
+        self.sceneIntegrators.exportVolumeIntegrator(self.scene)
+
+        # must be called last as the params from here will be used by render()
+        tby_scene.exportRenderSettings(self.yi, self.scene)
     
-    def exportTextures(self):
+    def exportSceneTextures(self):
         # find all used scene textures
         #textureScene=[]
-        self.createDefaultMats()
         for tex in bpy.data.textures:
             # skip 'preview' and 'world environment' textures
             if (self.is_preview and tex.name == "fakeshadow") or not tex.users_material:
                 continue
-            self.textures.writeTexture(self.scene, tex)
+            self.sceneTextures.writeTexture(self.scene, tex)
     
    
     def object_on_visible_layer(self, obj):
@@ -138,7 +143,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         
         return False
 
-    def exportObjects(self):
+    def exportSceneObjects(self):
         #
         sceneMeshes = list()   # MESH 
         sceneSurfaces = list() # SURFACE 
@@ -149,10 +154,16 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         sceneGeometry = list() # for accumulate different geometry objects
         
         for obj in self.scene.objects:
-            if obj.type =='LAMP':       sceneLamps.append(obj)
-            if obj.type =='MESH':       sceneMeshes.append(obj)
-            if obj.type =='CURVE':      sceneCurves.append(obj)
-            if obj.type =='SURFACE':    sceneSurfaces.append(obj)
+            if obj.type =='LAMP':               sceneLamps.append(obj)
+            elif obj.type =='MESH':
+                if self.exportableObjects(obj): sceneMeshes.append(obj)
+            elif obj.type =='CURVE':
+                if self.exportableObjects(obj): sceneCurves.append(obj)
+            elif obj.type =='SURFACE':          sceneSurfaces.append(obj)
+            elif obj.type =='FONT':             sceneFonts.append(obj)
+            elif obj.type =='EMPTY':            sceneEmpties.append(obj)
+            else:
+                continue
         # test
         sceneMeshes += sceneCurves
         sceneGeometry += sceneMeshes
@@ -168,7 +179,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                     obj.create_dupli_list(self.scene)
                     for obj_dupli in obj.dupli_list:
                         matrix = obj_dupli.matrix.copy()
-                        self.lights.createLight(self.yi, obj_dupli.object, matrix)
+                        self.sceneLights.createLight(self.yi, obj_dupli.object, matrix)
 
                     if obj.dupli_list:
                         obj.free_dupli_list()
@@ -176,7 +187,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                 else: # not duplicator
                     if obj.parent and obj.parent.is_duplicator:
                         continue
-                    self.lights.createLight(self.yi, obj, obj.matrix_world)
+                    self.sceneLights.createLight(self.yi, obj, obj.matrix_world)
 
         self.yi.printInfo("Exporter: Processing Geometry...")
 
@@ -204,12 +215,12 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
 
                     if not self.scene.render.use_instances:
                         matrix = obj_dupli.matrix.copy()
-                        self.geometry.writeMesh(obj_dupli.object, matrix)
+                        self.sceneGeometry.writeMesh(obj_dupli.object, matrix)
                     else:
                         if obj_dupli.object.name not in dupBaseIds:
-                            dupBaseIds[obj_dupli.object.name] = self.geometry.writeInstanceBase(obj_dupli.object)
+                            dupBaseIds[obj_dupli.object.name] = self.sceneGeometry.writeInstanceBase(obj_dupli.object)
                         matrix = obj_dupli.matrix.copy()
-                        self.geometry.writeInstance(dupBaseIds[obj_dupli.object.name], matrix, obj_dupli.object.name)
+                        self.sceneGeometry.writeInstance(dupBaseIds[obj_dupli.object.name], matrix, obj_dupli.object.name)
 
                 if obj.dupli_list is not None:
                     obj.dupli_list_clear()
@@ -220,7 +231,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
                         check_rendertype = pSys.settings.render_type in {'OBJECT', 'GROUP'}
                         if check_rendertype and pSys.settings.use_render_emitter:
                             matrix = obj.matrix_world.copy()
-                            self.geometry.writeMesh(obj, matrix)
+                            self.sceneGeometry.writeMesh(obj, matrix)
 
             # no need to write empty object from here on, so continue with next object in loop
             #elif obj.type == 'EMPTY':
@@ -230,14 +241,14 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             elif obj.data.users > 1 and self.scene.render.use_instances:
                 self.yi.printInfo("Processing shared mesh data node object: {0}".format(obj.name))
                 if obj.data.name not in baseIds:
-                    baseIds[obj.data.name] = self.geometry.writeInstanceBase(obj)
+                    baseIds[obj.data.name] = self.sceneGeometry.writeInstanceBase(obj)
 
                 if obj.name not in dupBaseIds:
                     matrix = obj.matrix_world.copy()
-                    self.geometry.writeInstance(baseIds[obj.data.name], matrix, obj.data.name)
+                    self.sceneGeometry.writeInstance(baseIds[obj.data.name], matrix, obj.data.name)
 
             elif obj.data.name not in baseIds and obj.name not in dupBaseIds:
-                self.geometry.writeObject(obj)
+                self.sceneGeometry.writeObject(obj)
 
     #
     def defineClayMaterial(self, mat):
@@ -345,7 +356,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             self.exportedMaterials.add(mat)
             self.setMaterial.writeMaterial(mat)
 
-    def exportMaterials(self):
+    def exportSceneMaterials(self):
         self.yi.printInfo("Exporter: Processing Materials...")
         self.exportedMaterials = set()
         
@@ -369,18 +380,20 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
             mat = bpy.data.materials['clay']
             self.defineClayMaterial(mat)            
             
-        #----------------------------------------------
-        # override all materials in 'clay render' mode
-        #----------------------------------------------           
-        #if not self.scene.bounty.gs_clay_render:
-        for obj in self.scene.objects:
-            for slot in obj.material_slots:
-                if slot.material not in self.exportedMaterials:
-                    self.exportMaterial(slot.material)
+        elif self.is_preview:
+            # preview scene special case
+            for obj in self.scene.objects:
+                for slot in obj.material_slots:
+                    if slot.material not in self.exportedMaterials:
+                        self.exportMaterial(slot.material)                                   
+        else:
+            for mat in bpy.data.materials:
+                if mat not in self.exportedMaterials and mat not in self.materialMap:
+                    self.exportMaterial(mat)
                         
         
     def exportMaterial(self, material):
-        if material and (material not in self.exportedMaterials):
+        if material:
             # must make sure all materials used by a blend mat
             # are written before the blend mat itself                
             if material.bounty.mat_type == 'blend':
@@ -422,7 +435,9 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         filePath = os.path.realpath(filePath)
         filePath = os.path.normpath(filePath)
 
-        [self.sizeX, self.sizeY, self.bStartX, self.bStartY, self.bsizeX, self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
+        [self.sizeX, self.sizeY, 
+         self.bStartX, self.bStartY, 
+         self.bsizeX, self.bsizeY, camDummy] = tby_scene.getRenderCoords(scene)
 
         #if render use border:
         self.resX = self.bsizeX if render.use_border else self.sizeX
@@ -456,11 +471,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
 
         self.yi.startScene()
         self.exportScene()
-        self.lightIntegrator.exportIntegrator(self.scene.bounty)
-        self.lightIntegrator.exportVolumeIntegrator(self.scene)
-
-        # must be called last as the params from here will be used by render()
-        tby_scene.exportRenderSettings(self.yi, self.scene)
+        
   
     def render(self, scene):
         #--------------------------------------------

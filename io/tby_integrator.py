@@ -65,12 +65,12 @@ def checkPreview(preview, scene):
     return transp_BG, transp_Refract_BG
         
 
-class exportIntegrator:
+class exportSceneIntegrators:
     def __init__(self, interface, preview):
         self.yi = interface
         self.preview = preview
 
-    def exportIntegrator(self, scene):
+    def exportSurfaceIntegrator(self, scene):
         yi = self.yi
 
         yi.paramsClearAll()

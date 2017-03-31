@@ -248,10 +248,8 @@ class TheBountyMaterialWrite:
                 i += 1
 
         yi.paramsEndList()
-        if len(mcolRoot) > 0:
-            yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)
+        if mcolRoot.startswith('mircol_'): yi.paramsSetString("mirror_color_shader", mcolRoot)
+        if bumpRoot.startswith('bump_')  : yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
 
@@ -283,6 +281,10 @@ class TheBountyMaterialWrite:
         yi.paramsSetBool("anisotropic", mat.bounty.anisotropic)
         yi.paramsSetFloat("exp_u", mat.bounty.exp_u)
         yi.paramsSetFloat("exp_v", mat.bounty.exp_v)
+        
+        if mat.bounty.brdf_type == "oren-nayar":  # oren-nayar fix for glossy
+            yi.paramsSetString("diffuse_brdf", "Oren-Nayar")
+            yi.paramsSetFloat("sigma", mat.bounty.sigma)
 
         # init shader values..
         diffRoot = glossRoot = glRefRoot = bumpRoot = ''
@@ -325,18 +327,10 @@ class TheBountyMaterialWrite:
 
         yi.paramsEndList()
         
-        if len(diffRoot) > 0:
-            yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(glossRoot) > 0:
-            yi.paramsSetString("glossy_shader", glossRoot)
-        if len(glRefRoot) > 0:
-            yi.paramsSetString("glossy_reflect_shader", glRefRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)
-
-        if mat.bounty.brdf_type == "oren-nayar":  # oren-nayar fix for glossy
-            yi.paramsSetString("diffuse_brdf", "Oren-Nayar")
-            yi.paramsSetFloat("sigma", mat.bounty.sigma)
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if glossRoot.startswith('gloss_'):      yi.paramsSetString("glossy_shader", glossRoot)
+        if glRefRoot.startswith('glossref_'):   yi.paramsSetString("glossy_reflect_shader", glRefRoot)            
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)
 
         return yi.createMaterial(self.namehash(mat))
     
@@ -415,12 +409,12 @@ class TheBountyMaterialWrite:
             i +=1
         
         yi.paramsEndList()
-        if len(diffRoot) > 0:   yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(glossRoot) > 0:  yi.paramsSetString("glossy_shader", glossRoot)
-        if len(glRefRoot) > 0:  yi.paramsSetString("glossy_reflect_shader", glRefRoot)
-        if len(bumpRoot) > 0:   yi.paramsSetString("bump_shader", bumpRoot)
-        if len(transpRoot) > 0: yi.paramsSetString("sigmaA_shader", transpRoot)
-        if len(translRoot) > 0: yi.paramsSetString("sigmaS_shader", translRoot)
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if glossRoot.startswith('gloss_'):      yi.paramsSetString("glossy_shader", glossRoot)
+        if glRefRoot.startswith('glossref'):    yi.paramsSetString("glossy_reflect_shader", glRefRoot)
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)
+        if transpRoot.startswith('transp_'):    yi.paramsSetString("sigmaA_shader", transpRoot)
+        if translRoot.startswith('translu_'):   yi.paramsSetString("sigmaS_shader", translRoot)
 
         return yi.createMaterial(self.namehash(mat))
     #-------->
@@ -514,21 +508,14 @@ class TheBountyMaterialWrite:
             i += 1
 
         yi.paramsEndList()
-        if len(diffRoot) > 0:
-            yi.paramsSetString("diffuse_shader", diffRoot)
-        if len(mcolRoot) > 0:
-            yi.paramsSetString("mirror_color_shader", mcolRoot)
-        if len(transpRoot) > 0:
-            yi.paramsSetString("transparency_shader", transpRoot)
-        if len(translRoot) > 0:
-            yi.paramsSetString("translucency_shader", translRoot)
-        if len(mirrorRoot) > 0:
-            yi.paramsSetString("mirror_shader", mirrorRoot)
-        if len(bumpRoot) > 0:
-            yi.paramsSetString("bump_shader", bumpRoot)        
+        if diffRoot.startswith('diff_'):        yi.paramsSetString("diffuse_shader", diffRoot)
+        if mcolRoot.startswith('mircol_'):      yi.paramsSetString("mirror_color_shader", mcolRoot)
+        if transpRoot.startswith('transp_'):    yi.paramsSetString("transparency_shader", transpRoot)
+        if translRoot.startswith('translu_'):   yi.paramsSetString("translucency_shader", translRoot)
+        if mirrorRoot.startswith('mirr_'):      yi.paramsSetString("mirror_shader", mirrorRoot)
+        if bumpRoot.startswith('bump_'):        yi.paramsSetString("bump_shader", bumpRoot)        
 
-        return yi.createMaterial(self.namehash(mat))
-    
+        return yi.createMaterial(self.namehash(mat))    
 
     def writeBlendShader(self, mat):
         yi = self.yi
@@ -587,14 +574,7 @@ class TheBountyMaterialWrite:
         yi.paramsClearAll()
         yi.paramsSetString("type", "null")
         return yi.createMaterial(self.namehash(mat))
-    
-    def writeDefaultMat(self, mat):
-        self.yi.paramsClearAll()
-        self.yi.paramsSetString("type", "shinydiffusemat")
-        self.yi.paramsSetColor("color", 0.8, 0.8, 0.8)
-        self.yi.printInfo("Exporter: Creating Material \"defaultMat\"")
-        return yi.createMaterial("defaultMat")
-
+   
     def writeMaterial(self, mat, preview=False):
         self.preview = preview
         self.yi.printInfo("Exporter: Creating Material: \"" + self.namehash(mat) + "\"")

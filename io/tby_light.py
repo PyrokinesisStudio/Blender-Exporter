@@ -38,7 +38,7 @@ class exportLight:
         yi.startGeometry()
 
         if not yi.startTriMesh(ID, 2 + (nu - 1) * nv, 2 * (nu - 1) * nv, False, False):
-            yi.printError("Couldn't start trimesh!")
+            yi.printError("Couldn't start triMesh!")
 
         yi.addVertex(x, y, z + rad)
         yi.addVertex(x, y, z - rad)
@@ -134,21 +134,22 @@ class exportLight:
                 angle = degrees(lamp.spot_size) * 0.5
             ###
             light_type = "spotlight"
-            if lamp.bounty.ies_file !="":
-                ies_file = abspath(lamp.bounty.ies_file)
-                if not any(ies_file) and not os.path.exists(ies_file):
-                    yi.printWarning("IES file not found for {0}".format(lamp_name))
-                    return False
-                yi.paramsSetString("file", ies_file)
+            if lamp.bounty.use_ies and lamp.bounty.ies_file !="":
                 light_type = "ieslight"
+                file = "None"
+                if not lamp.bounty.with_ies_data:
+                    ies_file = abspath(lamp.bounty.ies_file)
+                    if os.path.exists(ies_file) and (ies_file.endswith('.IES') or ies_file.endswith('.ies')):
+                        file = ies_file
+                yi.paramsSetString("file", file)
                             
-            else:
-                yi.paramsSetFloat("cone_angle", angle)
+            if light_type == "spotlight":
                 yi.paramsSetFloat("blend", lamp.spot_blend)            
                 yi.paramsSetFloat("shadowFuzzyness", lamp.bounty.shadow_fuzzyness)
-                yi.paramsSetBool("photon_only", lamp.bounty.photon_only)
+                yi.paramsSetBool("photon_only", lamp.bounty.photon_only)                
                 
             ## commons values
+            yi.paramsSetFloat("cone_angle", angle)
             yi.paramsSetPoint("to", to[0], to[1], to[2])
             yi.paramsSetBool("soft_shadows", lamp.bounty.spot_soft_shadows)
             yi.paramsSetInt("samples", lamp.bounty.samples)
