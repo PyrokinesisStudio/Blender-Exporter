@@ -17,7 +17,7 @@
 # ##### END GPL LICENSE BLOCK #####
 
 # <pep8 compliant>
-
+import os
 import bpy
 import mathutils
 from bpy.types import Operator
@@ -181,7 +181,7 @@ opClasses.append(Thebounty_OT_UpdateBlend)
 #-------------------------------------------
 # Add support for use ibl files
 #-------------------------------------------
-import re, os
+import re
 
 class Thebounty_OT_ParseSSS(Operator):
     bl_idname = "material.parse_sss"
@@ -344,13 +344,24 @@ class Thebounty_OT_ParseIBL(Operator):
     
     @classmethod
     def poll(cls, context):
-        world = context.world
+        world = context.scene.world
         return world and (world.bounty.bg_type == "textureback")
     #
+    def isIBL(self, file):
+        
+        ibl = (file !="" and 
+               os.path.exists(file) and 
+               (file.endswith('.ibl') or file.endswith('.IBL'))
+        )
+        return ibl
+    
+    #
     def execute(self, context):
-        world = context.world.bounty
+        world = context.scene.world
         scene = context.scene
-        file = world.ibl_file
+        file = world.bounty.ibl_file
+        if not self.isIBL(file):
+            return {'CANCELLED'}
         # parse..
         self.iblValues = self.parseIbl(file)
         iblFolder = os.path.dirname(file) 
@@ -391,7 +402,7 @@ class Thebounty_OT_ParseIBL(Operator):
             if line.startswith('PREVIEWfile'):
                 self.iblValues['PREVIEWfile']= self.parseValue(line, 2) # string          
             
-            #[Background]
+            # [Background]
             if line.startswith('BGfile'):
                 self.iblValues['BGfile']= self.parseValue(line, 2) # string
             #
@@ -435,7 +446,230 @@ class Thebounty_OT_ParseIBL(Operator):
         return self.iblValues
     
 opClasses.append(Thebounty_OT_ParseIBL)
+
 # test
+class Thebounty_OT_ParseIES(Operator):
+    bl_idname = "lamp.parse_ies"
+    bl_label = "Parse IES file"
+    bl_description='Parse IES file to store data in scene'
+    '''
+    Parts of code are extract from "IES to Cycles" addon, by Lockal S.
+    and modified by Pedro Alcaide, aka 'povmaniac'
+    '''
+    
+    @classmethod
+    def poll(self, context):
+        lamp = context.lamp        
+        return lamp and (lamp.type == 'SPOT' and lamp.bounty.use_ies)
+    
+    def execute(self, context):
+        #
+        lamp = context.lamp
+        # allow relative path
+        iesfile = bpy.path.abspath(lamp.bounty.ies_file)
+        iesfile = os.path.realpath(iesfile)
+        iesfile = os.path.normpath(iesfile)
+        #print('file..', iesfile)
+        
+        allow_ies = ( os.path.exists(iesfile) and
+            (iesfile.endswith('.ies') or iesfile.endswith('.IES')))
+        
+        if not allow_ies:
+            self.report({'ERROR'}, "Missing or invalid IES file")
+            return {'CANCELLED'}
+        
+        self.parseIES(iesfile)
+            
+        return {'FINISHED'}
+    
+    def simple_interp(self, k, x, y):
+        for i in range(len(x)):
+            if k == x[i]:
+                return y[i]
+            elif k < x[i]:
+                return y[i] + (k - x[i]) * (y[i - 1] - y[i]) / (x[i - 1] - x[i])
+            
+    def parseIES(self, filename):
+        #(log, filename, generate_rig, multiplier, image_format, color_temperature):
+        INFO = "INFO: IES Parser:"
+        multiplier = 1        
+        version_table = {
+            'IESNA:LM-63-1986': 1986,
+            'IESNA:LM-63-1991': 1991,
+            'IESNA91': 1991,
+            'IESNA:LM-63-1995': 1995,
+            'IESNA:LM-63-2002': 2002,
+        }
+        
+        name = os.path.splitext(os.path.split(filename)[1])[0]
+    
+        file = open(filename, 'rt', encoding='cp1252')
+        content = file.read()
+        file.close()
+        s, content = content.split('\n', 1)
+    
+        if s in version_table:
+            version = version_table[s]
+        else:
+            self.report({'INFO'}, "IES file does not specify any version")
+            version = None
+    
+        keywords = dict()
+    
+        while content and not content.startswith('TILT='):
+            s, content = content.split('\n', 1)
+    
+            if s.startswith('['):
+                endbracket = s.find(']')
+                if endbracket != -1:
+                    keywords[s[1:endbracket]] = s[endbracket + 1:].strip()
+    
+        s, content = content.split('\n', 1)
+    
+        if not s.startswith('TILT'):
+            self.report({'ERROR'}, "TILT keyword not found, check your IES file")
+            return {'CANCELLED'}
+    
+        # fight against ill-formed files
+        file_data = content.replace(',', ' ').split()
+    
+        lamps_num = int(file_data[0])
+        print(INFO, 'Number of lamps: ', lamps_num)
+        if lamps_num != 1:
+            self.report({'INFO'}, "Only 1 lamp is supported, %d in IES file" % lamps_num)
+    
+        lumens_per_lamp = float(file_data[1])
+        print(INFO, 'Lumens per lamp: ', lumens_per_lamp)
+        
+        candela_mult = float(file_data[2])
+        candela_mult *= 0.001
+        print(INFO, 'Candela multiplier (kcd): ', candela_mult)
+    
+        v_angles_num = int(file_data[3])
+        print(INFO, 'Vertical Angles: ', v_angles_num)
+        
+        h_angles_num = int(file_data[4])
+        print(INFO, 'Horizontal Angles: ', h_angles_num)
+        
+        if not v_angles_num or not h_angles_num:
+            self.report({'ERROR'}, "TILT keyword not found, check your IES file")
+            return {'CANCELLED'}
+    
+        photometric_type = int(file_data[5])
+        print(INFO, 'Photometric type: ', photometric_type)
+        
+        units_type = int(file_data[6])
+        print(INFO, 'Units Type: ', units_type)
+        
+        if units_type not in [1, 2]:
+            self.report({'INFO'}, "Units type should be either 1 (feet) or 2 (meters)")
+    
+        width, length, height = map(float, file_data[7:10])
+        print(INFO, '(Width, Length, Height) = (', width ,', ', length, ', ', height ,')')
+        #
+        geoType = "Unknown light type!!"
+
+        if (width ==   0.0 and length == 0.0 and height == 0.0):  geoType = "Point Light"    
+        elif (width >= 0.0 and length >= 0.0 and height >= 0.0):  geoType = "Rectangular Light"    
+        elif (width <  0.0 and length == 0.0 and height == 0.0):  geoType = "Circular Light"    
+        elif (width <  0.0 and length == 0.0 and height <  0.0):  geoType = "Shpere Light"    
+        elif (width <  0.0 and length == 0.0 and height >= 0.0):  geoType = "Vertical Cylindric Light"    
+        elif (width == 0.0 and length >= 0.0 and height <  0.0):  geoType = "Horizontal Cylindric Light (Along width)"    
+        elif (width >= 0.0 and length == 0.0 and height <  0.0):  geoType = "Horizontal Cylindric Light (Along length)"    
+        elif (width <  0.0 and length >= 0.0 and height >= 0.0):  geoType = "Elipse Light (Along width)"    
+        elif (width >= 0.0 and length <  0.0 and height >= 0.0):  geoType = "Elipse Light (Along length)"    
+        elif (width <  0.0 and length >= 0.0 and height <  0.0):  geoType = "Elipsoid Light (Along width)"    
+        elif (width >= 0.0 and length <  0.0 and height <  0.0):  geoType = "Elipsoid Light (Along length)"
+        
+        print(INFO, 'Lamp Geometry: ', geoType)    
+    
+        ballast_factor = float(file_data[10])
+        print(INFO, 'Ballast Factor: ', ballast_factor)
+    
+        future_use = float(file_data[11])
+        print(INFO, 'Ballast-Lamp Photometric Factor: ', future_use)
+        if future_use != 1.0:
+            self.report({'INFO'}, "Invalid future use field")
+    
+        input_watts = float(file_data[12])
+        print(INFO, 'Input Watts: ', input_watts)
+    
+        v_angs = [float(s) for s in file_data[13:13 + v_angles_num]]
+        h_angs = [float(s) for s in file_data[13 + v_angles_num:
+                                              13 + v_angles_num + h_angles_num]]
+    
+        if v_angs[0] == 0 and v_angs[-1] == 90:
+            lamp_cone_type = 'TYPE90'
+        elif v_angs[0] == 0 and v_angs[-1] == 180:
+            lamp_cone_type = 'TYPE180'
+        else:
+            self.report({'INFO'}, "Lamps with vertical angles (%d-%d) are not supported" % (v_angs[0], v_angs[-1]))
+            lamp_cone_type = 'TYPE180'
+    
+    
+        if len(h_angs) == 1 or abs(h_angs[0] - h_angs[-1]) == 360:
+            lamp_h_type = 'TYPE360'
+        elif abs(h_angs[0] - h_angs[-1]) == 180:
+            lamp_h_type = 'TYPE180'
+        elif abs(h_angs[0] - h_angs[-1]) == 90:
+            lamp_h_type = 'TYPE90'
+        else:
+            self.report({'INFO'}, "Lamps with horizontal angles (%d-%d) are not supported" % (h_angs[0], h_angs[-1]))
+            lamp_h_type = 'TYPE360'
+            
+        # print(h_angs, lamp_h_type)
+    
+        # read candela values
+        offset = 13 + len(v_angs) + len(h_angs)
+        candela_num = len(v_angs) * len(h_angs)
+        candela_values = [float(s) for s in file_data[offset:offset + candela_num]]
+    
+        # reshape 1d array to 2d array
+        candela_2d = list(zip(*[iter(candela_values)] * len(v_angs)))
+        
+        # check if angular offsets are the same
+        v_d = [v_angs[i] - v_angs[i - 1] for i in range(1, len(v_angs))]
+        h_d = [h_angs[i] - h_angs[i - 1] for i in range(1, len(h_angs))]
+    
+        v_same = all(abs(v_d[i] - v_d[i - 1]) < 0.001 for i in range(1, len(v_d)))
+        h_same = all(abs(h_d[i] - h_d[i - 1]) < 0.001 for i in range(1, len(h_d)))
+    
+        if not v_same:
+            vmin, vmax = v_angs[0], v_angs[-1]
+            divisions = int((vmax - vmin) / max(1, min(v_d)))
+            step = (vmax - vmin) / divisions
+    
+            # Approximating non-uniform vertical angles with step = step
+            new_v_angs = [vmin + i * step for i in range(divisions + 1)]
+            new_candela_2d = [[self.simple_interp(ang, v_angs, line) for ang in new_v_angs] for line in candela_2d]
+            #print('candela ', candela_2d)
+            #print('new candela', new_candela_2d)
+            v_angs = new_v_angs
+            candela_2d = new_candela_2d
+    
+        if not h_same:
+            self.report({'INFO'}, "Different offsets for horizontal angles!")
+        #print('vangle: ', v_angs)    
+        # normalize candela values
+        maxval = max([max(row) for row in candela_2d])
+        candela_2d = [[val / maxval for val in row] for row in candela_2d]
+    
+        # add extra left and right rows to bypass cycles repeat of uv coordinates
+        candela_2d = [[line[0]] + list(line) + [line[-1]] for line in candela_2d]
+        
+        if len(candela_2d) > 1:
+            candela_2d = [candela_2d[0]] + candela_2d + [candela_2d[-1]]
+    
+        # flatten 2d array to 1d
+        candela_values = [y for x in candela_2d for y in x]
+        #print('candela ', candela_values)
+        
+        intensity = max(500, min(maxval * multiplier * candela_mult, 5000))
+        #print('intensity ', intensity)
+        
+        return {'FINISHED'}
+
+opClasses.append(Thebounty_OT_ParseIES)
 
 def register():
     for cls in opClasses:

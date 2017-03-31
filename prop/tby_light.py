@@ -95,7 +95,7 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             default=True
     )    
     spot_soft_shadows = BoolProperty(
-            name="Soft shadows (unused with photon only)",
+            name="Soft shadows",
             description="Use soft shadows(turn disabled with 'photon only')",
             default=False
     )    
@@ -115,7 +115,17 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             description="Angle of the cone in degrees (shadow softness)",
             min=0.0, max=80.0,
             default=0.5
-    )    
+    )
+    use_ies = BoolProperty(
+            name="Use IES",
+            description="Use photometric IES file data",
+            default=False
+    )
+    with_ies_data = BoolProperty(
+            name="With parsed IES data",
+            description="Use parsed IES data from file",
+            default=False
+    )         
     ies_soft_shadows = BoolProperty(
             name="IES Soft shadows",
             description="Use soft shadows for IES light type",
@@ -126,7 +136,7 @@ class TheBountyLightProperties(bpy.types.PropertyGroup):
             description="File to be used as the light projection",
             subtype='FILE_PATH',
             default=""
-    )    
+    )   
     samples = IntProperty(
             name="Samples",
             description="Number of samples to be taken for direct lighting",

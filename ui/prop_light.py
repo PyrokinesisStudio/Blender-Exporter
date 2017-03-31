@@ -63,24 +63,24 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
     '''
     def draw_spot_shape(self, context):
         layout = self.layout
-        lamp = context.lamp.bounty
+        lamp = context.lamp #.bounty
         
         layout.label("Spot shape settings:")
         
         row = layout.row()
-        row.prop(context.lamp, "spot_size", text="Size")
-        row.prop(context.lamp, "spot_blend", text="Blend", slider=True)
+        row.prop(lamp, "spot_size", text="Size")
+        row.prop(lamp, "spot_blend", text="Blend", slider=True)
         
         split = layout.split()
         col = split.column(align=True)
-        col.prop(lamp, "show_dist_clip", toggle=True)
-        if lamp.show_dist_clip:
-            col.prop(context.lamp, "distance")
-            col.prop(context.lamp, "shadow_buffer_clip_start", text="Clip Start")
-            col.prop(context.lamp, "shadow_buffer_clip_end", text=" Clip End")
+        col.prop(lamp.bounty, "show_dist_clip", toggle=True)
+        if lamp.bounty.show_dist_clip:
+            col.prop(lamp, "distance")
+            col.prop(lamp, "shadow_buffer_clip_start", text="Clip Start")
+            col.prop(lamp, "shadow_buffer_clip_end", text=" Clip End")
 
         col = split.column()
-        col.prop(context.lamp, "show_cone", toggle=True)
+        col.prop(lamp, "show_cone", toggle=True)
 
     def draw_area_shape(self, context):
         layout = self.layout
@@ -116,18 +116,30 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
             self.draw_area_shape(context)
 
         elif lamp.type == "SPOT":
-            layout.prop(lamp.bounty, "ies_file")
-            if lamp.bounty.ies_file =="":
-                layout.prop(lamp.bounty, "photon_only", toggle=True)
+            row = layout.row()
+            row.prop(lamp.bounty, 'use_ies')
+            row.prop(lamp.bounty, 'with_ies_data')
+            row = layout.row()
+            row.enabled = lamp.bounty.use_ies
+            row.prop(lamp.bounty, "ies_file", text='')
+            
+            colrow = layout.row()
+            colrow.enabled = (lamp.bounty.use_ies and lamp.bounty.with_ies_data and lamp.bounty.ies_file !="")
+            colrow.operator("lamp.parse_ies")
+            
             col = layout.column(align=True)
-            if not lamp.bounty.photon_only:
+            if not lamp.bounty.photon_only or lamp.bounty.use_ies:
+                # test
+                col.prop(lamp, "spot_size", text="Cone Angle")
                 col.prop(lamp.bounty, "spot_soft_shadows", toggle=True)
                 if lamp.bounty.spot_soft_shadows:
                     col.prop(lamp.bounty, "samples")
-                    if lamp.bounty.ies_file =="":
+                    if not lamp.bounty.use_ies:
                         col.prop(lamp.bounty, "shadow_fuzzyness")
              
-            if lamp.bounty.ies_file =="":
+            if not lamp.bounty.use_ies:
+                col = layout.column()
+                col.prop(lamp.bounty, "photon_only", toggle=True)
                 self.draw_spot_shape(context)            
 
         elif lamp.type == "SUN":
@@ -147,16 +159,6 @@ class THEBOUNTY_PT_lamp(TheBountyDataButtonsPanel, Panel):
                 col.prop(lamp.bounty, "sphere_radius")
                 col.prop(lamp.bounty, "samples")
                 col.prop(lamp.bounty, "create_geometry", toggle=True)
-        
-        elif lamp.type == "IES":
-            layout.prop(lamp, "ies_file")
-            col = layout.column(align=True)            
-            col.prop(lamp, "ies_soft_shadows", toggle=True)
-            if lamp.ies_soft_shadows:
-                col.prop(lamp, "samples")
-            #
-            self.draw_spot_shape(context)
-        
 
 
 if __name__ == "__main__":  # only for live edit.
