@@ -161,7 +161,12 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
             subtype='COLOR',
             min=0.0, max=1.0,
             default=(0.8, 0.8, 0.8)
-    )    
+    )
+    gs_clay_mat = StringProperty(
+            name="",
+            description="",
+            default="clay"
+    )        
     gs_mask_render = BoolProperty(
             name="Render mask",
             description="Renders an object mask pass with different colors",

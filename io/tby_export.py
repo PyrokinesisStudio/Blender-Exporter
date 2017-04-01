@@ -322,7 +322,7 @@ class TheBountyRenderEngine(bpy.types.RenderEngine):
         yi.paramsSetBool("fresnel_effect", mat.fresnel_effect)
         yi.paramsSetFloat("IOR", mat.IOR_reflection)
     
-        if mat.bounty.brdf_type == "oren-nayar":
+        if mat.brdf_type == "oren-nayar":
             yi.paramsSetString("diffuse_brdf", "oren_nayar")
             yi.paramsSetFloat("sigma", mat.sigma)    
                    
