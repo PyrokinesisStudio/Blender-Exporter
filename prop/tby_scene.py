@@ -82,10 +82,10 @@ enum_tile_order = (
 )
 
 enum_verbosity_level = (
-    ('info', "Console Info", "Show all general info messages on console"),
+    ('info',    "Console Info",    "Show all general info messages on console"),
     ('warning', "Console Warning", "Show only warning messages on console"),
-    ('error', "Console Error", "Show only error messages on console"),
-    ('mute', "Console Mute", "Mute all messages on console"),
+    ('error',   "Console Error",   "Show only error messages on console"),
+    ('mute',    "Console Mute",    "Mute all messages on console"),
 )
 
 # set fileformat for image saving on same format as in the exporter, both have default PNG
@@ -105,12 +105,12 @@ class TheBountySceneSettings(bpy.types.PropertyGroup):
     gs_ray_depth = IntProperty(
             name="Recursive Raytracing depth",
             description="Maximum depth for recursive raytracing",
-            min=0, max=64, default=2
+            min=1, max=64, default=3
     )    
     gs_shadow_depth = IntProperty(
             name="Shadow depth",
             description="Max. depth for transparent shadows calculation (if enabled)",
-            min=0, max=64, default=2
+            min=1, max=64, default=2
     )    
     gs_threads = IntProperty(
             name="Threads",

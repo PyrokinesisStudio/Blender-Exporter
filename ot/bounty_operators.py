@@ -595,9 +595,8 @@ class Thebounty_OT_ParseIES(Operator):
         print(INFO, 'Input Watts: ', input_watts)
     
         v_angs = [float(s) for s in file_data[13:13 + v_angles_num]]
-        h_angs = [float(s) for s in file_data[13 + v_angles_num:
-                                              13 + v_angles_num + h_angles_num]]
-    
+        h_angs = [float(s) for s in file_data[13 + v_angles_num:13 + v_angles_num + h_angles_num]]
+        #
         if v_angs[0] == 0 and v_angs[-1] == 90:
             lamp_cone_type = 'TYPE90'
         elif v_angs[0] == 0 and v_angs[-1] == 180:

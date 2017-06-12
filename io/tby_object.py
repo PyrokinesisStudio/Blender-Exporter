@@ -749,9 +749,15 @@ class exportObject(object):
                 obj.data.update(calc_tessface=True)
                 # children is pre multiplied
                 total = children if children != 0 else parents
+                start = 0
+                if children != 0:
+                    # Number of virtual parents reduces the number of exported children
+                    virtual_parents = math.trunc(0.3 * psys.settings.virtual_parents * psys.settings.child_nbr * parents)
+                    start = parents + virtual_parents
+                
                 print("[Hair] Total curves", total)
                 #
-                for p in range( 0, total):
+                for p in range( start, total):
                     #
                     particle = None
                     if p >= parents:
