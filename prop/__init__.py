@@ -18,30 +18,30 @@
 
 # <pep8 compliant>
 
-from . import tby_object
-from . import tby_material
-from . import tby_light
-from . import tby_scene
 from . import tby_camera
+from . import tby_light
+from . import tby_material
+from . import tby_object
+from . import tby_scene
 from . import tby_texture
 from . import tby_world
 
 
 def register():
-    tby_object.register()
-    tby_material.register()
-    tby_light.register()
-    tby_scene.register()
     tby_camera.register()
+    tby_light.register()
+    tby_material.register()
+    tby_object.register()
+    tby_scene.register()
     tby_texture.register()
     tby_world.register()
 
 
 def unregister():
-    tby_object.unregister()
-    tby_material.unregister()
-    tby_light.unregister()
-    tby_scene.unregister()
     tby_camera.unregister()
+    tby_light.unregister()
+    tby_material.unregister()
+    tby_object.unregister()
+    tby_scene.unregister()
     tby_texture.unregister()
     tby_world.unregister()
