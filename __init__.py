@@ -22,12 +22,13 @@ bl_info = {
     "name": "TheBounty Render Engine",
     "description": "TheBounty Renderer integration for Blender",
     "author": "Pedro Alcaide (povmaniaco), rubdos, TynkaTopi, paultron",
-    "version": (0, 1, 6, 4),
+    "version": (0, 1, 7, 0),
     "blender": (2, 78, 0),
     "location": "Info Header > Engine dropdown menu",
     "wiki_url": "https://github.com/TheBounty/Blender-Exporter/wiki",
     "tracker_url": "https://github.com/TheBounty/Blender-Exporter/issues",
-    "category": "Render"
+    "category": "Render",
+    "branch": "0.1.7.dev"
 }
 
 import sys

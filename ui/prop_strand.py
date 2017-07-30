@@ -53,7 +53,9 @@ class TheBountyStrandPanel( bpy.types.Panel):
         sh.enabled = (bounty.root_size != bounty.tip_size)
         sh.prop( bounty, "shape")
         #
-        col.prop( bounty, "bake_hair")      
+        bake = col.column()
+        bake.enabled = context.scene.bounty.gs_type_render == "xml"
+        bake.prop( bounty, "bake_hair")             
         
         col = split.column()        
         col.label(text="")
