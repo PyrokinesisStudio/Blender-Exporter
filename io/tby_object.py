@@ -172,7 +172,7 @@ class exportObject(object):
             if self.is_preview:
                 self.previewhair(obj)
             else:                
-                bake = False #self.scene.bounty.gs_type_render == 'xml'
+                bake = self.scene.bounty.gs_type_render == 'xml'
                 #
                 for pSys in obj.particle_systems:
                     if pSys.settings.type == 'HAIR' and pSys.settings.render_type == 'PATH':
