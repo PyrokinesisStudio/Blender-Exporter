@@ -102,7 +102,7 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
                 (m +".fresnel_effect", mat.fresnel_effect),
                 (m +".IOR_reflection", mat.IOR_reflection),
                 (m +".brdf_type", brdf),
-                (m +".sigma = ", mat.sigma),
+                (m +".sigma", mat.sigma),
             ]
                     
         elif mat.mat_type == 'translucent':
@@ -177,7 +177,8 @@ class TheBountyMaterialPresets(AddPresetBase, Operator):
                     pfile.write('\n')
                 #
                 self.report({'INFO'}, "File preset write sucessful: "+ str(filepath))
-        
+        else:
+            self.report({'INFO'}, "File preset delete sucessful: "+ str(filepath))
                  
         return {'FINISHED'}
     
